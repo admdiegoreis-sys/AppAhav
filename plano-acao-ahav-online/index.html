@@ -543,7 +543,8 @@ td.wrap{white-space:normal}
 
   <div class="smart-section" id="smart-section-dashboard">
     <div class="smart-dashboard-grid">
-      <div class="chart-card wide"><h3>Faturamento por Mês</h3><div class="chart-wrap"><canvas id="smartChartFaturamentoMes"></canvas></div><div class="chart-note">* Faturamento ajustado considera o efeito das compensações.</div></div>
+      <div class="chart-card"><h3>Faturamento por Mês</h3><div class="chart-wrap"><canvas id="smartChartFaturamentoMes"></canvas></div><div class="chart-note">* Faturamento ajustado considera o efeito das compensações.</div></div>
+      <div class="chart-card"><h3>Top Clientes</h3><div class="chart-wrap"><canvas id="smartChartTopClientes"></canvas></div></div>
       <div class="chart-card"><h3>Top Produção</h3><div class="chart-wrap"><canvas id="smartChartProdutos"></canvas></div></div>
       <div class="chart-card"><h3>Produtos Faturados</h3><div class="chart-wrap"><canvas id="smartChartProdutosFaturados"></canvas></div></div>
       <div class="chart-card wide featured"><h3>Produzido x Vendido</h3><div class="chart-wrap"><canvas id="smartChartProdVend"></canvas></div></div>
@@ -1274,7 +1275,7 @@ let editingRiskUid = null;
 let smartState = null;
 let smartActiveTab = 'dashboard';
 let smartChartCategoria = null, smartChartEstoque = null, smartChartProdutos = null;
-let smartChartFaturamentoMes = null, smartChartProdutosFaturados = null, smartChartProdVend = null;
+let smartChartFaturamentoMes = null, smartChartTopClientes = null, smartChartProdutosFaturados = null, smartChartProdVend = null;
 let currentUser = null;
 let authUsesSupabase = false;
 
@@ -3629,6 +3630,17 @@ function updateSmartCharts() {
   const normalizedProduction = state.producao.map(p => ({...p, 'Produto ERP': smartProductName(p.codprod, p['Produto ERP'])}));
   const validSales = state.vendas.filter(v => !['Cancelado','Compensação'].includes(String(v.Status || ''))).map(v => ({...v, 'Produto ERP': smartProductName(v.codprod, v['Produto ERP'])}));
   const compensacoes = state.vendas.filter(v => String(v.Status || '') === 'Compensação').map(v => ({...v, 'Valor Total': Math.abs(smartNum(v['Valor Total']))}));
+  const clientChartMap = {};
+  state.vendas.filter(v => String(v.Status || '') !== 'Cancelado').forEach(v => {
+    const cliente = v.Cliente || 'Sem informação';
+    if (!clientChartMap[cliente]) clientChartMap[cliente] = {label: cliente, total: 0, compensacao: 0};
+    if (String(v.Status || '') === 'Compensação') clientChartMap[cliente].compensacao += Math.abs(smartNum(v['Valor Total']));
+    else clientChartMap[cliente].total += smartNum(v['Valor Total']);
+  });
+  const topClients = Object.values(clientChartMap)
+    .map(x => ({label:x.label, value:x.total - x.compensacao}))
+    .sort((a,b)=>b.value-a.value)
+    .slice(0,8);
   const topProduction = smartGroupRows(normalizedProduction, 'Produto ERP', 'Quantidade').sort((a,b)=>b.value-a.value).slice(0,8);
   const salesByMonth = smartGroupSalesByMonth(validSales);
   const compensacaoByMonth = smartGroupSalesByMonth(compensacoes);
@@ -3636,27 +3648,34 @@ function updateSmartCharts() {
   const compensacaoMonthMap = Object.fromEntries(compensacaoByMonth.map(x => [x.label, x.value]));
   const monthLabels = [...new Set([...salesByMonth.map(x=>x.label), ...compensacaoByMonth.map(x=>x.label)])].sort((a,b) => smartMonthLabelSortValue(a) - smartMonthLabelSortValue(b));
   const topSalesProducts = smartGroupRows(validSales, 'Produto ERP', 'Valor Total').sort((a,b)=>b.value-a.value).slice(0,8);
-  const soldByProduct = smartGroupRows(validSales, 'Produto ERP', 'Quantidade').sort((a,b)=>b.value-a.value).slice(0,8);
+  const soldByProductAll = smartGroupRows(validSales, 'Produto ERP', 'Quantidade');
   const producedByProduct = smartGroupRows(normalizedProduction, 'Produto ERP', 'Quantidade');
+  const soldMap = Object.fromEntries(soldByProductAll.map(x => [x.label, x.value]));
   const producedMap = Object.fromEntries(producedByProduct.map(x => [x.label, x.value]));
+  const productCompare = [...new Set([...soldByProductAll.map(x=>x.label), ...producedByProduct.map(x=>x.label)])]
+    .map(label => ({label, vendido:soldMap[label] || 0, produzido:producedMap[label] || 0}))
+    .sort((a,b) => (b.produzido + b.vendido) - (a.produzido + a.vendido))
+    .slice(0,10);
   if (smartChartProdutos) smartChartProdutos.destroy();
   smartChartProdutos = new Chart(document.getElementById('smartChartProdutos'), {type:'bar',data:{labels:topProduction.map(x=>smartShortLabel(x.label)),datasets:[{data:topProduction.map(x=>x.value),backgroundColor:'#22c55e'}]},options:smartChartOptions({fullLabels:topProduction.map(x=>x.label), quantityAxis:true, options:{indexAxis:'y'}})});
   if (smartChartFaturamentoMes) smartChartFaturamentoMes.destroy();
   smartChartFaturamentoMes = new Chart(document.getElementById('smartChartFaturamentoMes'), {type:'line',data:{labels:monthLabels,datasets:[{label:'Faturamento',data:monthLabels.map(x=>salesMonthMap[x]||0),borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.14)',fill:false,tension:.35},{label:'Faturamento Ajustado*',data:monthLabels.map(x=>(salesMonthMap[x]||0)-(compensacaoMonthMap[x]||0)),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.12)',fill:true,tension:.35}]},options:smartChartOptions({tooltipMoney:true, moneyAxis:true, options:{plugins:{legend:{display:true,position:'bottom'}}}})});
+  if (smartChartTopClientes) smartChartTopClientes.destroy();
+  smartChartTopClientes = new Chart(document.getElementById('smartChartTopClientes'), {type:'bar',data:{labels:topClients.map(x=>smartShortLabel(x.label)),datasets:[{data:topClients.map(x=>x.value),backgroundColor:'#8b5cf6'}]},options:smartChartOptions({fullLabels:topClients.map(x=>x.label), tooltipMoney:true, moneyAxis:true, options:{indexAxis:'y'}})});
   if (smartChartProdutosFaturados) smartChartProdutosFaturados.destroy();
   smartChartProdutosFaturados = new Chart(document.getElementById('smartChartProdutosFaturados'), {type:'bar',data:{labels:topSalesProducts.map(x=>smartShortLabel(x.label)),datasets:[{data:topSalesProducts.map(x=>x.value),backgroundColor:'#f59e0b'}]},options:smartChartOptions({fullLabels:topSalesProducts.map(x=>x.label), tooltipMoney:true, moneyAxis:true, options:{indexAxis:'y'}})});
   if (smartChartProdVend) smartChartProdVend.destroy();
   smartChartProdVend = new Chart(document.getElementById('smartChartProdVend'), {
     type:'bar',
     data:{
-      labels:soldByProduct.map(x=>smartShortLabel(x.label, 18)),
+      labels:productCompare.map(x=>smartShortLabel(x.label, 18)),
       datasets:[
-        {label:'Produzido',data:soldByProduct.map(x=>producedMap[x.label]||0),backgroundColor:'#22c55e'},
-        {label:'Vendido',data:soldByProduct.map(x=>x.value),backgroundColor:'#ef4444'}
+        {label:'Produzido',data:productCompare.map(x=>x.produzido),backgroundColor:'#22c55e'},
+        {label:'Vendido',data:productCompare.map(x=>x.vendido),backgroundColor:'#ef4444'}
       ]
     },
     options:smartChartOptions({
-      fullLabels:soldByProduct.map(x=>x.label),
+      fullLabels:productCompare.map(x=>x.label),
       quantityAxis:true,
       options:{
         plugins:{legend:{display:true,position:'bottom'}},
