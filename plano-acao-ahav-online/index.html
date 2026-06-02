@@ -1567,19 +1567,28 @@ async function completeFirstPasswordChange() {
 
 async function persistAuthUser(user) {
   if (authUsesSupabase) {
-    const {error} = await supabase.from('app_users').update({
+    const payload = {
       full_name:user.full_name || user.username,
       role:user.role || 'user',
       active:user.active !== false,
       password_hash:user.password_hash,
       must_change_password:user.must_change_password === true
-    }).eq('username', user.username);
+    };
+    let {error} = await supabase.from('app_users').update(payload).eq('username', user.username);
+    if (isMissingMustChangeColumnError(error)) {
+      delete payload.must_change_password;
+      ({error} = await supabase.from('app_users').update(payload).eq('username', user.username));
+    }
     if (error) return false;
     return true;
   }
   const users = readLocalUsers();
   writeLocalUsers(users.map(u => u.username === user.username ? user : u));
   return true;
+}
+
+function isMissingMustChangeColumnError(error) {
+  return !!error && /must_change_password|schema cache/i.test(error.message || '');
 }
 
 async function findAuthUser(username) {
@@ -1721,9 +1730,19 @@ async function saveUserAdmin() {
     password_hash: password ? await sha256(password) : current.password_hash
   };
   if (authUsesSupabase) {
-    const result = current
+    let result = current
       ? await supabase.from('app_users').update(payload).eq('username', username)
       : await supabase.from('app_users').insert([payload]);
+    if (isMissingMustChangeColumnError(result.error)) {
+      const fallbackPayload = {...payload};
+      delete fallbackPayload.must_change_password;
+      result = current
+        ? await supabase.from('app_users').update(fallbackPayload).eq('username', username)
+        : await supabase.from('app_users').insert([fallbackPayload]);
+      if (!result.error) {
+        showToast('Usuário salvo. Rode o SQL da coluna must_change_password para exigir troca de senha.', true);
+      }
+    }
     if (result.error) { showToast('Erro ao salvar usuário: ' + result.error.message, true); return; }
   } else {
     const next = current ? users.map(u => u.username === username ? payload : u) : [...users, payload];
