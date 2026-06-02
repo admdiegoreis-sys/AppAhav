@@ -199,13 +199,19 @@ td.wrap{white-space:normal}
 .stock-table th:nth-child(7),.stock-table td:nth-child(7),
 .stock-table th:nth-child(8),.stock-table td:nth-child(8){width:82px;text-align:center}
 .stock-table th:nth-child(9),.stock-table td:nth-child(9){width:92px}
-.stock-table th:nth-child(10),.stock-table td:nth-child(10){width:120px;white-space:normal;line-height:1.25}
-.stock-table th:nth-child(11),.stock-table td:nth-child(11){width:74px;text-align:center}
+.stock-table th:nth-child(10),.stock-table td:nth-child(10){width:100px;text-align:center}
+.stock-table th:nth-child(11),.stock-table td:nth-child(11){width:100px;white-space:normal;line-height:1.25}
+.stock-table th:nth-child(12),.stock-table td:nth-child(12){width:104px;text-align:center}
 .stock-flow{display:inline-flex;align-items:center;justify-content:center;min-width:74px;padding:4px 9px;border-radius:999px;font-weight:800;font-variant-numeric:tabular-nums}
 .stock-table .stock-flow{min-width:58px;padding:3px 6px}
 .stock-flow.positive{background:rgba(34,197,94,.16);color:#86efac;border:1px solid rgba(34,197,94,.32)}
 .stock-flow.negative{background:rgba(248,113,113,.16);color:#fca5a5;border:1px solid rgba(248,113,113,.34)}
 .stock-flow.neutral{background:rgba(148,163,184,.12);color:#cbd5e1;border:1px solid rgba(148,163,184,.24)}
+.stock-limits{display:inline-flex;flex-direction:column;gap:1px;color:#cbd5e1;font-size:10px;line-height:1.2}
+.stock-limits span{white-space:nowrap}
+.stock-actions{display:flex;gap:5px;justify-content:center;flex-wrap:wrap}
+.stock-actions .btn{padding:4px 6px;font-size:10px;min-height:26px}
+.stock-status-alert{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:3px 7px;background:rgba(248,113,113,.16);border:1px solid rgba(248,113,113,.34);color:#fca5a5;font-weight:800}
 .smart-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:18px}
 .smart-sales-filters{display:grid;grid-template-columns:minmax(180px,1.2fr) minmax(170px,1fr) minmax(170px,1fr) 120px 135px 135px auto auto;gap:10px;align-items:end}
 .smart-sales-filters .filter-group{min-width:0}
@@ -1196,6 +1202,28 @@ td.wrap{white-space:normal}
       <div style="flex:1"></div>
       <button class="btn btn-ghost" onclick="closeSmartAdjustmentModal()">Cancelar</button>
       <button class="btn btn-primary" onclick="saveSmartAdjustment()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Smartmold Stock Limits Modal -->
+<div class="modal-overlay hidden" id="smart-stock-limits-modal" onclick="if(event.target===this)closeSmartStockLimitsModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="smart-stock-limits-title">Limites de Estoque</h2>
+      <button class="btn btn-ghost btn-sm" onclick="closeSmartStockLimitsModal()">✕ Fechar</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="smart-stock-limits-code">
+      <div class="field full"><label>Produto</label><input type="text" id="smart-stock-limits-product" disabled></div>
+      <div class="field"><label>Estoque mínimo</label><input type="text" inputmode="decimal" id="smart-stock-min"></div>
+      <div class="field"><label>Estoque máximo</label><input type="text" inputmode="decimal" id="smart-stock-max"></div>
+      <div class="field full"><label>Observação</label><textarea id="smart-stock-limits-obs" placeholder="Observação opcional sobre o parâmetro"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <div style="flex:1"></div>
+      <button class="btn btn-ghost" onclick="closeSmartStockLimitsModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveSmartStockLimits()">💾 Salvar limites</button>
     </div>
   </div>
 </div>
@@ -3421,8 +3449,8 @@ function smartComputedStock() {
     const atual = initialQty + produzido - vendido + ajustes;
     const min = smartNum(stockRow['Estoque Mínimo']);
     const max = smartNum(stockRow['Estoque Máximo']);
-    const status = min && atual < min ? 'Abaixo mínimo' : max && atual > max ? 'Acima máximo' : 'OK';
-    const validation = producedBeforeInitial[code] ? `Produção antes do saldo inicial: ${producedBeforeInitial[code].toLocaleString('pt-BR')}` : 'OK';
+    const status = atual < 0 ? 'Estoque negativo' : min && atual < min ? 'Abaixo mínimo' : max && atual > max ? 'Acima máximo' : 'OK';
+    const validation = atual < 0 ? '⚠ Estoque negativo' : producedBeforeInitial[code] ? `Produção antes do saldo inicial: ${producedBeforeInitial[code].toLocaleString('pt-BR')}` : 'OK';
     return {
       codprod: code,
       'Produto ERP': smartProductName(code, product['descrprod ERP'] || product['Produto ERP'] || stockRow['Produto ERP'] || ''),
@@ -3435,6 +3463,8 @@ function smartComputedStock() {
       'Estoque Final': atual,
       'Estoque Mínimo': min,
       'Estoque Máximo': max,
+      'Limites Estoque': `Mín ${min.toLocaleString('pt-BR')} / Máx ${max.toLocaleString('pt-BR')}`,
+      'Observação Limites': stockRow['Observação Limites'] || '',
       'Status Estoque': status,
       Validação: validation
     };
@@ -3774,12 +3804,14 @@ function renderSmartStock() {
       Saídas: smartSignedCell(p.Vendas, 'negative'),
       Ajustes: smartSignedCell(p.Ajustes, 'signed'),
       Final: smartSignedCell(p['Estoque Final'], 'signed'),
-      Ações:`<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openSmartAdjustmentModal(null,'${escapeHtml(String(p.codprod || ''))}')">Ajustar</button>`
+      Limites:`<span class="stock-limits"><span>Mín: ${smartFormatCell(p['Estoque Mínimo'])}</span><span>Máx: ${smartFormatCell(p['Estoque Máximo'])}</span></span>`,
+      Status:p['Status Estoque'] === 'Estoque negativo' ? '<span class="stock-status-alert">Estoque negativo</span>' : escapeHtml(p['Status Estoque']),
+      Ações:`<div class="stock-actions"><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openSmartAdjustmentModal(null,'${escapeHtml(String(p.codprod || ''))}')">Ajustar</button><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openSmartStockLimitsModal('${escapeHtml(String(p.codprod || ''))}')">Limites</button></div>`
     }));
   smartTable('smart-estoque-head', 'smart-estoque-body', rows, {
-    headers:['CODPROD','PRODUTO','DT. INICIAL','INICIAL','ENTRADAS','SAÍDAS','AJUSTES','FINAL','STATUS','VALIDAÇÃO','AÇÕES'],
-    fieldMap:{'CODPROD':'codprod','PRODUTO':'Produto ERP','DT. INICIAL':'Data Estoque Inicial','INICIAL':'Inicial','ENTRADAS':'Entradas','SAÍDAS':'Saídas','AJUSTES':'Ajustes','FINAL':'Final','STATUS':'Status Estoque','VALIDAÇÃO':'Validação','AÇÕES':'Ações'},
-    htmlFields:['Inicial','Entradas','Saídas','Ajustes','Final','Ações']
+    headers:['CODPROD','PRODUTO','DT. INICIAL','INICIAL','ENTRADAS','SAÍDAS','AJUSTES','FINAL','LIMITES','STATUS','VALIDAÇÃO','AÇÕES'],
+    fieldMap:{'CODPROD':'codprod','PRODUTO':'Produto ERP','DT. INICIAL':'Data Estoque Inicial','INICIAL':'Inicial','ENTRADAS':'Entradas','SAÍDAS':'Saídas','AJUSTES':'Ajustes','FINAL':'Final','LIMITES':'Limites','STATUS':'Status','VALIDAÇÃO':'Validação','AÇÕES':'Ações'},
+    htmlFields:['Inicial','Entradas','Saídas','Ajustes','Final','Limites','Status','Ações']
   });
 }
 
@@ -4063,6 +4095,53 @@ function deleteSmartAdjustment() {
   if (id === '' || !confirm('Excluir ajuste Smartmold?')) return;
   getSmartState().ajustes.splice(Number(id),1);
   saveSmartState(); closeSmartAdjustmentModal(); renderSmartmoldPage(); showToast('✓ Ajuste excluído');
+}
+
+function openSmartStockLimitsModal(code) {
+  const state = getSmartState();
+  const product = smartProductByCode(code);
+  const stockRow = (state.estoqueBase || []).find(row => String(row.codprod) === String(code)) || {};
+  document.getElementById('smart-stock-limits-code').value = code;
+  document.getElementById('smart-stock-limits-title').textContent = 'Limites de Estoque';
+  document.getElementById('smart-stock-limits-product').value = `${code} - ${smartProductName(code, stockRow['Produto ERP'] || product['descrprod ERP'] || '')}`;
+  document.getElementById('smart-stock-min').value = stockRow['Estoque Mínimo'] ?? 0;
+  document.getElementById('smart-stock-max').value = stockRow['Estoque Máximo'] ?? 0;
+  document.getElementById('smart-stock-limits-obs').value = stockRow['Observação Limites'] || '';
+  document.getElementById('smart-stock-limits-modal').classList.remove('hidden');
+}
+
+function closeSmartStockLimitsModal() {
+  document.getElementById('smart-stock-limits-modal').classList.add('hidden');
+}
+
+function saveSmartStockLimits() {
+  const state = getSmartState();
+  const code = document.getElementById('smart-stock-limits-code').value;
+  const product = smartProductByCode(code);
+  if (!code) {
+    alert('Produto não identificado.');
+    return;
+  }
+  const min = smartNum(document.getElementById('smart-stock-min').value);
+  const max = smartNum(document.getElementById('smart-stock-max').value);
+  const idx = state.estoqueBase.findIndex(row => String(row.codprod) === String(code));
+  const current = idx >= 0 ? state.estoqueBase[idx] : {};
+  const row = {
+    ...current,
+    codprod: code,
+    'Produto ERP': smartProductName(code, current['Produto ERP'] || product['descrprod ERP'] || ''),
+    Categoria: current.Categoria || product.Categoria || '',
+    'Data Estoque Inicial': current['Data Estoque Inicial'] || product['Data Estoque Inicial'] || '13/02/2026',
+    'Estoque Inicial': current['Estoque Inicial'] ?? product['Estoque Inicial'] ?? 0,
+    'Estoque Mínimo': min,
+    'Estoque Máximo': max,
+    'Observação Limites': document.getElementById('smart-stock-limits-obs').value
+  };
+  if (idx >= 0) state.estoqueBase[idx] = row; else state.estoqueBase.unshift(row);
+  saveSmartState();
+  closeSmartStockLimitsModal();
+  renderSmartmoldPage();
+  showToast('✓ Limites de estoque salvos');
 }
 
 function exportSmartmoldPDF() {
