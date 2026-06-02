@@ -3396,7 +3396,7 @@ function smartComputedStock() {
   });
   const soldByCode = {};
   state.vendas.forEach(v => {
-    if (['Cancelado','Compensação'].includes(String(v.Status || ''))) return;
+    if (String(v.Status || '') === 'Cancelado') return;
     const initialDate = initialDateByCode[v.codprod];
     const movementDate = smartDateSerial(v.Data);
     if (initialDate && movementDate && movementDate < initialDate) return;
@@ -3541,17 +3541,18 @@ function renderSmartSummary() {
   const state = getSmartState();
   const stock = smartComputedStock();
   const validSales = state.vendas.filter(v => !['Cancelado','Compensação'].includes(String(v.Status || '')));
+  const stockMovementSales = state.vendas.filter(v => String(v.Status || '') !== 'Cancelado');
   const compensacoes = state.vendas.filter(v => String(v.Status || '') === 'Compensação');
   const receita = validSales.reduce((sum, v) => sum + smartNum(v['Valor Total']), 0);
   const compensacao = compensacoes.reduce((sum, v) => sum + Math.abs(smartNum(v['Valor Total'])), 0);
   const receitaLiquida = receita - compensacao;
-  const qtdVendida = validSales.reduce((sum, v) => sum + smartNum(v.Quantidade), 0);
+  const qtdVendida = stockMovementSales.reduce((sum, v) => sum + smartNum(v.Quantidade), 0);
   const produced = state.producao.reduce((sum, p) => sum + smartNum(p.Quantidade), 0);
   const estoqueFinal = stock.reduce((sum, x) => sum + smartNum(x['Estoque Final']), 0);
   const cards = [
     ['Produtos cadastrados', state.produtos.length, 'SKUs ativos e importados'],
     ['Produção histórica', produced.toLocaleString('pt-BR'), 'unidades apontadas'],
-    ['Quantidade vendida', qtdVendida.toLocaleString('pt-BR'), 'unidades faturadas'],
+    ['Quantidade movimentada', qtdVendida.toLocaleString('pt-BR'), 'vendas + compensações'],
     ['Faturamento total', fvcMoney(receita), 'base de vendas/pedidos'],
     ['Faturamento líquido', fvcMoney(receitaLiquida), 'faturamento - compensação'],
     ['Estoque final', estoqueFinal.toLocaleString('pt-BR'), 'saldo consolidado'],
@@ -3651,6 +3652,7 @@ function updateSmartCharts() {
   const state = getSmartState();
   const normalizedProduction = state.producao.map(p => ({...p, 'Produto ERP': smartProductName(p.codprod, p['Produto ERP'])}));
   const validSales = state.vendas.filter(v => !['Cancelado','Compensação'].includes(String(v.Status || ''))).map(v => ({...v, 'Produto ERP': smartProductName(v.codprod, v['Produto ERP'])}));
+  const stockMovementSales = state.vendas.filter(v => String(v.Status || '') !== 'Cancelado').map(v => ({...v, 'Produto ERP': smartProductName(v.codprod, v['Produto ERP'])}));
   const compensacoes = state.vendas.filter(v => String(v.Status || '') === 'Compensação').map(v => ({...v, 'Valor Total': Math.abs(smartNum(v['Valor Total']))}));
   const topProduction = smartGroupRows(normalizedProduction, 'Produto ERP', 'Quantidade').sort((a,b)=>b.value-a.value).slice(0,8);
   const salesByMonth = smartGroupSalesByMonth(validSales);
@@ -3659,7 +3661,7 @@ function updateSmartCharts() {
   const compensacaoMonthMap = Object.fromEntries(compensacaoByMonth.map(x => [x.label, x.value]));
   const monthLabels = [...new Set([...salesByMonth.map(x=>x.label), ...compensacaoByMonth.map(x=>x.label)])].sort((a,b) => smartMonthLabelSortValue(a) - smartMonthLabelSortValue(b));
   const topSalesProducts = smartGroupRows(validSales, 'Produto ERP', 'Valor Total').sort((a,b)=>b.value-a.value).slice(0,8);
-  const soldByProductAll = smartGroupRows(validSales, 'Produto ERP', 'Quantidade');
+  const soldByProductAll = smartGroupRows(stockMovementSales, 'Produto ERP', 'Quantidade');
   const producedByProduct = smartGroupRows(normalizedProduction, 'Produto ERP', 'Quantidade');
   const soldMap = Object.fromEntries(soldByProductAll.map(x => [x.label, x.value]));
   const producedMap = Object.fromEntries(producedByProduct.map(x => [x.label, x.value]));
