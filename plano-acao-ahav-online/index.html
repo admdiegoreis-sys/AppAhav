@@ -69,10 +69,14 @@ input[type=date]{color-scheme:dark}
 input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.72}
 select:focus,input:focus{border-color:#3b82f6}
 .table-wrap{background:#1e293b;border:1px solid #334155;border-radius:12px;overflow:hidden}
+.table-wrap>div[style*="overflow-x:auto"],
+.modal-body div[style*="overflow-x:auto"],
+.credit-panel div[style*="overflow-x:auto"]{max-height:min(68vh,720px);overflow:auto!important}
 .table-header{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #334155}
 .table-header h3{font-size:14px;font-weight:600;color:#94a3b8}
 table{width:100%;border-collapse:collapse;font-size:13px}
 thead tr{background:#0f172a}
+thead th{position:sticky;top:0;z-index:30;background:#0f172a;box-shadow:0 1px 0 #334155}
 th{padding:10px 14px;text-align:left;color:#64748b;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;user-select:none;white-space:nowrap}
 th:hover{color:#94a3b8}th.sorted{color:#3b82f6}
 tbody tr{border-top:1px solid #1e293b;cursor:pointer;transition:background .15s}
