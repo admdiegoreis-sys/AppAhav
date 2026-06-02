@@ -64,7 +64,9 @@ body{font-family:'Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;min-heig
 .filters{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
 .filter-group{display:flex;flex-direction:column;gap:4px}
 .filter-group label{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.5px}
-select,input[type=text]{background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:6px;padding:7px 10px;font-size:13px;outline:none}
+select,input[type=text],input[type=date],input[type=number],input[type=password],input[type=decimal]{background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:6px;padding:7px 10px;font-size:13px;outline:none}
+input[type=date]{color-scheme:dark}
+input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.72}
 select:focus,input:focus{border-color:#3b82f6}
 .table-wrap{background:#1e293b;border:1px solid #334155;border-radius:12px;overflow:hidden}
 .table-header{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #334155}
@@ -205,6 +207,21 @@ td.wrap{white-space:normal}
 .stock-flow.negative{background:rgba(248,113,113,.16);color:#fca5a5;border:1px solid rgba(248,113,113,.34)}
 .stock-flow.neutral{background:rgba(148,163,184,.12);color:#cbd5e1;border:1px solid rgba(148,163,184,.24)}
 .smart-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:18px}
+.smart-sales-filters{display:grid;grid-template-columns:minmax(180px,1.2fr) minmax(170px,1fr) minmax(170px,1fr) 120px 135px 135px auto auto;gap:10px;align-items:end}
+.smart-sales-filters .filter-group{min-width:0}
+.smart-sales-filters input,.smart-sales-filters select{width:100%;min-width:0}
+.sales-table{min-width:0;width:100%;table-layout:fixed}
+.sales-table th,.sales-table td{padding:8px 7px;font-size:11px;vertical-align:middle}
+.sales-table th{font-size:10px;letter-spacing:.08em;color:#a7b7d8;background:#111827}
+.sales-table th:nth-child(1),.sales-table td:nth-child(1){width:82px}
+.sales-table th:nth-child(2),.sales-table td:nth-child(2){width:70px}
+.sales-table th:nth-child(3),.sales-table td:nth-child(3){width:24%;white-space:normal;line-height:1.25}
+.sales-table th:nth-child(4),.sales-table td:nth-child(4){width:82px}
+.sales-table th:nth-child(5),.sales-table td:nth-child(5){width:24%;white-space:normal;line-height:1.25;text-transform:uppercase}
+.sales-table th:nth-child(6),.sales-table td:nth-child(6){width:82px;text-align:right}
+.sales-table th:nth-child(7),.sales-table td:nth-child(7){width:98px;text-align:right}
+.sales-table th:nth-child(8),.sales-table td:nth-child(8){width:82px;text-align:center}
+.sales-table th:nth-child(9),.sales-table td:nth-child(9){width:72px;text-align:center}
 .credit-section{display:none}.credit-section.active{display:block}
 .credit-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .credit-field{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:10px}
@@ -272,6 +289,7 @@ td.wrap{white-space:normal}
   .header-right{order:3;flex:1 1 100%;width:100%;overflow-x:auto;padding-bottom:2px}
   .charts-grid,.smart-dashboard-grid{grid-template-columns:1fr}
   .smart-dashboard-grid .chart-card.wide{grid-column:auto}
+  .smart-sales-filters{grid-template-columns:1fr 1fr}
   .exec-hero,.exec-section-grid{grid-template-columns:1fr}
   .exec-grid{grid-template-columns:repeat(2,1fr)}
   .credit-grid,.credit-form-layout{grid-template-columns:1fr}
@@ -335,7 +353,8 @@ td.wrap{white-space:normal}
   .credit-score{font-size:34px}
   .filters{display:grid;grid-template-columns:1fr;gap:10px;padding:12px}
   .filter-group{width:100%}
-  .filters select,.filters input[type=text]{width:100%!important;max-width:100%}
+  .filters select,.filters input[type=text],.filters input[type=date]{width:100%!important;max-width:100%}
+  .smart-sales-filters{grid-template-columns:1fr}
   .filters .btn{width:100%;justify-content:center}
   .table-header{padding:12px;gap:10px;align-items:flex-start;flex-wrap:wrap}
   .table-header h3{width:100%}
@@ -586,7 +605,7 @@ td.wrap{white-space:normal}
   </div>
 
   <div class="smart-section" id="smart-section-vendas">
-    <div class="filters">
+    <div class="filters smart-sales-filters">
       <div class="filter-group"><label>Busca</label><input type="text" id="smart-venda-busca" placeholder="Nota, cliente, produto..." oninput="renderSmartSales()"></div>
       <div class="filter-group"><label>Cliente</label><select id="smart-venda-cliente" onchange="renderSmartSales()"></select></div>
       <div class="filter-group"><label>Produto</label><select id="smart-venda-produto" onchange="renderSmartSales()"></select></div>
@@ -596,7 +615,7 @@ td.wrap{white-space:normal}
       <button class="btn btn-primary btn-sm" onclick="renderSmartSales()">Aplicar filtros</button>
       <button class="btn btn-ghost btn-sm" onclick="clearSmartSalesFilters()">Limpar filtros</button>
     </div>
-    <div class="table-wrap"><div class="table-header"><h3 id="smart-vendas-title">Pedidos de Venda</h3></div><div style="overflow-x:auto"><table class="smart-table"><thead id="smart-vendas-head"></thead><tbody id="smart-vendas-body"></tbody></table></div></div>
+    <div class="table-wrap"><div class="table-header"><h3 id="smart-vendas-title">Pedidos de Venda</h3></div><div style="overflow-x:auto"><table class="smart-table sales-table"><thead id="smart-vendas-head"></thead><tbody id="smart-vendas-body"></tbody></table></div></div>
   </div>
 
   <div class="smart-section" id="smart-section-compras">
@@ -3431,7 +3450,7 @@ function smartTable(headId, bodyId, rows, opts = {}) {
     const cells = headers.map(h => {
       const key = opts.fieldMap?.[h] || h;
       const isHtml = opts.htmlFields?.includes(h) || opts.htmlFields?.includes(key);
-      return `<td>${isHtml ? (row[key] || '') : escapeHtml(smartFormatCell(row[key]))}</td>`;
+      return `<td data-label="${escapeHtml(h)}">${isHtml ? (row[key] || '') : escapeHtml(smartFormatCell(row[key]))}</td>`;
     }).join('');
     const click = opts.onClick ? ` onclick="${opts.onClick}('${escapeHtml(row._id ?? idx)}')"` : '';
     return `<tr${click}>${cells}</tr>`;
@@ -3806,7 +3825,7 @@ function renderSmartSales() {
   if (title) title.textContent = `Pedidos de Venda (${rows.length}/${baseRows.length})`;
   smartTable('smart-vendas-head', 'smart-vendas-body', rows, {
     limit:300,
-    headers:['Data','Nota','Cliente','Cidade','UF','codprod','Produto','Quantidade','Preço Unitário','Valor Total','Status','Ações'],
+    headers:['Data','Nota','Cliente','codprod','Produto','Quantidade','Valor Total','Status','Ações'],
     fieldMap:{'Produto':'Produto ERP'},
     htmlFields:['Ações']
   });
