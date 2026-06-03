@@ -3651,13 +3651,47 @@ function renderSmartDashboard() {
   updateSmartCharts();
 }
 
+function smartPartnerCode(row) {
+  const keys = ['codparc','CodParc','CODPARC','Cód. Parceiro','CÃ³d. Parceiro','Código Parceiro','CÃ³digo Parceiro'];
+  for (const key of keys) {
+    const value = row?.[key];
+    if (value !== null && value !== undefined && String(value).trim()) return String(value).trim();
+  }
+  return '';
+}
+
+function smartClientKey(row) {
+  const code = smartPartnerCode(row);
+  if (code) return `codparc:${code}`;
+  return `name:${String(row?.Cliente || 'Sem informação').replace(/\s+/g, ' ').trim().toUpperCase()}`;
+}
+
+function smartClientDirectory(rows = getSmartState().vendas) {
+  const map = {};
+  rows.forEach(row => {
+    const key = smartClientKey(row);
+    const label = String(row.Cliente || 'Sem informação').replace(/\s+/g, ' ').trim() || 'Sem informação';
+    if (!map[key] || label.length > map[key].label.length) {
+      map[key] = {key, label, codparc: smartPartnerCode(row)};
+    }
+  });
+  return map;
+}
+
+function smartClientLabel(row, directory) {
+  const info = (directory || smartClientDirectory())[smartClientKey(row)];
+  return info?.label || row?.Cliente || 'Sem informação';
+}
+
 function smartTopClients() {
   const clientMap = {};
+  const clients = smartClientDirectory();
   getSmartState().vendas.filter(v => String(v.Status || '') !== 'Cancelado').forEach(v => {
-    const cliente = v.Cliente || 'Sem informação';
-    if (!clientMap[cliente]) clientMap[cliente] = {label: cliente, faturamento: 0, compensacao: 0};
-    if (String(v.Status || '') === 'Compensação') clientMap[cliente].compensacao += Math.abs(smartNum(v['Valor Total']));
-    else clientMap[cliente].faturamento += smartNum(v['Valor Total']);
+    const key = smartClientKey(v);
+    const cliente = smartClientLabel(v, clients);
+    if (!clientMap[key]) clientMap[key] = {label: cliente, codparc: smartPartnerCode(v), faturamento: 0, compensacao: 0};
+    if (String(v.Status || '') === 'Compensação') clientMap[key].compensacao += Math.abs(smartNum(v['Valor Total']));
+    else clientMap[key].faturamento += smartNum(v['Valor Total']);
   });
   return Object.values(clientMap)
     .map(x => ({...x, ajustado: x.faturamento - x.compensacao}))
@@ -3929,9 +3963,13 @@ function renderSmartStock() {
 }
 
 function renderSmartSales() {
+  const clientDirectory = smartClientDirectory();
   const baseRows = getSmartState().vendas.map((v,i)=>({
     ...v,
     _id:i,
+    _clienteOriginal: v.Cliente || '',
+    _codparc: smartPartnerCode(v),
+    Cliente: smartClientLabel(v, clientDirectory),
     Data: smartFormatDate(v.Data),
     'Produto ERP': smartProductName(v.codprod, v['Produto ERP']),
     'Valor Total': smartNum(v['Valor Total']).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}),
