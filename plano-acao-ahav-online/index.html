@@ -246,9 +246,10 @@ td.wrap{white-space:normal}
 .sales-table th:nth-child(5),.sales-table td:nth-child(5){width:24%;white-space:normal;line-height:1.25;text-transform:uppercase}
 .sales-table th:nth-child(6),.sales-table td:nth-child(6){width:82px;text-align:right}
 .sales-table th:nth-child(7),.sales-table td:nth-child(7){width:98px;text-align:right}
-.sales-table th:nth-child(8),.sales-table td:nth-child(8){width:82px;text-align:center}
-.sales-table th:nth-child(9),.sales-table td:nth-child(9){width:84px;text-align:center}
-.sales-table th:nth-child(10),.sales-table td:nth-child(10){width:58px;text-align:center}
+.sales-table th:nth-child(8),.sales-table td:nth-child(8){width:76px;text-align:center}
+.sales-table th:nth-child(9),.sales-table td:nth-child(9){width:58px;text-align:center}
+.sales-table th:nth-child(10),.sales-table td:nth-child(10){width:84px;text-align:center}
+.sales-table th:nth-child(11),.sales-table td:nth-child(11){width:50px;text-align:center}
 .credit-section{display:none}.credit-section.active{display:block}
 .credit-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .credit-field{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:10px}
@@ -3961,7 +3962,7 @@ function renderSmartSales() {
   if (title) title.textContent = `Pedidos de Venda (${rows.length}/${baseRows.length})`;
   smartTable('smart-vendas-head', 'smart-vendas-body', rows, {
     limit:300,
-    headers:['Data','Nota','Cliente','codprod','Produto','Quantidade','Valor Total','Status','Cadastro','Ações'],
+    headers:['Data','Nota','Cliente','codprod','Produto','Quantidade','Valor Total','Status','CFOP','Cadastro','Ações'],
     fieldMap:{'Produto':'Produto ERP'},
     htmlFields:['Cadastro','Ações']
   });
