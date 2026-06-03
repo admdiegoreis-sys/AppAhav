@@ -55,6 +55,7 @@ body{font-family:'Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;min-heig
 .charts-grid{display:grid;grid-template-columns:1.2fr .8fr 1.1fr;gap:16px;margin-bottom:24px}
 .smart-dashboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
 .smart-dashboard-grid .chart-card.wide{grid-column:1/-1}
+.smart-dashboard-grid .chart-card .chart-wrap{height:260px}
 .smart-dashboard-grid .chart-card.featured .chart-wrap{height:360px}
 .smart-dashboard-grid .chart-card.wide:not(.featured) .chart-wrap{height:300px}
 .chart-card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px}
@@ -71,7 +72,7 @@ select:focus,input:focus{border-color:#3b82f6}
 .table-wrap{background:#1e293b;border:1px solid #334155;border-radius:12px;overflow:hidden}
 .table-wrap>div[style*="overflow-x:auto"],
 .modal-body div[style*="overflow-x:auto"],
-.credit-panel div[style*="overflow-x:auto"]{max-height:min(68vh,720px);overflow:auto!important}
+.credit-panel div[style*="overflow-x:auto"]{max-height:calc(100vh - 300px);min-height:220px;overflow:auto!important}
 .table-header{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #334155}
 .table-header h3{font-size:14px;font-weight:600;color:#94a3b8}
 table{width:100%;border-collapse:collapse;font-size:13px}
@@ -213,8 +214,8 @@ td.wrap{white-space:normal}
 .stock-flow.neutral{background:rgba(148,163,184,.12);color:#cbd5e1;border:1px solid rgba(148,163,184,.24)}
 .stock-limits{display:inline-flex;flex-direction:column;gap:1px;color:#cbd5e1;font-size:10px;line-height:1.2}
 .stock-limits span{white-space:nowrap}
-.stock-actions{display:flex;gap:5px;justify-content:center;flex-wrap:wrap}
-.stock-actions .btn{padding:4px 6px;font-size:10px;min-height:26px}
+.stock-actions{display:flex;gap:5px;justify-content:center;flex-wrap:nowrap}
+.stock-actions .btn{width:28px;height:28px;padding:0;font-size:14px;min-height:28px;display:inline-flex;align-items:center;justify-content:center}
 .stock-status-alert{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:3px 7px;background:rgba(248,113,113,.16);border:1px solid rgba(248,113,113,.34);color:#fca5a5;font-weight:800;white-space:nowrap}
 .smart-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:18px}
 .smart-sales-filters{display:grid;grid-template-columns:minmax(180px,1.2fr) minmax(170px,1fr) minmax(170px,1fr) 120px 135px 135px auto auto;gap:10px;align-items:end}
@@ -237,7 +238,8 @@ td.wrap{white-space:normal}
 .sales-table th:nth-child(6),.sales-table td:nth-child(6){width:82px;text-align:right}
 .sales-table th:nth-child(7),.sales-table td:nth-child(7){width:98px;text-align:right}
 .sales-table th:nth-child(8),.sales-table td:nth-child(8){width:82px;text-align:center}
-.sales-table th:nth-child(9),.sales-table td:nth-child(9){width:72px;text-align:center}
+.sales-table th:nth-child(9),.sales-table td:nth-child(9){width:84px;text-align:center}
+.sales-table th:nth-child(10),.sales-table td:nth-child(10){width:58px;text-align:center}
 .credit-section{display:none}.credit-section.active{display:block}
 .credit-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .credit-field{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:10px}
@@ -3375,12 +3377,12 @@ function smartNum(value) {
 function smartProductOptions(selected = '', fallbackLabel = '') {
   const options = getSmartState().produtos.map(p => {
     const code = String(p.codprod || '');
-    const label = `${code} - ${p['descrprod ERP'] || p['Produto ERP'] || ''}`;
+    const label = `${code} - ${smartProductText(p['descrprod ERP'] || p['Produto ERP'] || '')}`;
     return `<option value="${escapeHtml(code)}" ${String(selected)===code?'selected':''}>${escapeHtml(label)}</option>`;
   });
   const hasSelected = getSmartState().produtos.some(p => String(p.codprod || '') === String(selected || ''));
   if (selected && !hasSelected) {
-    options.unshift(`<option value="${escapeHtml(String(selected))}" selected>${escapeHtml(`${selected} - ${fallbackLabel || 'Produto importado'}`)}</option>`);
+    options.unshift(`<option value="${escapeHtml(String(selected))}" selected>${escapeHtml(`${selected} - ${smartProductText(fallbackLabel || 'Produto importado')}`)}</option>`);
   }
   return options.join('');
 }
@@ -3391,7 +3393,7 @@ function smartProductByCode(code) {
 
 function smartProductName(code, fallback = '') {
   const product = smartProductByCode(code);
-  return product['descrprod ERP'] || product['Produto ERP'] || fallback || '';
+  return smartProductText(product['descrprod ERP'] || product['Produto ERP'] || fallback || '');
 }
 
 function dedupeSmartProducts(rows) {
@@ -3409,7 +3411,7 @@ function normalizeSmartProduct(row) {
   const initialQty = row['Estoque Inicial'] ?? row['Estoque Inicial 13/02/2026'] ?? 0;
   return {
     codprod: row.codprod,
-    'descrprod ERP': row['descrprod ERP'] || row['Produto ERP'] || '',
+    'descrprod ERP': smartProductText(row['descrprod ERP'] || row['Produto ERP'] || ''),
     Categoria: row.Categoria || '',
     Unidade: row.Unidade || 'UNIDADE',
     'Data Estoque Inicial': initialDate,
@@ -3425,7 +3427,7 @@ function smartComputedStock() {
   const stockByCode = new Map((state.estoqueBase || []).map(row => [String(row.codprod || ''), row]));
   const products = (state.produtos || []).length ? state.produtos : (state.estoqueBase || []).map(row => ({
     codprod: row.codprod,
-    'descrprod ERP': row['Produto ERP'] || row['descrprod ERP'] || '',
+    'descrprod ERP': smartProductText(row['Produto ERP'] || row['descrprod ERP'] || ''),
     Categoria: row.Categoria || '',
     'Data Estoque Inicial': row['Data Estoque Inicial'] || row['Data'] || '2026-02-13',
     'Estoque Inicial': row['Estoque Inicial'] || 0
@@ -3660,6 +3662,10 @@ function smartShortLabel(value, max = 26) {
   return text.length > max ? text.slice(0, max - 3).trimEnd() + '...' : text;
 }
 
+function smartProductText(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim().toUpperCase();
+}
+
 function smartMonthLabelSortValue(label) {
   const match = String(label || '').match(/^([A-Za-zçÇ]{3})\/(\d{2})$/);
   if (!match) return 999999;
@@ -3673,6 +3679,14 @@ function smartChartOptions(extra = {}) {
   const quantityAxis = !!extra.quantityAxis;
   const tooltipMoney = !!extra.tooltipMoney;
   const horizontal = extra.options?.indexAxis === 'y';
+  const numericTick = value => (moneyAxis || quantityAxis) ? Number(value).toLocaleString('pt-BR') : value;
+  const baseScales = horizontal ? {
+    x:{ticks:{color:'#94a3b8',callback:numericTick}},
+    y:{ticks:{color:'#94a3b8',callback:function(value){return smartShortLabel(this.getLabelForValue ? this.getLabelForValue(value) : value, 24);}}}
+  } : {
+    x:{ticks:{color:'#94a3b8',callback:function(value){const raw=this.getLabelForValue ? this.getLabelForValue(value) : value; return smartShortLabel(raw, 16);}}},
+    y:{ticks:{color:'#94a3b8',callback:numericTick}}
+  };
   const base = {
     responsive:true,
     maintainAspectRatio:false,
@@ -3692,13 +3706,16 @@ function smartChartOptions(extra = {}) {
           }
         }
       }
-    },
-    scales:{
-      x:{ticks:{color:'#94a3b8',callback:function(value){const raw=this.getLabelForValue ? this.getLabelForValue(value) : value; return smartShortLabel(raw, 16);}}},
-      y:{ticks:{color:'#94a3b8',callback:function(value){if (moneyAxis) return Number(value).toLocaleString('pt-BR'); if (quantityAxis) return Number(value).toLocaleString('pt-BR'); return smartShortLabel(this.getLabelForValue ? this.getLabelForValue(value) : value, 22);}}}
     }
   };
-  return {...base, ...extra.options, plugins:{...base.plugins, ...(extra.options?.plugins || {})}, scales:{...base.scales, ...(extra.options?.scales || {})}};
+  const scaleOverrides = extra.options?.scales || {};
+  const scales = Object.keys({...baseScales, ...scaleOverrides}).reduce((acc, axis) => {
+    const baseScale = baseScales[axis] || {};
+    const override = scaleOverrides[axis] || {};
+    acc[axis] = {...baseScale, ...override, ticks:{...(baseScale.ticks || {}), ...(override.ticks || {})}};
+    return acc;
+  }, {});
+  return {...base, ...extra.options, plugins:{...base.plugins, ...(extra.options?.plugins || {})}, scales};
 }
 
 function updateSmartCharts() {
@@ -3715,7 +3732,7 @@ function updateSmartCharts() {
   const salesMonthMap = Object.fromEntries(salesByMonth.map(x => [x.label, x.value]));
   const compensacaoMonthMap = Object.fromEntries(compensacaoByMonth.map(x => [x.label, x.value]));
   const monthLabels = [...new Set([...salesByMonth.map(x=>x.label), ...compensacaoByMonth.map(x=>x.label)])].sort((a,b) => smartMonthLabelSortValue(a) - smartMonthLabelSortValue(b));
-  const topSalesProducts = smartGroupRows(validSales, 'Produto ERP', 'Valor Total').sort((a,b)=>b.value-a.value).slice(0,8);
+  const topSalesProducts = smartGroupRows(validSales, 'Produto ERP', 'Quantidade').sort((a,b)=>b.value-a.value).slice(0,8);
   const soldByProductAll = smartGroupRows(stockMovementSales, 'Produto ERP', 'Quantidade');
   const producedByProduct = smartGroupRows(normalizedProduction, 'Produto ERP', 'Quantidade');
   const soldMap = Object.fromEntries(soldByProductAll.map(x => [x.label, x.value]));
@@ -3750,7 +3767,7 @@ function updateSmartCharts() {
     })
   });
   if (smartChartProdutosFaturados) smartChartProdutosFaturados.destroy();
-  smartChartProdutosFaturados = new Chart(document.getElementById('smartChartProdutosFaturados'), {type:'bar',data:{labels:topSalesProducts.map(x=>smartShortLabel(x.label)),datasets:[{data:topSalesProducts.map(x=>x.value),backgroundColor:'#f59e0b'}]},options:smartChartOptions({fullLabels:topSalesProducts.map(x=>x.label), tooltipMoney:true, moneyAxis:true, options:{indexAxis:'y'}})});
+  smartChartProdutosFaturados = new Chart(document.getElementById('smartChartProdutosFaturados'), {type:'bar',data:{labels:topSalesProducts.map(x=>smartShortLabel(x.label)),datasets:[{data:topSalesProducts.map(x=>x.value),backgroundColor:'#f59e0b'}]},options:smartChartOptions({fullLabels:topSalesProducts.map(x=>x.label), quantityAxis:true, options:{indexAxis:'y'}})});
   if (smartChartProdVend) smartChartProdVend.destroy();
   smartChartProdVend = new Chart(document.getElementById('smartChartProdVend'), {
     type:'bar',
@@ -3778,7 +3795,7 @@ function renderSmartProducts() {
   const busca = (document.getElementById('smart-prod-busca')?.value || '').toLowerCase();
   const cat = document.getElementById('smart-prod-categoria')?.value || '';
   const rows = state.produtos.filter(p => (!cat || p.Categoria === cat) && JSON.stringify(p).toLowerCase().includes(busca))
-    .map(p => ({...p, Ações:`<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openSmartProductModal('${escapeHtml(String(p.codprod || ''))}')">Editar</button>`}));
+    .map(p => ({...p, 'descrprod ERP': smartProductText(p['descrprod ERP'] || p['Produto ERP'] || ''), Ações:`<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openSmartProductModal('${escapeHtml(String(p.codprod || ''))}')">Editar</button>`}));
   smartTable('smart-prod-head', 'smart-prod-body', rows, {
     headers:['codprod','descrprod ERP','Categoria','Unidade','Data Estoque Inicial','Estoque Inicial','Status','Ações'],
     htmlFields:['Ações']
@@ -3852,7 +3869,7 @@ function renderSmartStock() {
       Final: smartSignedCell(p['Estoque Final'], 'signed'),
       Limites:`<span class="stock-limits"><span>Mín: ${smartFormatCell(p['Estoque Mínimo'])}</span><span>Máx: ${smartFormatCell(p['Estoque Máximo'])}</span></span>`,
       Status:p['Status Estoque'] === 'Estoque negativo' ? '<span class="stock-status-alert">N/OK</span>' : escapeHtml(p['Status Estoque']),
-      Ações:`<div class="stock-actions"><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openSmartAdjustmentModal(null,'${escapeHtml(String(p.codprod || ''))}')">Ajustar</button><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openSmartStockLimitsModal('${escapeHtml(String(p.codprod || ''))}')">Limites</button></div>`
+      Ações:`<div class="stock-actions"><button class="btn btn-ghost btn-sm" title="Ajustar estoque" aria-label="Ajustar estoque" onclick="event.stopPropagation();openSmartAdjustmentModal(null,'${escapeHtml(String(p.codprod || ''))}')">±</button><button class="btn btn-ghost btn-sm" title="Editar limites" aria-label="Editar limites" onclick="event.stopPropagation();openSmartStockLimitsModal('${escapeHtml(String(p.codprod || ''))}')">↕</button></div>`
     }));
   smartTable('smart-estoque-head', 'smart-estoque-body', rows, {
     headers:['CODPROD','PRODUTO','DT. INICIAL','INICIAL','ENTRADAS','SAÍDAS','AJUSTES','FINAL','LIMITES','STATUS','VALIDAÇÃO','AÇÕES'],
@@ -3867,6 +3884,7 @@ function renderSmartSales() {
     _id:i,
     Data: smartFormatDate(v.Data),
     'Produto ERP': smartProductName(v.codprod, v['Produto ERP']),
+    Cadastro: smartProductByCode(v.codprod).codprod ? 'OK' : '<span class="stock-status-alert">Sem Cadastro</span>',
     Ações:`<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openSmartSaleModal('${i}')">Editar</button>`
   }));
   fillSmartSelect('smart-venda-cliente', smartUnique(baseRows, 'Cliente'), 'Todos');
@@ -3895,9 +3913,9 @@ function renderSmartSales() {
   if (title) title.textContent = `Pedidos de Venda (${rows.length}/${baseRows.length})`;
   smartTable('smart-vendas-head', 'smart-vendas-body', rows, {
     limit:300,
-    headers:['Data','Nota','Cliente','codprod','Produto','Quantidade','Valor Total','Status','Ações'],
+    headers:['Data','Nota','Cliente','codprod','Produto','Quantidade','Valor Total','Status','Cadastro','Ações'],
     fieldMap:{'Produto':'Produto ERP'},
-    htmlFields:['Ações']
+    htmlFields:['Cadastro','Ações']
   });
 }
 
@@ -3948,7 +3966,7 @@ function closeSmartProductModal() { document.getElementById('smart-product-modal
 
 function smartProductFormRow() {
   const code = document.getElementById('smart-product-code').value.trim();
-  const desc = document.getElementById('smart-product-desc').value.trim();
+  const desc = smartProductText(document.getElementById('smart-product-desc').value);
   if (!code || !desc) {
     alert('Preencha Código e Descrição.');
     return null;
