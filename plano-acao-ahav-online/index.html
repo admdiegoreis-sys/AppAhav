@@ -216,6 +216,8 @@ td.wrap{white-space:normal}
 .stock-limits span{white-space:nowrap}
 .stock-actions{display:flex;gap:5px;justify-content:center;flex-wrap:nowrap}
 .stock-actions .btn{width:28px;height:28px;padding:0;font-size:14px;min-height:28px;display:inline-flex;align-items:center;justify-content:center}
+.smart-row-actions{display:flex;gap:5px;justify-content:center;align-items:center;flex-wrap:nowrap}
+.smart-icon-btn{width:28px;height:28px;padding:0;font-size:14px;min-height:28px;display:inline-flex;align-items:center;justify-content:center}
 .stock-status-alert{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:3px 7px;background:rgba(248,113,113,.16);border:1px solid rgba(248,113,113,.34);color:#fca5a5;font-weight:800;white-space:nowrap}
 .smart-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:18px}
 .smart-sales-filters{display:grid;grid-template-columns:minmax(180px,1.2fr) minmax(170px,1fr) minmax(170px,1fr) 120px 135px 135px auto auto;gap:10px;align-items:end}
@@ -3816,7 +3818,7 @@ function renderSmartProducts() {
   const busca = (document.getElementById('smart-prod-busca')?.value || '').toLowerCase();
   const cat = document.getElementById('smart-prod-categoria')?.value || '';
   const rows = state.produtos.filter(p => (!cat || p.Categoria === cat) && JSON.stringify(p).toLowerCase().includes(busca))
-    .map(p => ({...p, 'descrprod ERP': smartProductText(p['descrprod ERP'] || p['Produto ERP'] || ''), Ações:`<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openSmartProductModal('${escapeHtml(String(p.codprod || ''))}')">Editar</button>`}));
+    .map(p => ({...p, 'descrprod ERP': smartProductText(p['descrprod ERP'] || p['Produto ERP'] || ''), Ações:`<div class="smart-row-actions"><button class="btn btn-ghost btn-sm smart-icon-btn" title="Editar produto" aria-label="Editar produto" onclick="event.stopPropagation();openSmartProductModal('${escapeHtml(String(p.codprod || ''))}')">✎</button></div>`}));
   smartTable('smart-prod-head', 'smart-prod-body', rows, {
     headers:['codprod','descrprod ERP','Categoria','Unidade','Data Estoque Inicial','Estoque Inicial','Status','Ações'],
     htmlFields:['Ações']
@@ -3845,7 +3847,7 @@ function renderSmartProduction() {
     .map(p => ({
       ...p,
       Data: smartFormatDate(p.Data),
-      Ações:`<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openSmartProductionModal('${p._id}')">Editar</button>`
+      Ações:`<div class="smart-row-actions"><button class="btn btn-ghost btn-sm smart-icon-btn" title="Editar produção" aria-label="Editar produção" onclick="event.stopPropagation();openSmartProductionModal('${p._id}')">✎</button></div>`
     }));
   smartTable('smart-producao-head', 'smart-producao-body', rows, {
     limit:300,
@@ -3906,7 +3908,7 @@ function renderSmartSales() {
     Data: smartFormatDate(v.Data),
     'Produto ERP': smartProductName(v.codprod, v['Produto ERP']),
     Cadastro: smartProductByCode(v.codprod).codprod ? 'OK' : '<span class="stock-status-alert">Sem Cadastro</span>',
-    Ações:`<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openSmartSaleModal('${i}')">Editar</button>`
+    Ações:`<div class="smart-row-actions"><button class="btn btn-ghost btn-sm smart-icon-btn" title="Editar venda" aria-label="Editar venda" onclick="event.stopPropagation();openSmartSaleModal('${i}')">✎</button></div>`
   }));
   fillSmartSelect('smart-venda-cliente', smartUnique(baseRows, 'Cliente'), 'Todos');
   fillSmartSelect('smart-venda-produto', smartUnique(baseRows, 'Produto ERP'), 'Todos');
