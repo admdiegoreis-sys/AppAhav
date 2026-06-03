@@ -60,6 +60,9 @@ body{font-family:'Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;min-heig
 .smart-dashboard-grid .chart-card.wide:not(.featured) .chart-wrap{height:300px}
 .chart-card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px}
 .chart-card h3{font-size:12px;font-weight:600;color:#94a3b8;margin-bottom:16px;text-transform:uppercase;letter-spacing:.5px}
+.chart-title-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.chart-title-row h3{margin-bottom:0}
+.chart-title-row select{max-width:220px;padding:6px 10px;font-size:11px;min-height:34px}
 .chart-wrap{position:relative;height:220px}
 .chart-note{font-size:11px;color:#94a3b8;margin-top:10px;line-height:1.4}
 .filters{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
@@ -586,7 +589,13 @@ td.wrap{white-space:normal}
       <div class="chart-card"><h3>Top Clientes por Faturamento</h3><div class="chart-wrap"><canvas id="smartChartTopClientes"></canvas></div></div>
       <div class="chart-card"><h3>Top Produção</h3><div class="chart-wrap"><canvas id="smartChartProdutos"></canvas></div></div>
       <div class="chart-card"><h3>Produtos Faturados</h3><div class="chart-wrap"><canvas id="smartChartProdutosFaturados"></canvas></div></div>
-      <div class="chart-card wide featured"><h3>Produzido x Vendido</h3><div class="chart-wrap"><canvas id="smartChartProdVend"></canvas></div></div>
+      <div class="chart-card wide featured">
+        <div class="chart-title-row">
+          <h3>Produzido x Vendido</h3>
+          <select id="smart-prodvend-tipo" onchange="updateSmartCharts()"></select>
+        </div>
+        <div class="chart-wrap"><canvas id="smartChartProdVend"></canvas></div>
+      </div>
     </div>
   </div>
 
@@ -3743,6 +3752,12 @@ function smartChartOptions(extra = {}) {
 function updateSmartCharts() {
   if (!window.Chart) return;
   const state = getSmartState();
+  fillSmartSelect('smart-prodvend-tipo', smartUnique(state.produtos, 'Categoria'), 'Todos os tipos');
+  const prodVendTipo = document.getElementById('smart-prodvend-tipo')?.value || '';
+  const categoryByProduct = {};
+  state.produtos.forEach(p => {
+    categoryByProduct[smartProductName(p.codprod, p['descrprod ERP'] || p['Produto ERP'])] = p.Categoria || '';
+  });
   const normalizedProduction = state.producao.map(p => ({...p, 'Produto ERP': smartProductName(p.codprod, p['Produto ERP'])}));
   const validSales = state.vendas.filter(v => !['Cancelado','Compensação'].includes(String(v.Status || ''))).map(v => ({...v, 'Produto ERP': smartProductName(v.codprod, v['Produto ERP'])}));
   const stockMovementSales = state.vendas.filter(v => String(v.Status || '') !== 'Cancelado').map(v => ({...v, 'Produto ERP': smartProductName(v.codprod, v['Produto ERP'])}));
@@ -3761,8 +3776,9 @@ function updateSmartCharts() {
   const producedMap = Object.fromEntries(producedByProduct.map(x => [x.label, x.value]));
   const productCompare = [...new Set([...soldByProductAll.map(x=>x.label), ...producedByProduct.map(x=>x.label)])]
     .map(label => ({label, vendido:soldMap[label] || 0, produzido:producedMap[label] || 0}))
+    .filter(item => !prodVendTipo || categoryByProduct[item.label] === prodVendTipo)
     .sort((a,b) => (b.produzido + b.vendido) - (a.produzido + a.vendido))
-    .slice(0,10);
+    .filter(item => item.produzido || item.vendido);
   if (smartChartProdutos) smartChartProdutos.destroy();
   smartChartProdutos = new Chart(document.getElementById('smartChartProdutos'), {type:'bar',data:{labels:topProduction.map(x=>smartShortLabel(x.label, 32)),datasets:[{data:topProduction.map(x=>x.value),backgroundColor:'#22c55e'}]},options:smartChartOptions({fullLabels:topProduction.map(x=>x.label), labelMax:32, quantityAxis:true, options:{indexAxis:'y'}})});
   if (smartChartFaturamentoMes) smartChartFaturamentoMes.destroy();
@@ -3795,7 +3811,7 @@ function updateSmartCharts() {
   smartChartProdVend = new Chart(document.getElementById('smartChartProdVend'), {
     type:'bar',
     data:{
-      labels:productCompare.map(x=>smartShortLabel(x.label, 18)),
+      labels:productCompare.map(x=>smartShortLabel(x.label, prodVendTipo ? 22 : 18)),
       datasets:[
         {label:'Produzido',data:productCompare.map(x=>x.produzido),backgroundColor:'#22c55e'},
         {label:'Vendido',data:productCompare.map(x=>x.vendido),backgroundColor:'#ef4444'}
@@ -3806,7 +3822,7 @@ function updateSmartCharts() {
       quantityAxis:true,
       options:{
         plugins:{legend:appChartLegend(true)},
-        scales:{x:{ticks:{color:'#94a3b8',maxRotation:35,minRotation:0,callback:function(value){return smartShortLabel(this.getLabelForValue(value), 14);}}}}
+        scales:{x:{ticks:{color:'#94a3b8',maxRotation:35,minRotation:0,callback:function(value){return smartShortLabel(this.getLabelForValue(value), prodVendTipo ? 18 : 14);}}}}
       }
     })
   });
