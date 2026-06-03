@@ -1327,6 +1327,8 @@ const CFG_KEY = 'ahav_supabase_config';
 const CAD_RESP_KEY = 'ahav_cad_responsaveis';
 const CAD_PROJ_KEY = 'ahav_cad_projetos';
 const SMART_STORAGE_KEY = 'ahav_smartmold_erp_v1';
+const SMART_REMOTE_TABLE = 'smartmold_state';
+const SMART_REMOTE_KEY = 'default';
 const FVC_STORAGE_KEY = 'ahav_fvc_data';
 const RISK_STORAGE_KEY = 'ahav_risk_data';
 const AUTH_SESSION_KEY = 'ahav_auth_session';
@@ -1350,6 +1352,9 @@ let riskFiltrados = [];
 let riskChartNatureza = null, riskChartCriticidade = null, riskChartNegocio = null;
 let editingRiskUid = null;
 let smartState = null;
+let smartRemoteReady = false;
+let smartRemoteLoading = false;
+let smartRemoteLastLoadedAt = 0;
 let smartActiveTab = 'dashboard';
 let smartChartCategoria = null, smartChartEstoque = null, smartChartProdutos = null;
 let smartChartFaturamentoMes = null, smartChartTopClientes = null, smartChartProdutosFaturados = null, smartChartProdVend = null;
@@ -3217,7 +3222,12 @@ function showPage(page) {
   };
   document.getElementById('page-title').textContent = titles[page] || titles.home;
   if (page === 'home') renderExecutiveDashboard();
-  if (page === 'smartmold') renderSmartmoldPage();
+  if (page === 'smartmold') {
+    renderSmartmoldPage();
+    loadSmartSharedState(true).then(ok => {
+      if (ok && !document.getElementById('page-smartmold')?.classList.contains('hidden')) renderSmartmoldPage();
+    });
+  }
   if (page === 'fvc') renderFvcPage();
   if (page === 'risk') renderRiskPage();
   if (page === 'credit') renderCreditPage();
@@ -3408,8 +3418,74 @@ function syncSmartFaturamentoData(state) {
   try { localStorage.setItem(SMART_STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
 }
 
+function normalizeSmartState(state = {}) {
+  const normalized = {...smartDefaultState(), ...(state || {})};
+  normalized.produtos = dedupeSmartProducts(normalized.produtos || []);
+  normalized.producao = normalizeSmartProductionRows(normalized.producao || []);
+  syncSmartFaturamentoData(normalized);
+  return normalized;
+}
+
+async function loadSmartSharedState(force = false) {
+  if (!supabase || smartRemoteLoading) return false;
+  const now = Date.now();
+  if (!force && smartRemoteReady && now - smartRemoteLastLoadedAt < 15000) return true;
+  smartRemoteLoading = true;
+  try {
+    const {data, error} = await supabase.from(SMART_REMOTE_TABLE).select('*').eq('key', SMART_REMOTE_KEY);
+    if (error) throw error;
+    const row = Array.isArray(data) ? data[0] : null;
+    if (row?.state) {
+      smartState = normalizeSmartState(row.state);
+      localStorage.setItem(SMART_STORAGE_KEY, JSON.stringify(smartState));
+    } else {
+      smartState = normalizeSmartState(smartState || JSON.parse(localStorage.getItem(SMART_STORAGE_KEY) || 'null') || smartDefaultState());
+      await saveSmartSharedState(smartState, true);
+    }
+    smartRemoteReady = true;
+    smartRemoteLastLoadedAt = Date.now();
+    return true;
+  } catch(e) {
+    smartRemoteReady = false;
+    console.warn('Smartmold compartilhado indisponível:', e.message);
+    return false;
+  } finally {
+    smartRemoteLoading = false;
+  }
+}
+
+async function saveSmartSharedState(state, initializing = false) {
+  if (!supabase) return false;
+  const payload = {
+    key: SMART_REMOTE_KEY,
+    state,
+    updated_by: currentUser?.username || 'sistema',
+    updated_at: new Date().toISOString()
+  };
+  try {
+    const existing = await supabase.from(SMART_REMOTE_TABLE).select('key').eq('key', SMART_REMOTE_KEY);
+    if (existing.error) throw existing.error;
+    const hasRow = Array.isArray(existing.data) && existing.data.length > 0;
+    const result = hasRow
+      ? await supabase.from(SMART_REMOTE_TABLE).update(payload).eq('key', SMART_REMOTE_KEY)
+      : await supabase.from(SMART_REMOTE_TABLE).insert([payload]);
+    if (result.error) throw result.error;
+    smartRemoteReady = true;
+    smartRemoteLastLoadedAt = Date.now();
+    if (!initializing) showToast('✓ Smartmold sincronizado com a equipe');
+    return true;
+  } catch(e) {
+    smartRemoteReady = false;
+    if (!initializing) showToast('Smartmold salvo só neste navegador. Rode o SQL smartmold_state no Supabase.', true);
+    console.warn('Erro ao salvar Smartmold compartilhado:', e.message);
+    return false;
+  }
+}
+
 function saveSmartState() {
-  localStorage.setItem(SMART_STORAGE_KEY, JSON.stringify(getSmartState()));
+  const state = getSmartState();
+  localStorage.setItem(SMART_STORAGE_KEY, JSON.stringify(state));
+  saveSmartSharedState(state);
 }
 
 function smartNum(value) {
