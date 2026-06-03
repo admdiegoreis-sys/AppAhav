@@ -1859,6 +1859,15 @@ function updateKPIs() {
 }
 
 // ---- CHARTS ----
+function appChartLegend(display = true) {
+  return {
+    display,
+    position:'top',
+    align:'end',
+    labels:{color:'#94a3b8',font:{size:9,weight:'600'},boxWidth:12,boxHeight:8,padding:10,usePointStyle:false}
+  };
+}
+
 function updateCharts() {
   if (!window.Chart) return;
   const base = getVisiblePlanoData();
@@ -1876,7 +1885,7 @@ function updateCharts() {
       {label:'Em andamento',data:andP,backgroundColor:'#3b82f6',borderRadius:4}
     ]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},
+      plugins:{legend:appChartLegend(true)},
       scales:{x:{stacked:true,ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'}},
               y:{stacked:true,ticks:{color:'#64748b'},grid:{color:'#334155'}}}}
   });
@@ -1888,7 +1897,7 @@ function updateCharts() {
     type:'doughnut',
     data:{labels:prios,datasets:[{data:prioC,backgroundColor:['#ef4444','#f97316','#3b82f6'],borderWidth:0}]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{labels:{color:'#94a3b8',font:{size:12}},position:'bottom'}}}
+      plugins:{legend:appChartLegend(true)}}
   });
 
   const pessoas = [...new Set(base.map(a => a.quem || 'Sem responsável'))].sort();
@@ -1905,7 +1914,7 @@ function updateCharts() {
       {label:'Em andamento',data:andPessoa,backgroundColor:'#3b82f6',borderRadius:4}
     ]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},
+      plugins:{legend:appChartLegend(true)},
       scales:{x:{stacked:true,ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'}},
               y:{stacked:true,ticks:{color:'#64748b'},grid:{color:'#334155'}}}}
   });
@@ -3631,7 +3640,7 @@ function smartTopClients() {
   return Object.values(clientMap)
     .map(x => ({...x, ajustado: x.faturamento - x.compensacao}))
     .sort((a,b)=>b.ajustado-a.ajustado)
-    .slice(0,10);
+    .slice(0,7);
 }
 
 function smartGroupRows(rows, labelField, valueField) {
@@ -3702,7 +3711,7 @@ function smartChartOptions(extra = {}) {
     responsive:true,
     maintainAspectRatio:false,
     plugins:{
-      legend:{display:false},
+      legend:appChartLegend(false),
       tooltip:{
         callbacks:{
           title(items) {
@@ -3736,14 +3745,14 @@ function updateSmartCharts() {
   const validSales = state.vendas.filter(v => !['Cancelado','Compensação'].includes(String(v.Status || ''))).map(v => ({...v, 'Produto ERP': smartProductName(v.codprod, v['Produto ERP'])}));
   const stockMovementSales = state.vendas.filter(v => String(v.Status || '') !== 'Cancelado').map(v => ({...v, 'Produto ERP': smartProductName(v.codprod, v['Produto ERP'])}));
   const compensacoes = state.vendas.filter(v => String(v.Status || '') === 'Compensação').map(v => ({...v, 'Valor Total': Math.abs(smartNum(v['Valor Total']))}));
-  const topProduction = smartGroupRows(normalizedProduction, 'Produto ERP', 'Quantidade').sort((a,b)=>b.value-a.value).slice(0,8);
+  const topProduction = smartGroupRows(normalizedProduction, 'Produto ERP', 'Quantidade').sort((a,b)=>b.value-a.value).slice(0,7);
   const salesByMonth = smartGroupSalesByMonth(validSales);
   const compensacaoByMonth = smartGroupSalesByMonth(compensacoes);
   const topClients = smartTopClients();
   const salesMonthMap = Object.fromEntries(salesByMonth.map(x => [x.label, x.value]));
   const compensacaoMonthMap = Object.fromEntries(compensacaoByMonth.map(x => [x.label, x.value]));
   const monthLabels = [...new Set([...salesByMonth.map(x=>x.label), ...compensacaoByMonth.map(x=>x.label)])].sort((a,b) => smartMonthLabelSortValue(a) - smartMonthLabelSortValue(b));
-  const topSalesProducts = smartGroupRows(validSales, 'Produto ERP', 'Quantidade').sort((a,b)=>b.value-a.value).slice(0,8);
+  const topSalesProducts = smartGroupRows(validSales, 'Produto ERP', 'Quantidade').sort((a,b)=>b.value-a.value).slice(0,7);
   const soldByProductAll = smartGroupRows(stockMovementSales, 'Produto ERP', 'Quantidade');
   const producedByProduct = smartGroupRows(normalizedProduction, 'Produto ERP', 'Quantidade');
   const soldMap = Object.fromEntries(soldByProductAll.map(x => [x.label, x.value]));
@@ -3753,14 +3762,14 @@ function updateSmartCharts() {
     .sort((a,b) => (b.produzido + b.vendido) - (a.produzido + a.vendido))
     .slice(0,10);
   if (smartChartProdutos) smartChartProdutos.destroy();
-  smartChartProdutos = new Chart(document.getElementById('smartChartProdutos'), {type:'bar',data:{labels:topProduction.map(x=>smartShortLabel(x.label, 30)),datasets:[{data:topProduction.map(x=>x.value),backgroundColor:'#22c55e'}]},options:smartChartOptions({fullLabels:topProduction.map(x=>x.label), labelMax:30, quantityAxis:true, options:{indexAxis:'y'}})});
+  smartChartProdutos = new Chart(document.getElementById('smartChartProdutos'), {type:'bar',data:{labels:topProduction.map(x=>smartShortLabel(x.label, 32)),datasets:[{data:topProduction.map(x=>x.value),backgroundColor:'#22c55e'}]},options:smartChartOptions({fullLabels:topProduction.map(x=>x.label), labelMax:32, quantityAxis:true, options:{indexAxis:'y'}})});
   if (smartChartFaturamentoMes) smartChartFaturamentoMes.destroy();
-  smartChartFaturamentoMes = new Chart(document.getElementById('smartChartFaturamentoMes'), {type:'line',data:{labels:monthLabels,datasets:[{label:'Faturamento',data:monthLabels.map(x=>salesMonthMap[x]||0),borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.14)',fill:false,tension:.35},{label:'Faturamento Ajustado*',data:monthLabels.map(x=>(salesMonthMap[x]||0)-(compensacaoMonthMap[x]||0)),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.12)',fill:true,tension:.35}]},options:smartChartOptions({tooltipMoney:true, moneyAxis:true, options:{plugins:{legend:{display:true,position:'bottom'}}}})});
+  smartChartFaturamentoMes = new Chart(document.getElementById('smartChartFaturamentoMes'), {type:'line',data:{labels:monthLabels,datasets:[{label:'Faturamento',data:monthLabels.map(x=>salesMonthMap[x]||0),borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.14)',fill:false,tension:.35},{label:'Faturamento Ajustado*',data:monthLabels.map(x=>(salesMonthMap[x]||0)-(compensacaoMonthMap[x]||0)),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.12)',fill:true,tension:.35}]},options:smartChartOptions({tooltipMoney:true, moneyAxis:true, options:{plugins:{legend:appChartLegend(true)}}})});
   if (smartChartTopClientes) smartChartTopClientes.destroy();
   smartChartTopClientes = new Chart(document.getElementById('smartChartTopClientes'), {
     type:'bar',
     data:{
-      labels:topClients.map(x=>smartShortLabel(x.label, 30)),
+      labels:topClients.map(x=>smartShortLabel(x.label, 32)),
       datasets:[
         {label:'Faturamento',data:topClients.map(x=>x.faturamento),backgroundColor:'#60a5fa'},
         {label:'Compensação',data:topClients.map(x=>x.compensacao),backgroundColor:'#f87171'}
@@ -3768,18 +3777,18 @@ function updateSmartCharts() {
     },
     options:smartChartOptions({
       fullLabels:topClients.map(x=>x.label),
-      labelMax:30,
+      labelMax:32,
       tooltipMoney:true,
       moneyAxis:true,
       options:{
         indexAxis:'y',
-        plugins:{legend:{display:true,position:'bottom'}},
+        plugins:{legend:appChartLegend(true)},
         scales:{x:{stacked:true,ticks:{color:'#94a3b8',callback:value=>Number(value).toLocaleString('pt-BR')}},y:{stacked:true,ticks:{color:'#94a3b8'}}}
       }
     })
   });
   if (smartChartProdutosFaturados) smartChartProdutosFaturados.destroy();
-  smartChartProdutosFaturados = new Chart(document.getElementById('smartChartProdutosFaturados'), {type:'bar',data:{labels:topSalesProducts.map(x=>smartShortLabel(x.label, 30)),datasets:[{data:topSalesProducts.map(x=>x.value),backgroundColor:'#f59e0b'}]},options:smartChartOptions({fullLabels:topSalesProducts.map(x=>x.label), labelMax:30, quantityAxis:true, options:{indexAxis:'y'}})});
+  smartChartProdutosFaturados = new Chart(document.getElementById('smartChartProdutosFaturados'), {type:'bar',data:{labels:topSalesProducts.map(x=>smartShortLabel(x.label, 32)),datasets:[{data:topSalesProducts.map(x=>x.value),backgroundColor:'#f59e0b'}]},options:smartChartOptions({fullLabels:topSalesProducts.map(x=>x.label), labelMax:32, quantityAxis:true, options:{indexAxis:'y'}})});
   if (smartChartProdVend) smartChartProdVend.destroy();
   smartChartProdVend = new Chart(document.getElementById('smartChartProdVend'), {
     type:'bar',
@@ -3794,7 +3803,7 @@ function updateSmartCharts() {
       fullLabels:productCompare.map(x=>x.label),
       quantityAxis:true,
       options:{
-        plugins:{legend:{display:true,position:'bottom'}},
+        plugins:{legend:appChartLegend(true)},
         scales:{x:{ticks:{color:'#94a3b8',maxRotation:35,minRotation:0,callback:function(value){return smartShortLabel(this.getLabelForValue(value), 14);}}}}
       }
     })
@@ -4407,7 +4416,7 @@ function updateFvcCharts() {
   fvcChartNegocio = new Chart(document.getElementById('fvcChartNegocio'), {
     type:'bar',
     data:{labels:negocios,datasets:[{label:'Valor Ano',data:valorNeg,backgroundColor:'#22c55e',borderRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'}},y:{ticks:{color:'#64748b'},grid:{color:'#334155'}}}}
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:appChartLegend(false)},scales:{x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'}},y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'#334155'}}}}
   });
 
   const statuses = uniqueSorted(fvcFiltrados.map(x => x.status));
@@ -4416,7 +4425,7 @@ function updateFvcCharts() {
   fvcChartStatus = new Chart(document.getElementById('fvcChartStatus'), {
     type:'doughnut',
     data:{labels:statuses,datasets:[{data:statusCounts,backgroundColor:['#22c55e','#3b82f6','#ef4444','#f97316'],borderWidth:0}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:12}},position:'bottom'}}}
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:appChartLegend(true)}}
   });
 
   const pessoas = uniqueSorted(fvcFiltrados.map(x => x.responsavel || 'Sem responsável'));
@@ -4427,7 +4436,7 @@ function updateFvcCharts() {
       {label:'Concluído',data:pessoas.map(p => fvcFiltrados.filter(x => (x.responsavel || 'Sem responsável')===p && x.status==='Concluído').length),backgroundColor:'#22c55e',borderRadius:4},
       {label:'Em andamento',data:pessoas.map(p => fvcFiltrados.filter(x => (x.responsavel || 'Sem responsável')===p && x.status!=='Concluído').length),backgroundColor:'#3b82f6',borderRadius:4}
     ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},scales:{x:{stacked:true,ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'}},y:{stacked:true,ticks:{color:'#64748b'},grid:{color:'#334155'}}}}
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:appChartLegend(true)},scales:{x:{stacked:true,ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'}},y:{stacked:true,ticks:{color:'#64748b',font:{size:10}},grid:{color:'#334155'}}}}
   });
 }
 
@@ -4540,7 +4549,7 @@ function updateRiskCharts() {
   riskChartNatureza = new Chart(document.getElementById('riskChartNatureza'), {
     type:'bar',
     data:{labels:naturezas,datasets:[{label:'Exposição',data:exposicaoNatureza,backgroundColor:'#ef4444',borderRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'}},y:{ticks:{color:'#64748b'},grid:{color:'#334155'}}}}
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:appChartLegend(false)},scales:{x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'}},y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'#334155'}}}}
   });
 
   const crits = uniqueSorted(riskFiltrados.map(x => x.criticidade));
@@ -4548,7 +4557,7 @@ function updateRiskCharts() {
   riskChartCriticidade = new Chart(document.getElementById('riskChartCriticidade'), {
     type:'doughnut',
     data:{labels:crits,datasets:[{data:crits.map(c => riskFiltrados.filter(x=>x.criticidade===c).length),backgroundColor:['#ef4444','#f97316','#3b82f6','#22c55e'],borderWidth:0}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:12}},position:'bottom'}}}
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:appChartLegend(true)}}
   });
 
   const negocios = uniqueSorted(riskFiltrados.map(x => x.negocio));
@@ -4560,7 +4569,7 @@ function updateRiskCharts() {
       {label:'Não Iniciado',data:negocios.map(n => riskFiltrados.filter(x=>x.negocio===n && x.status==='Não Iniciado').length),backgroundColor:'#f97316',borderRadius:4},
       {label:'Concluído',data:negocios.map(n => riskFiltrados.filter(x=>x.negocio===n && x.status==='Concluído').length),backgroundColor:'#22c55e',borderRadius:4}
     ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},scales:{x:{stacked:true,ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'}},y:{stacked:true,ticks:{color:'#64748b'},grid:{color:'#334155'}}}}
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:appChartLegend(true)},scales:{x:{stacked:true,ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'}},y:{stacked:true,ticks:{color:'#64748b',font:{size:10}},grid:{color:'#334155'}}}}
   });
 }
 
