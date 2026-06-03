@@ -3387,11 +3387,22 @@ function normalizeSmartProductionRows(rows) {
 function syncSmartFaturamentoData(state) {
   const imported = window.SMARTMOLD_DATA?.Faturamento_Smartmold || [];
   if (!imported.length) return;
-  const version = `${imported.length}:${imported[0]?.Chave || ''}:${imported[imported.length - 1]?.Chave || ''}`;
+  const version = imported.reduce((acc, row) => {
+    const text = `${row.Chave || ''}|${row.NUNOTA || ''}|${row.codprod || ''}|${row.Status || ''}|${row['Valor Total'] || ''}|${row.Cliente || ''}`;
+    for (let i = 0; i < text.length; i++) acc = ((acc << 5) - acc + text.charCodeAt(i)) | 0;
+    return acc;
+  }, imported.length);
   if (state._faturamentoSmartmoldVersion === version) return;
-  const existing = new Set((state.vendas || []).map(v => String(v.Chave || '')));
+  const rowKey = row => String(row.Chave || `${row.NUNOTA || row.Nota || ''}-${row['Sequência'] || row['SequÃªncia'] || ''}-${row.codprod || ''}`);
+  const existing = new Map((state.vendas || []).map((v, idx) => [rowKey(v), idx]));
   imported.forEach(row => {
-    if (!existing.has(String(row.Chave || ''))) state.vendas.push(row);
+    const key = rowKey(row);
+    if (existing.has(key)) {
+      state.vendas[existing.get(key)] = {...state.vendas[existing.get(key)], ...row};
+    } else {
+      existing.set(key, state.vendas.length);
+      state.vendas.push(row);
+    }
   });
   state._faturamentoSmartmoldVersion = version;
   try { localStorage.setItem(SMART_STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
