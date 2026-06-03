@@ -3716,9 +3716,10 @@ function renderSmartSummary() {
   const validSales = state.vendas.filter(v => !['Cancelado','Compensação'].includes(String(v.Status || '')));
   const stockMovementSales = state.vendas.filter(v => String(v.Status || '') !== 'Cancelado');
   const compensacoes = state.vendas.filter(v => String(v.Status || '') === 'Compensação');
-  const receita = validSales.reduce((sum, v) => sum + smartNum(v['Valor Total']), 0);
+  const receitaSemCompensacao = validSales.reduce((sum, v) => sum + smartNum(v['Valor Total']), 0);
   const compensacao = compensacoes.reduce((sum, v) => sum + Math.abs(smartNum(v['Valor Total'])), 0);
-  const receitaLiquida = receita - compensacao;
+  const receita = receitaSemCompensacao + compensacao;
+  const receitaAjustada = receita - compensacao;
   const qtdVendida = stockMovementSales.reduce((sum, v) => sum + smartNum(v.Quantidade), 0);
   const produced = state.producao.reduce((sum, p) => sum + smartNum(p.Quantidade), 0);
   const estoqueFinal = stock.reduce((sum, x) => sum + smartNum(x['Estoque Final']), 0);
@@ -3726,8 +3727,8 @@ function renderSmartSummary() {
     ['Produtos cadastrados', state.produtos.length, 'SKUs ativos e importados'],
     ['Produção histórica', produced.toLocaleString('pt-BR'), 'unidades apontadas'],
     ['Quantidade movimentada', qtdVendida.toLocaleString('pt-BR'), 'vendas + compensações'],
-    ['Faturamento total', fvcMoney(receita), 'base de vendas/pedidos'],
-    ['Faturamento líquido', fvcMoney(receitaLiquida), 'faturamento - compensação'],
+    ['Faturamento total', fvcMoney(receita), 'faturamento ajustado + compensações'],
+    ['Faturamento ajustado', fvcMoney(receitaAjustada), 'faturamento - compensações'],
     ['Estoque final', estoqueFinal.toLocaleString('pt-BR'), 'saldo consolidado'],
     ['Itens críticos', stock.filter(x => x['Status Estoque'] !== 'OK').length, 'abaixo/acima dos limites']
   ];
@@ -3901,6 +3902,8 @@ function updateSmartCharts() {
   const salesMonthMap = Object.fromEntries(salesByMonth.map(x => [x.label, x.value]));
   const compensacaoMonthMap = Object.fromEntries(compensacaoByMonth.map(x => [x.label, x.value]));
   const monthLabels = [...new Set([...salesByMonth.map(x=>x.label), ...compensacaoByMonth.map(x=>x.label)])].sort((a,b) => smartMonthLabelSortValue(a) - smartMonthLabelSortValue(b));
+  const faturamentoTotalByMonth = label => (salesMonthMap[label] || 0) + (compensacaoMonthMap[label] || 0);
+  const faturamentoAjustadoByMonth = label => faturamentoTotalByMonth(label) - (compensacaoMonthMap[label] || 0);
   const topSalesProducts = smartGroupRows(validSales, 'Produto ERP', 'Quantidade').sort((a,b)=>b.value-a.value).slice(0,7);
   const soldByProductAll = smartGroupRows(stockMovementSales, 'Produto ERP', 'Quantidade');
   const producedByProduct = smartGroupRows(normalizedProduction, 'Produto ERP', 'Quantidade');
@@ -3914,7 +3917,7 @@ function updateSmartCharts() {
   if (smartChartProdutos) smartChartProdutos.destroy();
   smartChartProdutos = new Chart(document.getElementById('smartChartProdutos'), {type:'bar',data:{labels:topProduction.map(x=>smartShortLabel(x.label, 32)),datasets:[{data:topProduction.map(x=>x.value),backgroundColor:'#22c55e'}]},options:smartChartOptions({fullLabels:topProduction.map(x=>x.label), labelMax:32, quantityAxis:true, options:{indexAxis:'y'}})});
   if (smartChartFaturamentoMes) smartChartFaturamentoMes.destroy();
-  smartChartFaturamentoMes = new Chart(document.getElementById('smartChartFaturamentoMes'), {type:'line',data:{labels:monthLabels,datasets:[{label:'Faturamento',data:monthLabels.map(x=>salesMonthMap[x]||0),borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.14)',fill:false,tension:.35},{label:'Faturamento Ajustado*',data:monthLabels.map(x=>(salesMonthMap[x]||0)-(compensacaoMonthMap[x]||0)),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.12)',fill:true,tension:.35}]},options:smartChartOptions({tooltipMoney:true, moneyAxis:true, options:{plugins:{legend:appChartLegend(true)}}})});
+  smartChartFaturamentoMes = new Chart(document.getElementById('smartChartFaturamentoMes'), {type:'line',data:{labels:monthLabels,datasets:[{label:'Faturamento',data:monthLabels.map(faturamentoTotalByMonth),borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.14)',fill:false,tension:.35},{label:'Faturamento Ajustado*',data:monthLabels.map(faturamentoAjustadoByMonth),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.12)',fill:true,tension:.35}]},options:smartChartOptions({tooltipMoney:true, moneyAxis:true, options:{plugins:{legend:appChartLegend(true)}}})});
   if (smartChartTopClientes) smartChartTopClientes.destroy();
   smartChartTopClientes = new Chart(document.getElementById('smartChartTopClientes'), {
     type:'bar',
