@@ -3934,6 +3934,7 @@ function renderSmartSales() {
     _id:i,
     Data: smartFormatDate(v.Data),
     'Produto ERP': smartProductName(v.codprod, v['Produto ERP']),
+    'Valor Total': smartNum(v['Valor Total']).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}),
     Cadastro: smartProductByCode(v.codprod).codprod ? 'OK' : '<span class="stock-status-alert">Sem Cadastro</span>',
     Ações:`<div class="smart-row-actions"><button class="btn btn-ghost btn-sm smart-icon-btn" title="Editar venda" aria-label="Editar venda" onclick="event.stopPropagation();openSmartSaleModal('${i}')">✎</button></div>`
   }));
