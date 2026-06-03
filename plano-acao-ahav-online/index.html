@@ -222,7 +222,11 @@ td.wrap{white-space:normal}
 .smart-row-actions{display:flex;gap:5px;justify-content:center;align-items:center;flex-wrap:nowrap}
 .smart-icon-btn{width:28px;height:28px;padding:0;font-size:14px;min-height:28px;display:inline-flex;align-items:center;justify-content:center}
 .stock-status-alert{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:3px 7px;background:rgba(248,113,113,.16);border:1px solid rgba(248,113,113,.34);color:#fca5a5;font-weight:800;white-space:nowrap}
-.smart-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:18px}
+.smart-summary{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;margin-bottom:18px;align-items:stretch}
+.smart-summary .kpi{min-width:0;padding:16px 14px}
+.smart-summary .kpi-label{font-size:10px;line-height:1.25}
+.smart-summary .kpi-value{font-size:26px;line-height:1.05}
+.smart-summary .kpi-sub{font-size:11px;line-height:1.25}
 .smart-sales-filters{display:grid;grid-template-columns:minmax(180px,1.2fr) minmax(170px,1fr) minmax(170px,1fr) 120px 135px 135px auto auto;gap:10px;align-items:end}
 .smart-sales-filters .filter-group{min-width:0}
 .smart-sales-filters input,.smart-sales-filters select{width:100%;min-width:0}
@@ -304,6 +308,9 @@ td.wrap{white-space:normal}
 .auth-error{min-height:18px;color:#fca5a5;font-size:12px;margin:4px 0 14px}
 .user-admin-row{display:grid;grid-template-columns:1fr 110px 88px 72px;gap:10px;align-items:center;padding:10px;border:1px solid #334155;border-radius:10px;background:#0f172a;margin-bottom:8px}
 .user-admin-row strong{color:#e2e8f0;font-size:13px}.user-admin-row small{color:#64748b;display:block;margin-top:2px}
+@media(max-width:1600px){
+  .smart-summary{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
 @media(max-width:1024px){
   .header{gap:12px;flex-wrap:wrap;align-items:flex-start}
   .brand{flex:1 1 100%;width:100%}
@@ -312,6 +319,7 @@ td.wrap{white-space:normal}
   .header-right{order:3;flex:1 1 100%;width:100%;overflow-x:auto;padding-bottom:2px}
   .charts-grid,.smart-dashboard-grid{grid-template-columns:1fr}
   .smart-dashboard-grid .chart-card.wide{grid-column:auto}
+  .smart-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
   .smart-sales-filters{grid-template-columns:1fr 1fr}
   .exec-hero,.exec-section-grid{grid-template-columns:1fr}
   .exec-grid{grid-template-columns:repeat(2,1fr)}
@@ -353,6 +361,7 @@ td.wrap{white-space:normal}
   .header-actions-row>.btn{display:none}
   .page-actions{padding:12px;margin-bottom:14px}
   .page-actions-buttons .btn{flex:1 1 100%;justify-content:center}
+  .smart-summary{grid-template-columns:1fr}
   .header-actions-row .btn{width:100%;justify-content:flex-start;white-space:normal;text-align:left;line-height:1.1}
   .user-chip{max-width:100%;text-align:right;padding-right:2px;white-space:normal}
   .btn{min-height:34px}
