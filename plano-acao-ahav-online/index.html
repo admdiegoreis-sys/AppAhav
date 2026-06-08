@@ -89,8 +89,12 @@ td{padding:10px 14px;color:#cbd5e1;overflow:hidden;text-overflow:ellipsis;white-
 td.wrap{white-space:normal}
 .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600}
 .badge-Alta{background:#7f1d1d;color:#fca5a5}.badge-Média{background:#713f12;color:#fde68a}.badge-Baixa{background:#1e3a5f;color:#93c5fd}
-.badge-Concluído{background:#14532d;color:#86efac}.badge-andamento{background:#1e3a5f;color:#93c5fd}.badge-Atrasado{background:#7f1d1d;color:#fca5a5}
+.badge-Concluído{background:#14532d;color:#86efac}.badge-andamento{background:#1e3a5f;color:#93c5fd}.badge-Atrasado{background:#7f1d1d;color:#fca5a5}.badge-pendencia-prazo{background:#713f12;color:#fde68a}
 .warn-icon{color:#ef4444}
+.field-note{font-size:11px;color:#94a3b8;line-height:1.35}
+.approval-actions{display:flex;gap:6px;align-items:center;justify-content:flex-start;flex-wrap:wrap}
+.admin-pending-card{cursor:pointer}
+.admin-pending-card:hover{transform:translateY(-2px);border-color:#f97316}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
 .modal{background:#1e293b;border:1px solid #334155;border-radius:16px;width:100%;max-width:740px;max-height:90vh;overflow-y:auto}
 .modal-header{padding:20px 24px;border-bottom:1px solid #334155;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#1e293b;z-index:1}
@@ -136,7 +140,7 @@ td.wrap{white-space:normal}
 .matrix-cell.high{background:rgba(239,68,68,.16);border-color:rgba(239,68,68,.5)}
 .matrix-count{font-size:24px;font-weight:800;color:#f8fafc}
 .matrix-label{font-size:11px;color:#cbd5e1}
-.kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kanban{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px}
 .kanban-col{background:#0f172a;border:1px solid #334155;border-radius:12px;padding:12px;min-height:170px}
 .kanban-title{display:flex;justify-content:space-between;gap:8px;color:#e2e8f0;font-size:12px;font-weight:700;margin-bottom:10px}
 .kanban-pill{font-size:11px;color:#94a3b8;background:#1e293b;border-radius:999px;padding:1px 7px}
@@ -495,6 +499,7 @@ td.wrap{white-space:normal}
         <button class="nav-btn" id="nav-plano" onclick="showPage('plano'); closeDesktopMenus()">Plano de Ação</button>
         <button class="nav-btn" id="nav-fvc" onclick="showPage('fvc'); closeDesktopMenus()">FVC - Valor Gerado</button>
         <button class="nav-btn" id="nav-risk" onclick="showPage('risk'); closeDesktopMenus()">Gestão de Riscos</button>
+        <button class="nav-btn hidden" id="nav-prazos" onclick="showPage('prazos'); closeDesktopMenus()">Aprovação de Prazos</button>
       </div>
     </details>
     <details class="nav-menu" id="nav-menu-rede-epi">
@@ -515,6 +520,7 @@ td.wrap{white-space:normal}
         <button class="nav-btn" onclick="showPage('plano'); closeMobileMenus()">Plano de Ação</button>
         <button class="nav-btn" onclick="showPage('fvc'); closeMobileMenus()">FVC - Valor Gerado</button>
         <button class="nav-btn" onclick="showPage('risk'); closeMobileMenus()">Gestão de Riscos</button>
+        <button class="nav-btn hidden" id="mobile-nav-prazos" onclick="showPage('prazos'); closeMobileMenus()">Aprovação de Prazos</button>
         <div class="mobile-menu-section">Rede EPI</div>
         <button class="nav-btn" onclick="showPage('credit'); closeMobileMenus()">Análise de Crédito</button>
         <div class="mobile-menu-section">Ações</div>
@@ -567,6 +573,7 @@ td.wrap{white-space:normal}
     <div class="exec-card purple"><div class="exec-card-label">Saving acumulado</div><div class="exec-card-value" id="exec-saving">—</div><div class="exec-card-sub">R$ mil concluídos no FVC</div></div>
     <div class="exec-card blue"><div class="exec-card-label">KPI financeiro</div><div class="exec-card-value" id="exec-kpi-financeiro">—</div><div class="exec-card-sub">saving concluído sobre valor mapeado</div></div>
     <div class="exec-card red"><div class="exec-card-label">Exposição de riscos</div><div class="exec-card-value" id="exec-exposicao">—</div><div class="exec-card-sub">R$ mil em riscos mapeados</div></div>
+    <div class="exec-card orange admin-pending-card hidden" id="exec-prazo-pendencias-card" onclick="showPage('prazos')"><div class="exec-card-label">Pendências de prazo</div><div class="exec-card-value" id="exec-prazo-pendencias">—</div><div class="exec-card-sub">alterações aguardando aprovação</div></div>
   </div>
 
   <div class="exec-section-grid">
@@ -740,6 +747,7 @@ td.wrap{white-space:normal}
         <option value="Concluído">Concluído</option>
         <option value="Em andamento">Em andamento</option>
         <option value="Atrasado">Atrasado</option>
+        <option value="Pendência prazo">Pendência prazo</option>
       </select>
     </div>
     <div class="filter-group">
@@ -878,6 +886,38 @@ td.wrap{white-space:normal}
   </div>
 </div>
 
+<div class="container page hidden" id="page-prazos">
+  <div class="page-actions">
+    <div>
+      <div class="page-actions-title">Aprovação de Prazos</div>
+      <div class="field-note">Solicitações de alteração da data de previsão do Plano de Ação. A data original permanece como referência fixa.</div>
+    </div>
+    <div class="page-actions-buttons">
+      <button class="btn btn-ghost btn-sm" onclick="loadData()">🔄 Atualizar</button>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <div class="table-header">
+      <h3>Solicitações pendentes <span id="prazo-approval-count" style="color:#64748b;font-weight:400;font-size:13px"></span></h3>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr>
+          <th>Atividade</th>
+          <th>Previsão original</th>
+          <th>Previsão atual</th>
+          <th>Nova data solicitada</th>
+          <th>Solicitante</th>
+          <th>Solicitação</th>
+          <th>Motivo</th>
+          <th>Ações</th>
+        </tr></thead>
+        <tbody id="prazo-approval-body"><tr><td colspan="8" class="loading">Carregando solicitações...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <div class="container page hidden" id="page-credit">
   <div class="credit-grid">
     <div class="credit-panel">
@@ -964,8 +1004,16 @@ td.wrap{white-space:normal}
         <label>Status</label>
         <select id="m-status-resumido"><option selected>Em andamento</option><option>Concluído</option></select>
       </div>
-      <div class="field"><label>Data Previsão</label><input type="date" id="m-prazo"></div>
+      <div class="field">
+        <label>Data Previsão</label>
+        <input type="date" id="m-prazo" onchange="updatePrazoRequestFields()">
+        <div class="field-note hidden" id="m-prazo-note"></div>
+      </div>
       <div class="field"><label>Data Conclusão</label><input type="date" id="m-conclusao"></div>
+      <div class="field full hidden" id="m-prazo-reason-wrap">
+        <label>Motivo da alteração do prazo</label>
+        <textarea id="m-prazo-motivo" placeholder="Informe por que a data de previsão precisa ser alterada"></textarea>
+      </div>
       <div class="field full"><label>Tags</label><input type="text" id="m-tags" placeholder="ex: urgente, financeiro"></div>
       <div class="field full"><label>Por quê</label><textarea id="m-porque" placeholder="Justificativa da ação"></textarea></div>
       <div class="field full"><label>Situação atual</label><textarea id="m-situacao" placeholder="Último update / status descritivo"></textarea></div>
@@ -1344,6 +1392,7 @@ let pagina = 1;
 let sortCol = 'id';
 let sortDir = 1;
 let editingId = null;
+let modalPrazoAtual = null;
 let chartP = null, chartPrio = null, chartPessoas = null;
 let fvcFiltrados = [];
 let fvcChartNegocio = null, fvcChartStatus = null, fvcChartResp = null;
@@ -1644,6 +1693,8 @@ function enterApp() {
   document.getElementById('settings-reconnect')?.classList.toggle('hidden', !admin);
   document.getElementById('global-settings-menu')?.classList.toggle('hidden', !admin);
   document.getElementById('btn-credit-params')?.classList.toggle('hidden', !admin);
+  document.getElementById('nav-prazos')?.classList.toggle('hidden', !admin);
+  document.getElementById('mobile-nav-prazos')?.classList.toggle('hidden', !admin);
   applyCreditOnlyAccess();
   loadData();
   subscribeRealtime();
@@ -1664,6 +1715,27 @@ function applyCreditOnlyAccess() {
     document.getElementById('global-settings-menu')?.classList.add('hidden');
     setTimeout(() => showPage('credit'), 0);
   }
+}
+
+function normalizePrazoGovernance(a) {
+  const original = a.prazo_original || a.prazo || null;
+  return {
+    ...a,
+    prazo_original: original,
+    prazo_change_status: a.prazo_change_status || 'none'
+  };
+}
+
+function hasPendingPrazoChange(a) {
+  return a?.prazo_change_status === 'pending' && !!a.prazo_solicitado;
+}
+
+function getPrazoPendingRequests() {
+  return dados.filter(hasPendingPrazoChange);
+}
+
+function currentUserLabel() {
+  return currentUser?.full_name || currentUser?.username || 'Usuário';
 }
 
 function logout() {
@@ -1816,7 +1888,7 @@ async function loadData() {
     document.getElementById('status-text').textContent = 'Carregando...';
     const {data, error} = await supabase.from('acoes').select('*').order('id');
     if (error) throw error;
-    dados = data.map(a => ({
+    dados = data.map(a => normalizePrazoGovernance({
       ...a,
       quem: normalizeResponsibleName(a.quem),
       statusResumo: a.status_resumido || (a.status && a.status.toLowerCase().includes('finaliz') ? 'Concluído' : 'Em andamento')
@@ -1852,6 +1924,7 @@ function temAlertaPrazo(a) {
 }
 
 function statusCalculado(a) {
+  if (hasPendingPrazoChange(a)) return 'Pendência prazo';
   if (a.conclusao) return 'Concluído';
   if (isAtrasado(a)) return 'Atrasado';
   return a.statusResumo === 'Concluído' ? 'Concluído' : 'Em andamento';
@@ -1860,6 +1933,7 @@ function statusCalculado(a) {
 function statusBadgeClass(status) {
   if (status === 'Concluído') return 'Concluído';
   if (status === 'Atrasado') return 'Atrasado';
+  if (status === 'Pendência prazo') return 'pendencia-prazo';
   return 'andamento';
 }
 
@@ -3198,15 +3272,17 @@ function exportCreditPDF() {
 // ---- PAGE NAV ----
 function showPage(page) {
   if (isCreditOnlyUser() && page !== 'credit') page = 'credit';
+  if (page === 'prazos' && !isAdminUser()) page = 'home';
   document.getElementById('page-home').classList.toggle('hidden', page !== 'home');
   document.getElementById('page-smartmold')?.classList.toggle('hidden', page !== 'smartmold');
   document.getElementById('page-plano').classList.toggle('hidden', page !== 'plano');
   document.getElementById('page-fvc').classList.toggle('hidden', page !== 'fvc');
   document.getElementById('page-risk').classList.toggle('hidden', page !== 'risk');
+  document.getElementById('page-prazos').classList.toggle('hidden', page !== 'prazos');
   document.getElementById('page-credit').classList.toggle('hidden', page !== 'credit');
-  ['home','smartmold','plano','fvc','risk','credit'].forEach(key => document.getElementById(`nav-${key}`)?.classList.toggle('active', page === key));
+  ['home','smartmold','plano','fvc','risk','prazos','credit'].forEach(key => document.getElementById(`nav-${key}`)?.classList.toggle('active', page === key));
   document.getElementById('nav-smartmold')?.classList.toggle('active', page === 'smartmold');
-  document.getElementById('nav-gestao')?.classList.toggle('active', ['plano','fvc','risk'].includes(page));
+  document.getElementById('nav-gestao')?.classList.toggle('active', ['plano','fvc','risk','prazos'].includes(page));
   document.getElementById('nav-rede-epi')?.classList.toggle('active', page === 'credit');
   document.querySelectorAll('.mobile-menu-panel .nav-btn').forEach(btn => {
     const text = btn.textContent || '';
@@ -3215,6 +3291,7 @@ function showPage(page) {
       (page === 'plano' && text.includes('Plano de Ação')) ||
       (page === 'fvc' && text.includes('FVC')) ||
       (page === 'risk' && text.includes('Gestão de Riscos')) ||
+      (page === 'prazos' && text.includes('Aprovação de Prazos')) ||
       (page === 'credit' && text.includes('Análise de Crédito'));
     btn.classList.toggle('active', active);
   });
@@ -3224,6 +3301,7 @@ function showPage(page) {
     plano: 'FINANCE - Plano de Ação',
     fvc: 'FINANCE - FVC Valor Gerado',
     risk: 'FINANCE - Gestão de Riscos',
+    prazos: 'FINANCE - Aprovação de Prazos',
     credit: 'FINANCE - Análise de Crédito'
   };
   document.getElementById('page-title').textContent = titles[page] || titles.home;
@@ -3236,6 +3314,7 @@ function showPage(page) {
   }
   if (page === 'fvc') renderFvcPage();
   if (page === 'risk') renderRiskPage();
+  if (page === 'prazos') renderPrazoApprovals();
   if (page === 'credit') renderCreditPage();
 }
 
@@ -3265,6 +3344,7 @@ function renderExecutiveDashboard() {
   const exposicao = absSum(riskData, 'exposicao');
   const riscosCriticos = riskData.filter(x => x.criticidade === 'Grave').length;
   const planosAtrasados = planoData.filter(x => x.statusCalc === 'Atrasado').length;
+  const prazoPendencias = getPrazoPendingRequests().length;
   const kpiFinanceiro = valorTotal ? Math.round((savingConcluido / valorTotal) * 100) + '%' : '0%';
 
   setText('exec-valor-total', moneyInThousands(valorTotal));
@@ -3273,6 +3353,8 @@ function renderExecutiveDashboard() {
   setText('exec-saving', moneyInThousands(savingConcluido));
   setText('exec-kpi-financeiro', kpiFinanceiro);
   setText('exec-exposicao', moneyInThousands(exposicao));
+  setText('exec-prazo-pendencias', prazoPendencias);
+  document.getElementById('exec-prazo-pendencias-card')?.classList.toggle('hidden', !isAdminUser());
   renderRiskMatrix(riskData);
   renderExecutiveKanban(planoData);
   renderProjectStatus(planoData);
@@ -3300,6 +3382,7 @@ function renderRiskMatrix(riskData) {
 
 function renderExecutiveKanban(planoData) {
   const groups = [
+    {key:'Pendência prazo', title:'Pendência prazo', cls:'wait', items: planoData.filter(x => x.statusCalc === 'Pendência prazo')},
     {key:'Não iniciado', title:'Não iniciado', cls:'wait', items: planoData.filter(x => !x.statusCalc && !x.conclusao)},
     {key:'Em andamento', title:'Em andamento', cls:'', items: planoData.filter(x => x.statusCalc === 'Em andamento')},
     {key:'Atrasado', title:'Em risco', cls:'risk', items: planoData.filter(x => x.statusCalc === 'Atrasado')},
@@ -3324,6 +3407,58 @@ function renderProjectStatus(planoData) {
     const cls = atrasados ? 'risk' : concluidos === items.length ? 'done' : andamento ? '' : 'wait';
     return `<div class="status-row"><span>${escapeHtml(p)}</span><div class="status-track"><div class="status-fill ${cls}" style="width:${width}%"></div></div><strong>${items.length}</strong></div>`;
   }).join('') || '<div class="exec-copy">Sem projetos carregados.</div>';
+}
+
+function renderPrazoApprovals() {
+  if (!isAdminUser()) return;
+  const pending = getPrazoPendingRequests().sort((a,b) => String(b.prazo_change_requested_at || '').localeCompare(String(a.prazo_change_requested_at || '')));
+  setText('prazo-approval-count', `(${pending.length})`);
+  const body = document.getElementById('prazo-approval-body');
+  if (!body) return;
+  body.innerHTML = pending.map(item => {
+    const original = item.prazo_original || item.prazo || '';
+    const current = item.prazo || original || '';
+    const requestedAt = item.prazo_change_requested_at ? new Date(item.prazo_change_requested_at).toLocaleString('pt-BR') : '—';
+    return `<tr>
+      <td class="wrap" style="max-width:320px"><strong>#${item.id}</strong> ${escapeHtml(item.oque || '')}</td>
+      <td>${fmtDate(original)}</td>
+      <td>${fmtDate(current)}</td>
+      <td>${fmtDate(item.prazo_solicitado)}</td>
+      <td>${escapeHtml(item.prazo_change_requested_by || '—')}</td>
+      <td>${requestedAt}</td>
+      <td class="wrap" style="max-width:300px">${escapeHtml(item.prazo_change_reason || '—')}</td>
+      <td><div class="approval-actions">
+        <button class="btn btn-success btn-sm" onclick="reviewPrazoChange(${item.id}, true)">Aprovar</button>
+        <button class="btn btn-danger btn-sm" onclick="reviewPrazoChange(${item.id}, false)">Reprovar</button>
+      </div></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="8" style="text-align:center;padding:30px;color:#64748b">Nenhuma solicitação aguardando aprovação.</td></tr>';
+}
+
+async function reviewPrazoChange(id, approved) {
+  if (!requireAdmin()) return;
+  const item = dados.find(x => x.id == id);
+  if (!item || !hasPendingPrazoChange(item)) return;
+  const original = item.prazo_original || item.prazo || null;
+  const payload = {
+    prazo_original: original,
+    prazo_change_status: approved ? 'approved' : 'rejected',
+    prazo_change_reviewed_by: currentUserLabel(),
+    prazo_change_reviewed_at: new Date().toISOString()
+  };
+  if (approved) {
+    payload.prazo = item.prazo_solicitado;
+    payload.prazo_solicitado = null;
+  }
+  try {
+    const {error} = await supabase.from('acoes').update(payload).eq('id', id);
+    if (error) throw error;
+    showToast(approved ? 'Alteração de prazo aprovada' : 'Alteração de prazo reprovada');
+    await loadData();
+    renderPrazoApprovals();
+  } catch(e) {
+    showToast('Erro ao revisar prazo: ' + e.message, true);
+  }
 }
 
 function closeMobileMenus() {
@@ -4849,6 +4984,7 @@ function applyFilters(resetPage = true) {
   if (stat === 'Concluído')    d = d.filter(a => a.statusCalc === 'Concluído');
   else if (stat === 'Em andamento') d = d.filter(a => a.statusCalc === 'Em andamento');
   else if (stat === 'Atrasado') d = d.filter(a => a.statusCalc === 'Atrasado');
+  else if (stat === 'Pendência prazo') d = d.filter(a => a.statusCalc === 'Pendência prazo');
 
   d.sort((a,b) => {
     let va = a[sortCol]??'', vb = b[sortCol]??'';
@@ -4916,8 +5052,26 @@ function renderTable() {
 }
 
 // ---- MODAL ----
+function updatePrazoRequestFields() {
+  const input = document.getElementById('m-prazo');
+  const reasonWrap = document.getElementById('m-prazo-reason-wrap');
+  const note = document.getElementById('m-prazo-note');
+  if (!input || !reasonWrap || !note) return;
+  const changed = !!editingId && (input.value || null) !== (modalPrazoAtual || null);
+  reasonWrap.classList.toggle('hidden', !changed);
+  note.classList.toggle('hidden', !editingId);
+  if (editingId) {
+    note.textContent = changed
+      ? 'A alteração será salva como solicitação pendente de aprovação. A data atual não será alterada automaticamente.'
+      : 'A data de previsão original fica preservada como referência fixa.';
+  } else {
+    note.textContent = '';
+  }
+}
+
 function openModal(id) {
   editingId = id;
+  modalPrazoAtual = null;
   updateCadastroOptions();
   document.getElementById('modal-overlay').classList.remove('hidden');
   const del = document.getElementById('btn-delete');
@@ -4932,6 +5086,8 @@ function openModal(id) {
     document.getElementById('m-quem').value= isAdminUser() ? '' : normalizeResponsibleName(currentUser?.full_name || currentUser?.username || '');
     document.getElementById('m-prioridade').value='Média';
     document.getElementById('m-status-resumido').value='Em andamento';
+    document.getElementById('m-prazo-motivo').value = '';
+    updatePrazoRequestFields();
   } else {
     const a = dados.find(x=>x.id==id);
     if (!a) return;
@@ -4943,7 +5099,8 @@ function openModal(id) {
     document.getElementById('m-quem').value = a.quem||'';
     document.getElementById('m-prioridade').value = a.prioridade||'Média';
     document.getElementById('m-status-resumido').value = a.statusResumo||'Em andamento';
-    document.getElementById('m-prazo').value = a.prazo||'';
+    modalPrazoAtual = a.prazo || a.prazo_original || null;
+    document.getElementById('m-prazo').value = modalPrazoAtual||'';
     document.getElementById('m-conclusao').value = a.conclusao||'';
     document.getElementById('m-tags').value = a.tags||'';
     document.getElementById('m-porque').value = a.porque||'';
@@ -4951,12 +5108,15 @@ function openModal(id) {
     document.getElementById('m-onde').value = a.onde||'';
     document.getElementById('m-como').value = a.como||'';
     document.getElementById('m-quanto').value = a.quanto||'';
+    document.getElementById('m-prazo-motivo').value = '';
+    updatePrazoRequestFields();
   }
 }
 
 function closeModal() {
   document.getElementById('modal-overlay').classList.add('hidden');
   editingId = null;
+  modalPrazoAtual = null;
 }
 
 async function saveAcao() {
@@ -4968,13 +5128,25 @@ async function saveAcao() {
     document.getElementById('m-conclusao').focus();
     return;
   }
+  const currentAction = editingId ? dados.find(x => x.id == editingId) : null;
+  const prazoDigitado = document.getElementById('m-prazo').value || null;
+  const prazoAtual = currentAction ? (currentAction.prazo || currentAction.prazo_original || null) : null;
+  const prazoOriginal = currentAction ? (currentAction.prazo_original || currentAction.prazo || null) : prazoDigitado;
+  const prazoAlterado = !!currentAction && (prazoDigitado || null) !== (prazoAtual || null);
+  const prazoMotivo = document.getElementById('m-prazo-motivo').value.trim();
+  if (prazoAlterado && !prazoMotivo) {
+    alert('Informe o motivo da alteração da data de previsão.');
+    document.getElementById('m-prazo-motivo').focus();
+    return;
+  }
 
   const payload = {
     oque, projeto: document.getElementById('m-projeto').value,
     quem: normalizeResponsibleName(isAdminUser() ? document.getElementById('m-quem').value : (currentUser?.full_name || currentUser?.username || document.getElementById('m-quem').value)),
     prioridade: document.getElementById('m-prioridade').value,
     status_resumido: document.getElementById('m-status-resumido').value,
-    prazo: document.getElementById('m-prazo').value || null,
+    prazo: currentAction ? prazoAtual : prazoDigitado,
+    prazo_original: prazoOriginal,
     conclusao,
     tags: document.getElementById('m-tags').value,
     porque: document.getElementById('m-porque').value,
@@ -4983,6 +5155,18 @@ async function saveAcao() {
     como: document.getElementById('m-como').value,
     quanto: document.getElementById('m-quanto').value ? parsePtBrNumber(document.getElementById('m-quanto').value) : null,
   };
+
+  if (!currentAction) {
+    payload.prazo_change_status = 'none';
+  } else if (prazoAlterado) {
+    payload.prazo_solicitado = prazoDigitado;
+    payload.prazo_change_status = 'pending';
+    payload.prazo_change_requested_by = currentUserLabel();
+    payload.prazo_change_requested_at = new Date().toISOString();
+    payload.prazo_change_reason = prazoMotivo;
+    payload.prazo_change_reviewed_by = null;
+    payload.prazo_change_reviewed_at = null;
+  }
 
   const btn = document.getElementById('btn-save');
   btn.textContent = 'Salvando...'; btn.disabled = true;
@@ -4996,7 +5180,7 @@ async function saveAcao() {
     }
     if (error) throw error;
     closeModal();
-    showToast(editingId ? '✓ Ação atualizada!' : '✓ Ação criada!');
+    showToast(prazoAlterado ? '✓ Solicitação de alteração de prazo enviada para aprovação!' : (editingId ? '✓ Ação atualizada!' : '✓ Ação criada!'));
     await loadData();
   } catch(e) {
     showToast('Erro: ' + e.message, true);
