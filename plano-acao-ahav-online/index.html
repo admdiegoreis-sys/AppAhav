@@ -993,7 +993,7 @@ td.wrap{white-space:normal}
       <input type="hidden" id="risk-m-uid">
       <div class="field full"><label>Item *</label><input type="text" id="risk-m-item" placeholder="Nome do risco"></div>
       <div class="field"><label>Negócio</label><input type="text" id="risk-m-negocio"></div>
-      <div class="field"><label>Responsável</label><input type="text" id="risk-m-responsavel" value="Diego Reis"></div>
+      <div class="field"><label>Responsável</label><input type="text" id="risk-m-responsavel" value="Diego"></div>
       <div class="field"><label>Natureza</label><input type="text" id="risk-m-natureza"></div>
       <div class="field"><label>Criticidade</label><select id="risk-m-criticidade"><option>Grave</option><option>Médio</option><option>Baixo</option></select></div>
       <div class="field"><label>Prioridade</label><select id="risk-m-prioridade"><option>Alta</option><option>Média</option><option>Baixa</option></select></div>
@@ -1334,7 +1334,7 @@ const RISK_STORAGE_KEY = 'ahav_risk_data';
 const AUTH_SESSION_KEY = 'ahav_auth_session';
 const LOCAL_USERS_KEY = 'ahav_local_users';
 const DEFAULT_ADMIN_HASH = '2ccb642daba2e0364c839d5667a1ae4d2d61e5b66e697ea53c99127aa3129485';
-const DEFAULT_RESPONSAVEIS = ['Diego Reis','Diego','Douglas','Flávia','João','Gabriel','Mayara'];
+const DEFAULT_RESPONSAVEIS = ['Diego','Douglas','Flávia','João','Gabriel','Mayara'];
 const DEFAULT_PROJETOS = ['Automações','Contabilidade','Controladoria','Demandas Pontuais','Fluxo de Caixa','Internalizações','Loteamentos','Oportunidades','Orçamento','Reestruturação','Rota 70 - Marg. 10%','Societário'];
 
 let supabase = null;
@@ -1818,6 +1818,7 @@ async function loadData() {
     if (error) throw error;
     dados = data.map(a => ({
       ...a,
+      quem: normalizeResponsibleName(a.quem),
       statusResumo: a.status_resumido || (a.status && a.status.toLowerCase().includes('finaliz') ? 'Concluído' : 'Em andamento')
     }));
     setStatus(true);
@@ -1980,6 +1981,11 @@ function normalizeAccessName(value) {
     .replace(/[^a-z0-9]/g, '');
 }
 
+function normalizeResponsibleName(value) {
+  const text = String(value || '').replace(/\s+/g, ' ').trim();
+  return normalizeAccessName(text) === 'diegoreis' ? 'Diego' : text;
+}
+
 function currentUserKeys() {
   const full = currentUser?.full_name || '';
   const username = currentUser?.username || '';
@@ -2019,13 +2025,13 @@ function optionHtml(value, selectedValue) {
 
 function getResponsaveis() {
   if (!isAdminUser() && currentUser) {
-    return uniqueSorted([currentUser.full_name || currentUser.username]);
+    return uniqueSorted([normalizeResponsibleName(currentUser.full_name || currentUser.username)]);
   }
   return uniqueSorted([
     ...DEFAULT_RESPONSAVEIS,
     ...readCadastro(CAD_RESP_KEY),
     ...dados.map(a => a.quem)
-  ]);
+  ].map(normalizeResponsibleName));
 }
 
 function getProjetos() {
@@ -2084,7 +2090,7 @@ function addCadastro(type) {
   const isResp = type === 'responsavel';
   const input = document.getElementById(isResp ? 'cad-responsavel' : 'cad-projeto');
   const key = isResp ? CAD_RESP_KEY : CAD_PROJ_KEY;
-  const value = input.value.trim();
+  const value = isResp ? normalizeResponsibleName(input.value) : input.value.trim();
   if (!value) return;
   const existing = isResp ? getResponsaveis() : getProjetos();
   if (existing.some(v => v.toLowerCase() === value.toLowerCase())) {
@@ -2099,7 +2105,7 @@ function addCadastro(type) {
 
 function removeCadastro(type, value) {
   const key = type === 'responsavel' ? CAD_RESP_KEY : CAD_PROJ_KEY;
-  writeCadastro(key, readCadastro(key).filter(v => v !== value));
+  writeCadastro(key, readCadastro(key).filter(v => v !== value && (type !== 'responsavel' || normalizeResponsibleName(v) !== normalizeResponsibleName(value))));
   updateCadastroOptions();
   showToast('Cadastro removido');
 }
@@ -4436,6 +4442,7 @@ function fvcSelectOptions(id, values, firstLabel) {
 function normalizeFvcRows(rows) {
   return rows.map((item, index) => ({
     ...item,
+    responsavel: normalizeResponsibleName(item.responsavel),
     id: index + 1,
     uid: item.uid || `fvc-${index + 1}`
   }));
@@ -4539,7 +4546,7 @@ function saveFvcItem() {
     referencia,
     competencia: document.getElementById('fvc-m-competencia').value.trim(),
     planoAcao: document.getElementById('fvc-m-plano').value.trim(),
-    responsavel: isAdminUser() ? document.getElementById('fvc-m-responsavel').value.trim() : (currentUser?.full_name || currentUser?.username || document.getElementById('fvc-m-responsavel').value.trim()),
+    responsavel: normalizeResponsibleName(isAdminUser() ? document.getElementById('fvc-m-responsavel').value.trim() : (currentUser?.full_name || currentUser?.username || document.getElementById('fvc-m-responsavel').value.trim())),
     status: document.getElementById('fvc-m-status').value,
     condicao: document.getElementById('fvc-m-condicao').value.trim()
   };
@@ -4629,7 +4636,7 @@ function getRiskData() {
 }
 
 function normalizeRiskRows(rows) {
-  return rows.map((item, index) => ({...item, responsavel:item.responsavel || 'Diego Reis', id:index+1, uid:item.uid || `risk-${index+1}`}));
+  return rows.map((item, index) => ({...item, responsavel:normalizeResponsibleName(item.responsavel || 'Diego'), id:index+1, uid:item.uid || `risk-${index+1}`}));
 }
 
 function saveRiskData(rows) {
@@ -4762,7 +4769,7 @@ function openRiskModal(uid) {
   document.getElementById('risk-m-uid').value = uid || '';
   document.getElementById('risk-m-item').value = item?.item || '';
   document.getElementById('risk-m-negocio').value = item?.negocio || '';
-  document.getElementById('risk-m-responsavel').value = item?.responsavel || (isAdminUser() ? 'Diego Reis' : (currentUser?.full_name || currentUser?.username || 'Diego Reis'));
+  document.getElementById('risk-m-responsavel').value = normalizeResponsibleName(item?.responsavel || (isAdminUser() ? 'Diego' : (currentUser?.full_name || currentUser?.username || 'Diego')));
   document.getElementById('risk-m-natureza').value = item?.natureza || '';
   document.getElementById('risk-m-criticidade').value = item?.criticidade || 'Grave';
   document.getElementById('risk-m-prioridade').value = item?.prioridade || 'Alta';
@@ -4796,7 +4803,7 @@ function saveRiskItem() {
     id: current?.id || data.length + 1,
     item,
     negocio: document.getElementById('risk-m-negocio').value.trim(),
-    responsavel: isAdminUser() ? (document.getElementById('risk-m-responsavel').value.trim() || 'Diego Reis') : (currentUser?.full_name || currentUser?.username || document.getElementById('risk-m-responsavel').value.trim() || 'Diego Reis'),
+    responsavel: normalizeResponsibleName(isAdminUser() ? (document.getElementById('risk-m-responsavel').value.trim() || 'Diego') : (currentUser?.full_name || currentUser?.username || document.getElementById('risk-m-responsavel').value.trim() || 'Diego')),
     risco: document.getElementById('risk-m-risco').value.trim(),
     impacto: document.getElementById('risk-m-impacto').value.trim(),
     mitigacao: document.getElementById('risk-m-mitigacao').value.trim(),
@@ -4922,7 +4929,7 @@ function openModal(id) {
     ['m-oque','m-tags','m-porque','m-situacao','m-onde','m-como','m-prazo','m-conclusao'].forEach(f=>document.getElementById(f).value='');
     document.getElementById('m-quanto').value='';
     document.getElementById('m-projeto').value='';
-    document.getElementById('m-quem').value= isAdminUser() ? '' : (currentUser?.full_name || currentUser?.username || '');
+    document.getElementById('m-quem').value= isAdminUser() ? '' : normalizeResponsibleName(currentUser?.full_name || currentUser?.username || '');
     document.getElementById('m-prioridade').value='Média';
     document.getElementById('m-status-resumido').value='Em andamento';
   } else {
@@ -4964,7 +4971,7 @@ async function saveAcao() {
 
   const payload = {
     oque, projeto: document.getElementById('m-projeto').value,
-    quem: isAdminUser() ? document.getElementById('m-quem').value : (currentUser?.full_name || currentUser?.username || document.getElementById('m-quem').value),
+    quem: normalizeResponsibleName(isAdminUser() ? document.getElementById('m-quem').value : (currentUser?.full_name || currentUser?.username || document.getElementById('m-quem').value)),
     prioridade: document.getElementById('m-prioridade').value,
     status_resumido: document.getElementById('m-status-resumido').value,
     prazo: document.getElementById('m-prazo').value || null,
