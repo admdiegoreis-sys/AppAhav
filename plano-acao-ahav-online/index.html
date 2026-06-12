@@ -17,7 +17,14 @@ body{font-family:'Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;min-heig
 .brand-logo{height:38px;width:auto;max-width:140px;object-fit:contain;display:block;flex:0 0 auto}
 .header h1{font-size:19px;font-weight:700;color:#f1f5f9;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .header-right{display:flex;gap:10px;align-items:center}
-.page-nav{display:flex;gap:8px;align-items:center;margin:0 16px}
+.page-nav{display:flex;gap:8px;align-items:flex-end;margin:0 16px}
+.nav-group{display:flex;flex-direction:column;gap:3px}
+.nav-group-label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;padding:0 2px;line-height:1}
+.nav-group-btns{display:flex;gap:6px}
+.nav-group-red .nav-group-label{color:#f87171}
+.nav-group-red .nav-group-btns{border-left:2px solid #ef4444;padding-left:6px}
+.nav-group-green .nav-group-label{color:#4ade80}
+.nav-group-green .nav-group-btns{border-left:2px solid #22c55e;padding-left:6px}
 .nav-btn{background:#0f172a;color:#94a3b8;border:1px solid #334155;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
 .nav-btn.active{background:#3b82f6;color:#fff;border-color:#3b82f6}
 .nav-menu{position:relative}
@@ -491,14 +498,27 @@ td.wrap{white-space:normal}
     <h1 id="page-title">FINANCE - Executivo</h1>
   </div>
   <div class="page-nav">
-    <button class="nav-btn active" id="nav-home"      onclick="showPage('home')">Executivo</button>
-    <button class="nav-btn hidden"  id="nav-smartmold" onclick="showSmartModule('dashboard')">Smartmold</button>
-    <button class="nav-btn"         id="nav-plano"     onclick="showPage('plano')">Plano de Ação</button>
-    <button class="nav-btn"         id="nav-fvc"       onclick="showPage('fvc')">FVC - Valor Gerado</button>
-    <button class="nav-btn"         id="nav-risk"      onclick="showPage('risk')">Gestão de Riscos</button>
-    <button class="nav-btn hidden"  id="nav-prazos"    onclick="showPage('prazos')">Aprovação de Prazos</button>
-    <button class="nav-btn"         id="nav-credit"    onclick="showPage('credit')">Análise de Crédito</button>
-    <button class="nav-btn hidden"  id="nav-vjm"       onclick="showPage('vjm')">VJM</button>
+    <button class="nav-btn active" id="nav-home" onclick="showPage('home')">Executivo</button>
+    <button class="nav-btn hidden" id="nav-smartmold" onclick="showSmartModule('dashboard')">Smartmold</button>
+
+    <div class="nav-group nav-group-red" id="nav-group-gestao">
+      <span class="nav-group-label">Gestão Ahav</span>
+      <div class="nav-group-btns">
+        <button class="nav-btn" id="nav-plano"  onclick="showPage('plano')">Plano de Ação</button>
+        <button class="nav-btn" id="nav-fvc"    onclick="showPage('fvc')">FVC - Valor Gerado</button>
+        <button class="nav-btn" id="nav-risk"   onclick="showPage('risk')">Gestão de Riscos</button>
+        <button class="nav-btn hidden" id="nav-prazos" onclick="showPage('prazos')">Aprovação de Prazos</button>
+      </div>
+    </div>
+
+    <div class="nav-group nav-group-green" id="nav-group-rede-epi">
+      <span class="nav-group-label">Rede EPI</span>
+      <div class="nav-group-btns">
+        <button class="nav-btn" id="nav-credit" onclick="showPage('credit')">Análise de Crédito</button>
+      </div>
+    </div>
+
+    <button class="nav-btn hidden" id="nav-vjm" onclick="showPage('vjm')">VJM</button>
   </div>
   <div class="mobile-top-menus">
     <details class="mobile-menu mobile-menu-single">
@@ -1756,12 +1776,17 @@ function applyNavPermissions() {
   document.getElementById('nav-smartmold')?.classList.toggle('hidden', !hasPageAccess('smartmold'));
   document.getElementById('nav-vjm')?.classList.toggle('hidden', !hasPageAccess('vjm'));
 
-  // desktop nav — botões directos (gestão + crédito achatados)
+  // grupo Gestão Ahav (vermelho)
   document.getElementById('nav-plano')?.classList.toggle('hidden', !hasPageAccess('plano'));
   document.getElementById('nav-fvc')?.classList.toggle('hidden', !hasPageAccess('fvc'));
   document.getElementById('nav-risk')?.classList.toggle('hidden', !hasPageAccess('risk'));
   document.getElementById('nav-prazos')?.classList.toggle('hidden', !hasPageAccess('prazos'));
+  const showGestaoGroup = ['plano','fvc','risk','prazos'].some(p => hasPageAccess(p));
+  document.getElementById('nav-group-gestao')?.classList.toggle('hidden', !showGestaoGroup);
+
+  // grupo Rede EPI (verde)
   document.getElementById('nav-credit')?.classList.toggle('hidden', !hasPageAccess('credit'));
+  document.getElementById('nav-group-rede-epi')?.classList.toggle('hidden', !hasPageAccess('credit'));
 
   // mobile nav
   document.querySelectorAll('.mobile-menu-panel .nav-btn').forEach(btn => {
