@@ -312,7 +312,7 @@ td.wrap{white-space:normal}
 .auth-field input{width:100%;background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:9px;padding:12px 13px;font-size:14px;outline:none}
 .auth-field input:focus{border-color:#3b82f6;box-shadow:0 0 0 2px rgba(59,130,246,.16)}
 .auth-error{min-height:18px;color:#fca5a5;font-size:12px;margin:4px 0 14px}
-.user-admin-row{display:grid;grid-template-columns:1fr 110px 88px 72px;gap:10px;align-items:center;padding:10px;border:1px solid #334155;border-radius:10px;background:#0f172a;margin-bottom:8px}
+.user-admin-row{display:grid;grid-template-columns:1.4fr 1fr 80px 60px;gap:10px;align-items:center;padding:10px 12px;border:1px solid #334155;border-radius:10px;background:#0f172a;margin-bottom:8px}
 .user-admin-row strong{color:#e2e8f0;font-size:13px}.user-admin-row small{color:#64748b;display:block;margin-top:2px}
 @media(max-width:1600px){
   .smart-summary{grid-template-columns:repeat(4,minmax(0,1fr))}
@@ -1089,20 +1089,21 @@ td.wrap{white-space:normal}
   </div>
 </div>
 
-<div class="modal-overlay hidden" id="users-admin-modal" onclick="if(event.target===this)closeUsersAdmin()">
-  <div class="modal">
-    <div class="modal-header">
-      <h2>Administração de Usuários</h2>
-      <button class="btn btn-ghost btn-sm" onclick="closeUsersAdmin()">✕ Fechar</button>
+<!-- Sub-modal: editar / criar usuário -->
+<div id="edit-user-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1100;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#1e293b;border:1px solid #475569;border-radius:16px;width:100%;max-width:520px">
+    <div style="padding:18px 22px;border-bottom:1px solid #334155;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#1e293b;border-radius:16px 16px 0 0">
+      <h2 id="edit-user-modal-title" style="font-size:15px;font-weight:700;color:#f1f5f9">Novo usuário</h2>
+      <button class="btn btn-ghost btn-sm" onclick="closeEditUserModal()">✕ Fechar</button>
     </div>
-    <div class="modal-body">
+    <div style="padding:22px;display:grid;grid-template-columns:1fr 1fr;gap:14px">
       <div class="field">
         <label>Usuário</label>
         <input type="text" id="adm-username" placeholder="ex: flavia">
       </div>
       <div class="field">
         <label>Nome</label>
-        <input type="text" id="adm-fullname" placeholder="Nome do usuário">
+        <input type="text" id="adm-fullname" placeholder="Nome completo">
       </div>
       <div class="field">
         <label>Perfil</label>
@@ -1112,25 +1113,38 @@ td.wrap{white-space:normal}
         <label>Status</label>
         <select id="adm-active"><option value="true">Ativo</option><option value="false">Bloqueado</option></select>
       </div>
-      <div class="field full">
+      <div class="field" style="grid-column:1/-1">
         <label>Senha inicial</label>
         <select id="adm-must-change"><option value="true">Exigir troca no próximo acesso</option><option value="false">Não exigir troca</option></select>
       </div>
-      <div class="field full">
-        <label>Nova senha</label>
+      <div class="field" style="grid-column:1/-1">
+        <label>Senha</label>
         <div style="display:flex;gap:8px;align-items:center">
-          <input type="text" id="adm-password" placeholder="Preencha para criar ou alterar senha" style="flex:1">
-          <button type="button" onclick="(()=>{const i=document.getElementById('adm-password');i.type=i.type==='text'?'password':'text';this.textContent=i.type==='text'?'👁':'🔒'})()" style="padding:7px 10px;flex-shrink:0" title="Mostrar/ocultar senha">👁</button>
+          <input type="text" id="adm-password" placeholder="Preencha para criar ou alterar a senha" style="flex:1">
+          <button type="button" onclick="(()=>{const i=document.getElementById('adm-password');i.type=i.type==='text'?'password':'text';this.textContent=i.type==='text'?'👁':'🔒'})()" style="padding:7px 10px;flex-shrink:0" title="Mostrar/ocultar">👁</button>
         </div>
       </div>
-      <div class="field full">
+      <div style="grid-column:1/-1;display:flex;gap:10px;justify-content:flex-end;padding-top:4px">
+        <button class="btn btn-ghost" onclick="closeEditUserModal()">Cancelar</button>
         <button class="btn btn-primary" onclick="saveUserAdmin()">Salvar usuário</button>
-        <p class="cad-note" id="adm-users-mode">Usuários são compartilhados quando a tabela app_users existe no Supabase. Sem ela, ficam salvos apenas neste navegador.</p>
       </div>
-      <div class="field full">
-        <label>Usuários cadastrados</label>
-        <div id="adm-users-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal principal: lista de usuários -->
+<div class="modal-overlay hidden" id="users-admin-modal" onclick="if(event.target===this)closeUsersAdmin()">
+  <div class="modal" style="max-width:820px">
+    <div class="modal-header">
+      <h2>Administração de Usuários</h2>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary btn-sm" onclick="openEditUserModal(null)">+ Novo usuário</button>
+        <button class="btn btn-ghost btn-sm" onclick="closeUsersAdmin()">✕ Fechar</button>
       </div>
+    </div>
+    <div class="modal-body" style="display:block;padding:20px">
+      <p class="cad-note" id="adm-users-mode" style="margin-bottom:14px"></p>
+      <div id="adm-users-list"></div>
     </div>
   </div>
 </div>
@@ -1812,24 +1826,60 @@ function closeUsersAdmin() {
 }
 
 function clearUserAdminForm() {
-  ['adm-username','adm-fullname','adm-password'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('adm-role').value = 'user';
-  document.getElementById('adm-active').value = 'true';
-  document.getElementById('adm-must-change').value = 'true';
+  ['adm-username','adm-fullname','adm-password'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  const role = document.getElementById('adm-role'); if (role) role.value = 'user';
+  const active = document.getElementById('adm-active'); if (active) active.value = 'true';
+  const must = document.getElementById('adm-must-change'); if (must) must.value = 'true';
+  const pass = document.getElementById('adm-password'); if (pass) pass.type = 'text';
+}
+
+function openEditUserModal(username) {
+  const title = document.getElementById('edit-user-modal-title');
+  if (username) {
+    title.textContent = 'Editar usuário';
+    editUserAdmin(username);
+  } else {
+    title.textContent = 'Novo usuário';
+    clearUserAdminForm();
+  }
+  document.getElementById('edit-user-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('adm-username').focus(), 50);
+}
+
+function closeEditUserModal() {
+  document.getElementById('edit-user-modal').style.display = 'none';
+  clearUserAdminForm();
 }
 
 async function renderUsersAdmin() {
   const users = await listAuthUsers();
   document.getElementById('adm-users-mode').textContent = authUsesSupabase
     ? 'Modo compartilhado: usuários salvos na tabela app_users do Supabase.'
-    : 'Modo local: usuários salvos apenas neste navegador. Rode o SQL app_users no Supabase para compartilhar com a equipe.';
+    : 'Modo local: usuários salvos apenas neste navegador.';
   document.getElementById('adm-users-list').innerHTML = users.map(user => {
     const encoded = encodeURIComponent(user.username);
+    const plainPass = user.password_plain || '—';
+    const statusBadge = user.active !== false
+      ? '<span style="color:#22c55e;font-size:11px">● Ativo</span>'
+      : '<span style="color:#ef4444;font-size:11px">● Bloqueado</span>';
     return `
     <div class="user-admin-row">
-      <div><strong>${escapeHtml(user.full_name || user.username)}</strong><small>${escapeHtml(user.username)} · ${user.role === 'admin' ? 'Administrador' : 'Usuário'}</small></div>
-      <button class="btn btn-ghost btn-sm" onclick="editUserAdmin(decodeURIComponent('${encoded}'))">Editar</button>
-      <button class="btn btn-ghost btn-sm" onclick="resetUserPassword(decodeURIComponent('${encoded}'))">Senha</button>
+      <div>
+        <strong>${escapeHtml(user.full_name || user.username)}</strong>
+        <small>${escapeHtml(user.username)} · ${user.role === 'admin' ? 'Administrador' : 'Usuário'} · ${statusBadge}</small>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <input type="text" value="${escapeHtml(plainPass)}" id="pass-field-${encoded}"
+          style="flex:1;font-size:12px;padding:5px 8px;background:#0f172a;min-width:0"
+          placeholder="sem senha salva"
+          onchange="updateUserPassInline(decodeURIComponent('${encoded}'), this.value)">
+        <button type="button" title="Mostrar/ocultar"
+          onclick="(()=>{const i=document.getElementById('pass-field-${encoded}');i.type=i.type==='text'?'password':'text';this.textContent=i.type==='text'?'👁':'🔒'})()"
+          style="padding:4px 7px;font-size:12px;flex-shrink:0">👁</button>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="openEditUserModal(decodeURIComponent('${encoded}'))">Editar</button>
       <button class="btn btn-danger btn-sm" onclick="deleteUserAdmin(decodeURIComponent('${encoded}'))">Excluir</button>
     </div>`;
   }).join('');
@@ -1844,7 +1894,23 @@ async function editUserAdmin(username) {
   document.getElementById('adm-role').value = user.role || 'user';
   document.getElementById('adm-active').value = String(user.active !== false);
   document.getElementById('adm-must-change').value = String(user.must_change_password === true);
-  document.getElementById('adm-password').value = '';
+  document.getElementById('adm-password').value = user.password_plain || '';
+  document.getElementById('adm-password').type = 'text';
+}
+
+async function updateUserPassInline(username, plainPass) {
+  if (!plainPass || plainPass === '—') return;
+  const users = await listAuthUsers();
+  const current = users.find(u => u.username === username);
+  if (!current) return;
+  const payload = { ...current, password_plain: plainPass, password_hash: await sha256(plainPass) };
+  if (authUsesSupabase) {
+    const { error } = await supabase.from('app_users').update(payload).eq('username', username);
+    if (error) { showToast('Erro ao salvar senha: ' + error.message, true); return; }
+  } else {
+    writeLocalUsers(users.map(u => u.username === username ? payload : u));
+  }
+  showToast('Senha atualizada para ' + username);
 }
 
 async function saveUserAdmin() {
@@ -1866,7 +1932,8 @@ async function saveUserAdmin() {
     role,
     active,
     must_change_password: password ? true : mustChange,
-    password_hash: password ? await sha256(password) : current.password_hash
+    password_hash: password ? await sha256(password) : current.password_hash,
+    password_plain: password || current?.password_plain || ''
   };
   if (authUsesSupabase) {
     let result = current
@@ -1878,16 +1945,14 @@ async function saveUserAdmin() {
       result = current
         ? await supabase.from('app_users').update(fallbackPayload).eq('username', username)
         : await supabase.from('app_users').insert([fallbackPayload]);
-      if (!result.error) {
-        showToast('Usuário salvo. Rode o SQL da coluna must_change_password para exigir troca de senha.', true);
-      }
+      if (!result.error) showToast('Usuário salvo. Rode o SQL da coluna must_change_password para exigir troca de senha.', true);
     }
     if (result.error) { showToast('Erro ao salvar usuário: ' + result.error.message, true); return; }
   } else {
     const next = current ? users.map(u => u.username === username ? payload : u) : [...users, payload];
     writeLocalUsers(next);
   }
-  clearUserAdminForm();
+  closeEditUserModal();
   renderUsersAdmin();
   showToast('Usuário salvo');
 }
@@ -1908,10 +1973,9 @@ async function confirmResetPass() {
   const username = document.getElementById('reset-pass-username').textContent;
   const newPass = document.getElementById('reset-pass-input').value.trim();
   if (!newPass) { alert('Digite a nova senha.'); return; }
-  await editUserAdmin(username);
-  document.getElementById('adm-password').value = newPass;
-  await saveUserAdmin();
+  await updateUserPassInline(username, newPass);
   closeResetPassModal();
+  renderUsersAdmin();
 }
 
 async function resetUserPassword(username) {
