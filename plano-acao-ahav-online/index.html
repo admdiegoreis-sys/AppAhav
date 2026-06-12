@@ -1713,7 +1713,8 @@ function enterApp() {
 
 function applyCreditOnlyAccess() {
   const creditOnly = isCreditOnlyUser();
-  ['nav-home','nav-smartmold','nav-menu-gestao'].forEach(id => document.getElementById(id)?.classList.toggle('hidden', creditOnly));
+  ['nav-home','nav-menu-gestao'].forEach(id => document.getElementById(id)?.classList.toggle('hidden', creditOnly));
+  if (creditOnly) document.getElementById('nav-smartmold')?.classList.add('hidden');
   document.querySelectorAll('.mobile-menu-panel .nav-btn').forEach(btn => {
     const isCreditButton = (btn.textContent || '').includes('Análise de Crédito');
     btn.classList.toggle('hidden', creditOnly && !isCreditButton);
