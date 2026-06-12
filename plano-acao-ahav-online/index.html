@@ -508,6 +508,7 @@ td.wrap{white-space:normal}
         <button class="nav-btn" id="nav-credit" onclick="showPage('credit'); closeDesktopMenus()">Análise de Crédito</button>
       </div>
     </details>
+    <button class="nav-btn" id="nav-vjm" onclick="showPage('vjm')">VJM</button>
   </div>
   <div class="mobile-top-menus">
     <details class="mobile-menu mobile-menu-single">
@@ -523,6 +524,8 @@ td.wrap{white-space:normal}
         <button class="nav-btn hidden" id="mobile-nav-prazos" onclick="showPage('prazos'); closeMobileMenus()">Aprovação de Prazos</button>
         <div class="mobile-menu-section">Rede EPI</div>
         <button class="nav-btn" onclick="showPage('credit'); closeMobileMenus()">Análise de Crédito</button>
+        <div class="mobile-menu-section">Geologia</div>
+        <button class="nav-btn" onclick="showPage('vjm'); closeMobileMenus()">VJM</button>
         <div class="mobile-menu-section">Ações</div>
         <button class="btn btn-ghost btn-sm" onclick="logout()">Sair</button>
       </div>
@@ -3280,7 +3283,8 @@ function showPage(page) {
   document.getElementById('page-risk').classList.toggle('hidden', page !== 'risk');
   document.getElementById('page-prazos').classList.toggle('hidden', page !== 'prazos');
   document.getElementById('page-credit').classList.toggle('hidden', page !== 'credit');
-  ['home','smartmold','plano','fvc','risk','prazos','credit'].forEach(key => document.getElementById(`nav-${key}`)?.classList.toggle('active', page === key));
+  document.getElementById('page-vjm')?.classList.toggle('hidden', page !== 'vjm');
+  ['home','smartmold','plano','fvc','risk','prazos','credit','vjm'].forEach(key => document.getElementById(`nav-${key}`)?.classList.toggle('active', page === key));
   document.getElementById('nav-smartmold')?.classList.toggle('active', page === 'smartmold');
   document.getElementById('nav-gestao')?.classList.toggle('active', ['plano','fvc','risk','prazos'].includes(page));
   document.getElementById('nav-rede-epi')?.classList.toggle('active', page === 'credit');
@@ -3292,7 +3296,8 @@ function showPage(page) {
       (page === 'fvc' && text.includes('FVC')) ||
       (page === 'risk' && text.includes('Gestão de Riscos')) ||
       (page === 'prazos' && text.includes('Aprovação de Prazos')) ||
-      (page === 'credit' && text.includes('Análise de Crédito'));
+      (page === 'credit' && text.includes('Análise de Crédito')) ||
+      (page === 'vjm' && text.includes('VJM'));
     btn.classList.toggle('active', active);
   });
   const titles = {
@@ -3302,7 +3307,8 @@ function showPage(page) {
     fvc: 'FINANCE - FVC Valor Gerado',
     risk: 'FINANCE - Gestão de Riscos',
     prazos: 'FINANCE - Aprovação de Prazos',
-    credit: 'FINANCE - Análise de Crédito'
+    credit: 'FINANCE - Análise de Crédito',
+    vjm: 'VJM - Controle de Amostras'
   };
   document.getElementById('page-title').textContent = titles[page] || titles.home;
   if (page === 'home') renderExecutiveDashboard();
@@ -5389,10 +5395,416 @@ function showToast(msg, isError=false) {
   setTimeout(()=>{ t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 3000);
 }
 
+// ── VJM ─────────────────────────────────────────────────────────────────────
+
+const VJM_METHODS_DEFAULT = [
+  {code:'DIS94',name:'Descarte de amostras',price:0.65,unit:'kg',desc:'Descarte do rejeito após análise. Serviço operacional do laboratório.'},
+  {code:'PRP70J_A2',name:'Preparo físico da rocha',price:38.50,unit:'amostra',desc:'Brita e pulveriza a amostra. Necessário para a maioria dos métodos químicos.'},
+  {code:'GE_ICP40Q',name:'Multielementar ICP40Q',price:40.48,unit:'amostra',desc:'Triagem base: Ag, Al, As, Ba, Co, Cr, Cu, Fe, K, La, Li, Mg, Mn, Mo, Ni, Pb, S, Sb, Sc, Ti, V, Y, Zn, Zr.'},
+  {code:'FAA505',name:'Au Fire Assay 50g',price:59.94,unit:'amostra',desc:'Triagem de ouro em rocha comum. Não ideal para material heterogêneo.'},
+  {code:'FAASCR_150',name:'Au Screen Fire Assay 150#',price:263.42,unit:'amostra',desc:'Quartzo, gossan, brecha ferruginosa, hematita, filito grafitoso. Risco de ouro livre/efeito pepita.'},
+  {code:'FAA525',name:'Au alto teor',price:79.00,unit:'amostra',desc:'Só se FAA505 estourar limite. Não é rotina.'},
+  {code:'AAS12E',name:'Ag (Prata)',price:21.50,unit:'amostra',desc:'Análise dedicada para prata. Usar quando ICP40Q não reportar bem Ag.'},
+  {code:'ICP40B_S',name:'Sobrelimite ICP40Q',price:20.00,unit:'amostra',desc:'Quando Co, Cu, Fe, Ni, Pb, Zn, As, Mo, S estouram limite do ICP40Q.'},
+  {code:'XRF72FE',name:'Pacote Fe (XRF)',price:121.00,unit:'amostra',desc:'Fe alto, hematita, gossan, canga. Mede Fe, Al₂O₃, BaO, CaO, MgO, SiO₂, TiO₂, LOI.'},
+  {code:'XRF82MN',name:'Pacote Mn (XRF)',price:121.00,unit:'amostra',desc:'Mn alto ou amostra manganesífera. Mede Mn, Fe₂O₃, BaO, SiO₂, Al₂O₃, LOI.'},
+  {code:'XRF79C_10',name:'10 óxidos + LOI (XRF)',price:104.50,unit:'amostra',desc:'Classificação de rocha: SiO₂, Al₂O₃, Fe₂O₃, MgO, CaO, Na₂O, K₂O, MnO, TiO₂, P₂O₅, LOI.'},
+  {code:'ICP95A/IMS95A',name:'Rocha total + ETR',price:144.30,unit:'amostra',desc:'Óxidos maiores + Ce, La, Nd, Y, Nb, Ta, Th, U, Hf, Zr. Bom para PATOS, rocha verde, ETR.'},
+  {code:'ICM90A',name:'Fusão peróxido + ICP',price:132.23,unit:'amostra',desc:'Abertura agressiva. In, Li, Sc, Co, Ni, Cu, Pb, Zn, Mn, Fe, Ti, V, Nb, Ta, terras raras, Zr, Hf, U, Th.'},
+  {code:'ICP90A_S',name:'Sobrelimite ICM90A',price:53.63,unit:'amostra',desc:'Quando ICM90A estoura: Co, Ni, Mn, Fe, Li, Zn, Pb, Nb, Ta, Ti, V.'},
+  {code:'FAI30V_RH',name:'Rh (Ródio) Fire Assay',price:171.24,unit:'amostra',desc:'Pesquisa de Ródio/PGE. Apenas amostras selecionadas para metais nobres.'},
+  {code:'IMS95R',name:'Terras raras ICP-MS',price:98.34,unit:'amostra',desc:'Ce, La, Nd, Pr, Sm, Eu, Gd, Dy, Er, Ho, Lu, Tb, Tm, Yb, Y, Th, U.'},
+  {code:'IMS95RS',name:'Sobrelimite ETR',price:169.33,unit:'amostra',desc:'Só se IMS95R vierem muito altos. Reporta óxidos de terras raras.'},
+  {code:'XRF76R_Full',name:'ETR + óxidos XRF completo',price:280.00,unit:'amostra',desc:'Óxidos maiores e óxidos de terras raras. Alvo avançado de ETR.'},
+  {code:'XRD72C',name:'DRX / Mineralogia',price:624.75,unit:'amostra',desc:'Identifica minerais: quartzo, hematita, goethita, magnetita, clorita, epidoto, muscovita, argilas, óxidos de Mn.'},
+  {code:'CSA05V',name:'Carbono grafítico',price:84.54,unit:'amostra',desc:'Teor de carbono grafítico. Método correto para amostras com grafita.'},
+  {code:'CSA17V',name:'C e/ou S total',price:50.00,unit:'amostra',desc:'Carbono total e/ou enxofre total. Filito carbonoso ou suspeita de sulfetos.'},
+  {code:'GC_CSA17V',name:'C/S teor elevado',price:84.54,unit:'amostra',desc:'Quando CSA17V indica teores altos.'},
+  {code:'XRF82GR',name:'XRF matriz grafita',price:126.50,unit:'amostra',desc:'Óxidos em matriz grafitosa: SiO₂, Al₂O₃, Fe₂O₃, MgO, MnO, TiO₂, BaO.'},
+  {code:'GC_ICP40BGR',name:'Impurezas grafite',price:95.26,unit:'amostra',desc:'Impurezas no resíduo do grafite pós-calcinação. Só se grafita virar alvo real.'},
+  {code:'CSA20V',name:'Fases de carbono',price:220.22,unit:'amostra',desc:'Separa carbono carbonato, orgânico e grafítico/elementar. Estudo avançado.'},
+  {code:'PHY00E',name:'Carbono fixo, cinzas, voláteis',price:99.00,unit:'amostra',desc:'Carvão/coque. Baixa prioridade para projeto geral.'},
+];
+
+const VJM_KITS_DEFAULT = [
+  {name:'Rocha comum',desc:'Triagem básica para rocha nova',methods:['PRP70J_A2','GE_ICP40Q','FAA505']},
+  {name:'Quartzo / Au suspeito',desc:'Risco de ouro livre ou efeito pepita',methods:['PRP70J_A2','GE_ICP40Q','FAASCR_150']},
+  {name:'Fe alto / hematita',desc:'Quando Fe vem alto no ICP40Q',methods:['PRP70J_A2','GE_ICP40Q','FAA505','XRF72FE']},
+  {name:'Mn alto / manganês',desc:'Quando Mn passa de 10.000 ppm',methods:['PRP70J_A2','GE_ICP40Q','XRF82MN']},
+  {name:'Rocha verde / máfica',desc:'Classificação de rocha + ETR',methods:['PRP70J_A2','GE_ICP40Q','XRF79C_10','ICP95A/IMS95A','XRD72C']},
+  {name:'Grafita',desc:'Amostra com grafita',methods:['PRP70J_A2','GE_ICP40Q','CSA05V','XRD72C']},
+  {name:'Amostra especial (RO-060)',desc:'Abertura agressiva + XRF + mineralogia',methods:['PRP70J_A2','ICM90A','XRF72FE','XRD72C']},
+];
+
+let vjmMethods = JSON.parse(localStorage.getItem('vjm_methods') || 'null') || VJM_METHODS_DEFAULT;
+let vjmSamples = JSON.parse(localStorage.getItem('vjm_samples') || '[]');
+let vjmKits    = JSON.parse(localStorage.getItem('vjm_kits')    || 'null') || VJM_KITS_DEFAULT;
+let vjmNewKitSel = [];
+
+function vjmSave() {
+  localStorage.setItem('vjm_methods', JSON.stringify(vjmMethods));
+  localStorage.setItem('vjm_samples', JSON.stringify(vjmSamples));
+  localStorage.setItem('vjm_kits',    JSON.stringify(vjmKits));
+}
+
+function vjmFmt(v) {
+  return 'R$ ' + Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function vjmSampleCost(s) {
+  return (s.selected||[]).reduce((acc,code) => {
+    const m = vjmMethods.find(x => x.code === code);
+    if (!m) return acc;
+    return acc + (m.unit === 'kg' ? m.price * (s.peso||0) : m.price);
+  }, 0);
+}
+
+function vjmShowTab(t) {
+  ['calc','amostras','kits','metodos'].forEach(id => {
+    document.getElementById('vjm-tab-'+id)?.classList.toggle('active', id===t);
+    document.getElementById('vjm-pane-'+id)?.classList.toggle('hidden', id!==t);
+  });
+  if (t==='amostras') vjmRenderMethodPanel();
+  if (t==='kits') { vjmRenderKits(); vjmRenderKitSampleSel(); }
+  if (t==='metodos') vjmRenderMethodTable();
+}
+
+function vjmAddSample() {
+  const id = document.getElementById('vjm-sid').value.trim();
+  if (!id) return;
+  vjmSamples.push({
+    id,
+    type: document.getElementById('vjm-stype').value.trim(),
+    peso: parseFloat(document.getElementById('vjm-speso').value)||0,
+    selected: []
+  });
+  ['vjm-sid','vjm-stype','vjm-speso'].forEach(x => document.getElementById(x).value='');
+  vjmSave(); vjmRenderSamples(); vjmRenderMethodPanel(); vjmRenderKitSampleSel(); vjmUpdateMetrics();
+}
+
+function vjmRemoveSample(i) {
+  vjmSamples.splice(i,1);
+  vjmSave(); vjmRenderSamples(); vjmRenderMethodPanel(); vjmRenderKitSampleSel(); vjmUpdateMetrics();
+}
+
+function vjmToggleMethod(si, code) {
+  const s = vjmSamples[si];
+  const i = s.selected.indexOf(code);
+  if (i>=0) s.selected.splice(i,1); else s.selected.push(code);
+  vjmSave(); vjmRenderMethodPanel(); vjmRenderSamples(); vjmUpdateMetrics();
+}
+
+function vjmRenderSamples() {
+  const el = document.getElementById('vjm-sample-list');
+  const hdr = document.getElementById('vjm-sample-header');
+  const ns  = document.getElementById('vjm-no-samples');
+  if (!vjmSamples.length) { el.innerHTML=''; hdr.style.display='none'; ns.style.display=''; vjmRenderTotals(); return; }
+  hdr.style.display='grid';
+  ns.style.display='none';
+  el.innerHTML = vjmSamples.map((s,i) => `
+    <div style="display:grid;grid-template-columns:2fr 80px 1fr 110px 40px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #334155">
+      <div><div style="font-size:13px;font-weight:600;color:#f1f5f9">${s.id}</div><div style="font-size:11px;color:#64748b">${s.type||'—'}</div></div>
+      <div style="font-size:13px;color:#94a3b8">${s.peso?s.peso+' kg':'—'}</div>
+      <div style="font-size:11px;color:#64748b">${(s.selected||[]).length} método(s)<br>${(s.selected||[]).slice(0,3).join(', ')}${(s.selected||[]).length>3?'…':''}</div>
+      <div style="font-size:13px;font-weight:600;color:#22c55e">${vjmFmt(vjmSampleCost(s))}</div>
+      <button class="btn btn-danger btn-sm" onclick="vjmRemoveSample(${i})" title="Remover">✕</button>
+    </div>`).join('');
+  vjmRenderTotals();
+}
+
+function vjmRenderTotals() {
+  const total = vjmSamples.reduce((a,s)=>a+vjmSampleCost(s),0);
+  const box = document.getElementById('vjm-total-box');
+  if (!vjmSamples.length) { box.style.display='none'; return; }
+  box.style.display='block';
+  const byMethod = {};
+  vjmSamples.forEach(s=>(s.selected||[]).forEach(code=>{
+    const m=vjmMethods.find(x=>x.code===code); if(!m)return;
+    byMethod[code]=(byMethod[code]||0)+(m.unit==='kg'?m.price*(s.peso||0):m.price);
+  }));
+  document.getElementById('vjm-total-lines').innerHTML =
+    Object.entries(byMethod).sort((a,b)=>b[1]-a[1])
+      .map(([c,v])=>`<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0;color:#94a3b8"><span>${c}</span><span>${vjmFmt(v)}</span></div>`).join('');
+  document.getElementById('vjm-grand-val').textContent = vjmFmt(total);
+}
+
+function vjmUpdateMetrics() {
+  const total = vjmSamples.reduce((a,s)=>a+vjmSampleCost(s),0);
+  const allM  = new Set(vjmSamples.flatMap(s=>s.selected||[]));
+  document.getElementById('vjm-m-amostras').textContent = vjmSamples.length;
+  document.getElementById('vjm-m-metodos').textContent  = allM.size;
+  document.getElementById('vjm-m-custo').textContent    = vjmFmt(total);
+  document.getElementById('vjm-m-unit').textContent     = vjmSamples.length ? vjmFmt(total/vjmSamples.length) : 'R$ 0,00';
+}
+
+function vjmRenderMethodPanel() {
+  const sel = document.getElementById('vjm-sample-sel');
+  if (!sel) return;
+  sel.innerHTML = vjmSamples.map((s,i)=>`<option value="${i}">${s.id}${s.type?' — '+s.type:''}</option>`).join('');
+  if (!vjmSamples.length) { document.getElementById('vjm-method-panel').innerHTML='<p style="color:#64748b;font-size:13px">Adicione amostras na aba Calculadora primeiro.</p>'; return; }
+  const idx = parseInt(sel.value)||0;
+  const s = vjmSamples[idx];
+  document.getElementById('vjm-method-panel').innerHTML =
+    `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:8px">` +
+    vjmMethods.map(m => {
+      const sel2 = (s.selected||[]).includes(m.code);
+      return `<div onclick="vjmToggleMethod(${idx},'${m.code}')" style="background:${sel2?'#1e3a5f':'#1e293b'};border:1px solid ${sel2?'#3b82f6':'#334155'};border-radius:8px;padding:10px;cursor:pointer">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:13px;font-weight:600;color:#f1f5f9">${m.code}</span>
+          <span style="font-size:12px;font-weight:600;color:#22c55e">${m.unit==='kg'?vjmFmt(m.price)+'/kg':vjmFmt(m.price)}</span>
+        </div>
+        <div style="font-size:12px;color:#94a3b8">${m.name}</div>
+        <div style="font-size:11px;color:#64748b;margin-top:3px">${m.desc.substring(0,70)}${m.desc.length>70?'…':''}</div>
+      </div>`;
+    }).join('') + '</div>';
+}
+
+function vjmRenderKitSampleSel() {
+  const el = document.getElementById('vjm-kit-sample-sel');
+  if (el) el.innerHTML = vjmSamples.map((s,i)=>`<option value="${i}">${s.id}${s.type?' — '+s.type:''}</option>`).join('');
+}
+
+function vjmRenderKits() {
+  document.getElementById('vjm-kit-list').innerHTML = vjmKits.map((k,i)=>`
+    <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid #334155">
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;color:#f1f5f9">${k.name}</div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:6px">${k.desc}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">${k.methods.map(c=>`<span style="background:#1e3a5f;color:#60a5fa;border:1px solid #1d4ed8;border-radius:4px;font-size:11px;padding:2px 7px">${c}</span>`).join('')}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn btn-success btn-sm" onclick="vjmApplyKit(${i})">Aplicar</button>
+        <button class="btn btn-danger btn-sm" onclick="vjmRemoveKit(${i})">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function vjmApplyKit(ki) {
+  const sidx = parseInt(document.getElementById('vjm-kit-sample-sel').value);
+  if (isNaN(sidx)||!vjmSamples[sidx]) { alert('Selecione uma amostra.'); return; }
+  vjmKits[ki].methods.forEach(code=>{
+    if (!(vjmSamples[sidx].selected||[]).includes(code)) vjmSamples[sidx].selected.push(code);
+  });
+  vjmSave(); vjmRenderSamples(); vjmUpdateMetrics();
+  alert('Kit "'+vjmKits[ki].name+'" aplicado a '+vjmSamples[sidx].id);
+}
+
+function vjmRemoveKit(i) {
+  if (confirm('Remover kit "'+vjmKits[i].name+'"?')) { vjmKits.splice(i,1); vjmSave(); vjmRenderKits(); }
+}
+
+function vjmShowKitBuilder() {
+  vjmNewKitSel=[];
+  document.getElementById('vjm-kit-builder').style.display='block';
+  document.getElementById('vjm-kb-methods').innerHTML =
+    vjmMethods.map(m=>`
+      <div id="vjm-kb-${m.code}" onclick="vjmToggleKitMethod('${m.code}',this)" style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:8px 10px;cursor:pointer">
+        <div style="display:flex;justify-content:space-between"><span style="font-size:12px;font-weight:600;color:#f1f5f9">${m.code}</span><span style="font-size:12px;color:#22c55e">${vjmFmt(m.price)}</span></div>
+        <div style="font-size:11px;color:#64748b">${m.name}</div>
+      </div>`).join('');
+}
+
+function vjmToggleKitMethod(code,el) {
+  const i=vjmNewKitSel.indexOf(code);
+  if(i>=0){vjmNewKitSel.splice(i,1);el.style.background='#1e293b';el.style.borderColor='#334155';}
+  else{vjmNewKitSel.push(code);el.style.background='#1e3a5f';el.style.borderColor='#3b82f6';}
+}
+
+function vjmSaveNewKit() {
+  const name=document.getElementById('vjm-nk-name').value.trim();
+  if(!name||!vjmNewKitSel.length){alert('Informe nome e selecione ao menos 1 método.');return;}
+  vjmKits.push({name,desc:document.getElementById('vjm-nk-desc').value.trim(),methods:[...vjmNewKitSel]});
+  vjmSave();
+  document.getElementById('vjm-nk-name').value='';
+  document.getElementById('vjm-nk-desc').value='';
+  document.getElementById('vjm-kit-builder').style.display='none';
+  vjmRenderKits();
+}
+
+function vjmRenderMethodTable() {
+  const q=(document.getElementById('vjm-msearch').value||'').toLowerCase();
+  const list=vjmMethods.filter(m=>!q||m.code.toLowerCase().includes(q)||m.name.toLowerCase().includes(q));
+  document.getElementById('vjm-method-table').innerHTML=
+    `<div style="display:grid;grid-template-columns:130px 1fr 1fr 110px 70px;gap:8px;font-size:11px;color:#64748b;padding:0 0 8px;border-bottom:1px solid #334155;text-transform:uppercase;letter-spacing:.04em">
+      <span>Código</span><span>Nome</span><span>Descrição</span><span>Valor</span><span></span>
+    </div>`+
+    list.map(m=>`
+    <div style="display:grid;grid-template-columns:130px 1fr 1fr 110px 70px;gap:8px;align-items:start;padding:8px 0;border-bottom:1px solid #1e293b">
+      <div style="font-size:13px;font-weight:600;color:#f1f5f9">${m.code}</div>
+      <div style="font-size:13px;color:#e2e8f0">${m.name}</div>
+      <div style="font-size:12px;color:#64748b">${m.desc.substring(0,65)}${m.desc.length>65?'…':''}</div>
+      <div style="font-size:13px;font-weight:600;color:#22c55e">${m.unit==='kg'?vjmFmt(m.price)+'/kg':vjmFmt(m.price)}</div>
+      <div style="display:flex;gap:4px">
+        <button class="btn btn-ghost btn-sm" onclick="vjmEditMethod('${m.code}')">✎</button>
+        <button class="btn btn-danger btn-sm" onclick="vjmDeleteMethod('${m.code}')">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function vjmEditMethod(code) {
+  const m=vjmMethods.find(x=>x.code===code); if(!m)return;
+  document.getElementById('vjm-nm-code').value=m.code;
+  document.getElementById('vjm-nm-price').value=m.price;
+  document.getElementById('vjm-nm-unit').value=m.unit;
+  document.getElementById('vjm-nm-name').value=m.name;
+  document.getElementById('vjm-nm-desc').value=m.desc;
+  document.getElementById('vjm-add-method-form').style.display='block';
+}
+
+function vjmDeleteMethod(code) {
+  if(!confirm('Remover método "'+code+'"?'))return;
+  vjmMethods=vjmMethods.filter(m=>m.code!==code);
+  vjmSave(); vjmRenderMethodTable();
+}
+
+function vjmSaveNewMethod() {
+  const code=document.getElementById('vjm-nm-code').value.trim();
+  const price=parseFloat(document.getElementById('vjm-nm-price').value);
+  const unit=document.getElementById('vjm-nm-unit').value;
+  const name=document.getElementById('vjm-nm-name').value.trim();
+  const desc=document.getElementById('vjm-nm-desc').value.trim();
+  if(!code||isNaN(price)||!name){alert('Código, valor e nome são obrigatórios.');return;}
+  const idx=vjmMethods.findIndex(m=>m.code===code);
+  if(idx>=0) vjmMethods[idx]={code,name,price,unit,desc};
+  else vjmMethods.push({code,name,price,unit,desc});
+  vjmSave();
+  document.getElementById('vjm-add-method-form').style.display='none';
+  ['vjm-nm-code','vjm-nm-price','vjm-nm-name','vjm-nm-desc'].forEach(id=>document.getElementById(id).value='');
+  vjmRenderMethodTable();
+}
+
+function vjmExportCSV() {
+  const rows=[['ID','Tipo','Peso kg','Métodos','Custo total']];
+  vjmSamples.forEach(s=>rows.push([s.id,s.type,s.peso,(s.selected||[]).join('|'),vjmSampleCost(s).toFixed(2)]));
+  const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,﻿'+encodeURIComponent(csv);
+  a.download='vjm_amostras.csv';a.click();
+}
+
 // Init
 setupDesktopMenus();
 loadConfig();
 </script>
+<div class="container page hidden" id="page-vjm">
+
+  <!-- métricas -->
+  <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+    <div class="kpi"><div class="kpi-label">Amostras</div><div class="kpi-value" id="vjm-m-amostras" style="font-size:26px">0</div></div>
+    <div class="kpi green"><div class="kpi-label">Métodos usados</div><div class="kpi-value" id="vjm-m-metodos" style="font-size:26px">0</div></div>
+    <div class="kpi orange"><div class="kpi-label">Custo estimado</div><div class="kpi-value" id="vjm-m-custo" style="font-size:22px">R$ 0,00</div></div>
+    <div class="kpi purple"><div class="kpi-label">Custo / amostra</div><div class="kpi-value" id="vjm-m-unit" style="font-size:22px">R$ 0,00</div></div>
+  </div>
+
+  <!-- abas internas -->
+  <div style="display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid #334155;padding-bottom:0">
+    <button id="vjm-tab-calc"     class="nav-btn active" onclick="vjmShowTab('calc')">Calculadora</button>
+    <button id="vjm-tab-amostras" class="nav-btn"        onclick="vjmShowTab('amostras')">Selecionar Métodos</button>
+    <button id="vjm-tab-kits"     class="nav-btn"        onclick="vjmShowTab('kits')">Kits Rápidos</button>
+    <button id="vjm-tab-metodos"  class="nav-btn"        onclick="vjmShowTab('metodos')">Métodos / Valores</button>
+  </div>
+
+  <!-- pane: calculadora -->
+  <div id="vjm-pane-calc">
+    <div class="chart-card" style="margin-bottom:14px">
+      <h3>Adicionar amostra</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="vjm-sid"   placeholder="ID da amostra (ex: RO-001)" style="flex:2;min-width:140px">
+        <input id="vjm-stype" placeholder="Tipo (ex: hematita, quartzo...)" style="flex:3;min-width:160px">
+        <input id="vjm-speso" placeholder="Peso kg (descarte)" type="number" min="0" step="0.1" style="flex:1;min-width:100px">
+        <button class="btn btn-primary" onclick="vjmAddSample()">+ Adicionar</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-header">
+        <h3>Amostras desta cotação</h3>
+        <button class="btn btn-ghost btn-sm" onclick="vjmExportCSV()">⬇ Exportar CSV</button>
+      </div>
+      <div style="padding:0 16px 8px">
+        <div id="vjm-sample-header" style="display:none;grid-template-columns:2fr 80px 1fr 110px 40px;gap:8px;font-size:11px;color:#64748b;padding:8px 0;border-bottom:1px solid #334155;text-transform:uppercase;letter-spacing:.04em">
+          <span>ID / Tipo</span><span>Peso</span><span>Métodos</span><span>Custo</span><span></span>
+        </div>
+        <div id="vjm-sample-list"></div>
+        <p id="vjm-no-samples" style="color:#64748b;font-size:13px;padding:12px 0">Nenhuma amostra adicionada. Use o campo acima para incluir amostras da campanha.</p>
+      </div>
+    </div>
+
+    <div id="vjm-total-box" style="display:none;background:#0f2a1a;border:1px solid #166534;border-radius:12px;padding:16px 20px;margin-top:14px">
+      <div style="font-size:12px;color:#4ade80;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Resumo por método</div>
+      <div id="vjm-total-lines"></div>
+      <div style="display:flex;justify-content:space-between;font-size:18px;font-weight:700;padding-top:10px;border-top:1px solid #166534;margin-top:8px;color:#22c55e">
+        <span>Total geral</span><span id="vjm-grand-val"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- pane: selecionar métodos -->
+  <div id="vjm-pane-amostras" class="hidden">
+    <div class="chart-card">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <span style="font-size:13px;color:#94a3b8">Amostra:</span>
+        <select id="vjm-sample-sel" onchange="vjmRenderMethodPanel()" style="width:auto;flex:1;max-width:320px"></select>
+      </div>
+      <div id="vjm-method-panel"><p style="color:#64748b;font-size:13px">Adicione amostras na aba Calculadora primeiro.</p></div>
+    </div>
+  </div>
+
+  <!-- pane: kits -->
+  <div id="vjm-pane-kits" class="hidden">
+    <div class="chart-card" style="margin-bottom:14px">
+      <h3>Kits pré-configurados</h3>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <span style="font-size:13px;color:#94a3b8">Aplicar a:</span>
+        <select id="vjm-kit-sample-sel" style="width:auto;flex:1;max-width:300px"></select>
+      </div>
+      <div id="vjm-kit-list"></div>
+    </div>
+    <div class="chart-card">
+      <h3>Criar novo kit</h3>
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+        <input id="vjm-nk-name" placeholder="Nome do kit" style="flex:2;min-width:140px">
+        <input id="vjm-nk-desc" placeholder="Descrição" style="flex:3;min-width:160px">
+        <button class="btn btn-primary" onclick="vjmShowKitBuilder()">+ Montar kit</button>
+      </div>
+      <div id="vjm-kit-builder" style="display:none">
+        <p style="font-size:12px;color:#64748b;margin-bottom:8px">Clique nos métodos para incluir no kit:</p>
+        <div id="vjm-kb-methods" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:6px;margin-bottom:10px"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-success" onclick="vjmSaveNewKit()">Salvar kit</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('vjm-kit-builder').style.display='none'">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- pane: métodos -->
+  <div id="vjm-pane-metodos" class="hidden">
+    <div class="chart-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="margin:0">Tabela de métodos e valores</h3>
+        <button class="btn btn-primary btn-sm" onclick="document.getElementById('vjm-add-method-form').style.display=document.getElementById('vjm-add-method-form').style.display==='none'?'block':'none'">+ Novo método</button>
+      </div>
+      <div id="vjm-add-method-form" style="display:none;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:12px;margin-bottom:14px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+          <input id="vjm-nm-code"  placeholder="Código (ex: FAA505)">
+          <input id="vjm-nm-price" placeholder="Valor R$" type="number" step="0.01">
+          <select id="vjm-nm-unit"><option value="amostra">por amostra</option><option value="kg">por kg</option></select>
+        </div>
+        <input id="vjm-nm-name" placeholder="Nome do método" style="width:100%;margin-bottom:8px">
+        <textarea id="vjm-nm-desc" placeholder="O que analisa / quando usar" style="width:100%;height:60px;resize:vertical;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:6px;padding:7px 10px;font-family:inherit;font-size:13px"></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn btn-primary" onclick="vjmSaveNewMethod()">Salvar</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('vjm-add-method-form').style.display='none'">Cancelar</button>
+        </div>
+      </div>
+      <input id="vjm-msearch" placeholder="Buscar por código ou nome..." oninput="vjmRenderMethodTable()" style="width:220px;margin-bottom:12px">
+      <div id="vjm-method-table"></div>
+    </div>
+  </div>
+
+</div>
+
 </body>
 </html>
 
