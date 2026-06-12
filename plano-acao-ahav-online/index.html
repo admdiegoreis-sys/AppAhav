@@ -1124,6 +1124,10 @@ td.wrap{white-space:normal}
           <button type="button" onclick="(()=>{const i=document.getElementById('adm-password');i.type=i.type==='text'?'password':'text';this.textContent=i.type==='text'?'👁':'🔒'})()" style="padding:7px 10px;flex-shrink:0" title="Mostrar/ocultar">👁</button>
         </div>
       </div>
+      <div style="grid-column:1/-1">
+        <label style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:10px">Permissões de acesso <span style="color:#475569;font-weight:400;font-size:10px">(Admin sempre tem acesso total)</span></label>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:8px" id="adm-permissions-grid"></div>
+      </div>
       <div style="grid-column:1/-1;display:flex;gap:10px;justify-content:flex-end;padding-top:4px">
         <button class="btn btn-ghost" onclick="closeEditUserModal()">Cancelar</button>
         <button class="btn btn-primary" onclick="saveUserAdmin()">Salvar usuário</button>
@@ -1736,38 +1740,62 @@ function enterApp() {
   document.getElementById('settings-reconnect')?.classList.toggle('hidden', !admin);
   document.getElementById('global-settings-menu')?.classList.toggle('hidden', !admin);
   document.getElementById('btn-credit-params')?.classList.toggle('hidden', !admin);
-  document.getElementById('nav-prazos')?.classList.toggle('hidden', !admin);
-  document.getElementById('mobile-nav-prazos')?.classList.toggle('hidden', !admin);
-  const vjmSmart = isVjmSmartmoldUser();
-  document.getElementById('nav-vjm')?.classList.toggle('hidden', !vjmSmart);
-  document.getElementById('nav-smartmold')?.classList.toggle('hidden', !vjmSmart);
-  document.querySelectorAll('.mobile-menu-panel .nav-btn').forEach(btn => {
-    const t = btn.textContent || '';
-    if (t.includes('Smartmold') || t.includes('VJM'))
-      btn.classList.toggle('hidden', !vjmSmart);
-  });
-  applyCreditOnlyAccess();
+  applyNavPermissions();
   loadData();
   subscribeRealtime();
 }
 
-function applyCreditOnlyAccess() {
-  const creditOnly = isCreditOnlyUser();
-  ['nav-home','nav-menu-gestao'].forEach(id => document.getElementById(id)?.classList.toggle('hidden', creditOnly));
-  if (creditOnly) document.getElementById('nav-smartmold')?.classList.add('hidden');
+function applyNavPermissions() {
+  const admin = isAdminUser();
+  // settings — admin only
+  document.getElementById('settings-users')?.classList.toggle('hidden', !admin);
+  document.getElementById('settings-cadastros')?.classList.toggle('hidden', !admin);
+  document.getElementById('settings-reconnect')?.classList.toggle('hidden', !admin);
+  document.getElementById('global-settings-menu')?.classList.toggle('hidden', !admin);
+  document.getElementById('btn-credit-params')?.classList.toggle('hidden', !admin);
+
+  // desktop nav — direct buttons
+  document.getElementById('nav-home')?.classList.toggle('hidden', !hasPageAccess('home'));
+  document.getElementById('nav-smartmold')?.classList.toggle('hidden', !hasPageAccess('smartmold'));
+  document.getElementById('nav-vjm')?.classList.toggle('hidden', !hasPageAccess('vjm'));
+
+  // desktop nav — Gestão Ahav dropdown
+  document.getElementById('nav-plano')?.classList.toggle('hidden', !hasPageAccess('plano'));
+  document.getElementById('nav-fvc')?.classList.toggle('hidden', !hasPageAccess('fvc'));
+  document.getElementById('nav-risk')?.classList.toggle('hidden', !hasPageAccess('risk'));
+  document.getElementById('nav-prazos')?.classList.toggle('hidden', !hasPageAccess('prazos'));
+  const showGestao = ['plano','fvc','risk','prazos'].some(p => hasPageAccess(p));
+  document.getElementById('nav-menu-gestao')?.classList.toggle('hidden', !showGestao);
+
+  // desktop nav — Rede EPI dropdown
+  document.getElementById('nav-credit')?.classList.toggle('hidden', !hasPageAccess('credit'));
+  document.getElementById('nav-menu-rede-epi')?.classList.toggle('hidden', !hasPageAccess('credit'));
+
+  // mobile nav
   document.querySelectorAll('.mobile-menu-panel .nav-btn').forEach(btn => {
-    const isCreditButton = (btn.textContent || '').includes('Análise de Crédito');
-    btn.classList.toggle('hidden', creditOnly && !isCreditButton);
+    const t = btn.textContent?.trim() || '';
+    if (t === 'Executivo')           btn.classList.toggle('hidden', !hasPageAccess('home'));
+    else if (t === 'Smartmold')      btn.classList.toggle('hidden', !hasPageAccess('smartmold'));
+    else if (t === 'Plano de Ação')  btn.classList.toggle('hidden', !hasPageAccess('plano'));
+    else if (t === 'FVC - Valor Gerado') btn.classList.toggle('hidden', !hasPageAccess('fvc'));
+    else if (t === 'Gestão de Riscos')   btn.classList.toggle('hidden', !hasPageAccess('risk'));
+    else if (t === 'Aprovação de Prazos') btn.classList.toggle('hidden', !hasPageAccess('prazos'));
+    else if (t === 'Análise de Crédito') btn.classList.toggle('hidden', !hasPageAccess('credit'));
+    else if (t === 'VJM')            btn.classList.toggle('hidden', !hasPageAccess('vjm'));
   });
   document.querySelectorAll('.mobile-menu-panel .mobile-menu-section').forEach(section => {
-    const text = section.textContent || '';
-    section.classList.toggle('hidden', creditOnly && !text.includes('Rede EPI'));
+    const t = section.textContent?.trim() || '';
+    if (t === 'Gestão Ahav') section.classList.toggle('hidden', !showGestao);
+    if (t === 'Rede EPI')    section.classList.toggle('hidden', !hasPageAccess('credit'));
+    if (t === 'Geologia')    section.classList.toggle('hidden', !hasPageAccess('vjm'));
   });
-  if (creditOnly) {
-    document.getElementById('global-settings-menu')?.classList.add('hidden');
-    setTimeout(() => showPage('credit'), 0);
-  }
+  document.getElementById('mobile-nav-prazos')?.classList.toggle('hidden', !hasPageAccess('prazos'));
+
+  // se não tem acesso à home, redireciona para primeira página disponível
+  if (isCreditOnlyUser()) setTimeout(() => showPage('credit'), 0);
 }
+
+function applyCreditOnlyAccess() { applyNavPermissions(); }
 
 function normalizePrazoGovernance(a) {
   const original = a.prazo_original || a.prazo || null;
@@ -1835,6 +1863,17 @@ function clearUserAdminForm() {
   const pass = document.getElementById('adm-password'); if (pass) pass.type = 'text';
 }
 
+function renderPermissionsGrid(selectedPerms) {
+  const grid = document.getElementById('adm-permissions-grid');
+  if (!grid) return;
+  grid.innerHTML = PAGE_PERMISSIONS.map(p => `
+    <label style="display:flex;align-items:center;gap:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;cursor:pointer;font-size:13px;color:#e2e8f0">
+      <input type="checkbox" id="perm-${p.key}" value="${p.key}" ${selectedPerms.includes(p.key)?'checked':''}
+        style="width:15px;height:15px;accent-color:#3b82f6;flex-shrink:0">
+      ${p.label}
+    </label>`).join('');
+}
+
 function openEditUserModal(username) {
   const title = document.getElementById('edit-user-modal-title');
   if (username) {
@@ -1843,6 +1882,7 @@ function openEditUserModal(username) {
   } else {
     title.textContent = 'Novo usuário';
     clearUserAdminForm();
+    renderPermissionsGrid(DEFAULT_PERMISSIONS);
   }
   document.getElementById('edit-user-modal').style.display = 'flex';
   setTimeout(() => document.getElementById('adm-username').focus(), 50);
@@ -1896,6 +1936,7 @@ async function editUserAdmin(username) {
   document.getElementById('adm-must-change').value = String(user.must_change_password === true);
   document.getElementById('adm-password').value = user.password_plain || '';
   document.getElementById('adm-password').type = 'text';
+  renderPermissionsGrid(getUserPermissions(user));
 }
 
 async function updateUserPassInline(username, plainPass) {
@@ -1926,6 +1967,10 @@ async function saveUserAdmin() {
   const users = await listAuthUsers();
   const current = users.find(u => u.username === username);
   if (!current && !password) { alert('Informe uma senha para criar o usuário.'); return; }
+  const permissions = PAGE_PERMISSIONS.map(p => p.key).filter(k => {
+    const el = document.getElementById('perm-' + k);
+    return el ? el.checked : false;
+  });
   const payload = {
     username,
     full_name: fullName || username,
@@ -1933,7 +1978,8 @@ async function saveUserAdmin() {
     active,
     must_change_password: password ? true : mustChange,
     password_hash: password ? await sha256(password) : current.password_hash,
-    password_plain: password || current?.password_plain || ''
+    password_plain: password || current?.password_plain || '',
+    permissions
   };
   if (authUsesSupabase) {
     let result = current
@@ -2191,10 +2237,38 @@ function isAdminUser() {
   return currentUser?.role === 'admin';
 }
 
+const PAGE_PERMISSIONS = [
+  {key:'home',     label:'Executivo'},
+  {key:'smartmold',label:'Smartmold'},
+  {key:'plano',    label:'Plano de Ação'},
+  {key:'fvc',      label:'FVC - Valor Gerado'},
+  {key:'risk',     label:'Gestão de Riscos'},
+  {key:'prazos',   label:'Aprovação de Prazos'},
+  {key:'credit',   label:'Análise de Crédito'},
+  {key:'vjm',      label:'VJM'},
+];
+
+const DEFAULT_PERMISSIONS = ['home','plano','fvc','risk','credit'];
+
+function getUserPermissions(user) {
+  if (!user) return [];
+  if (user.role === 'admin') return PAGE_PERMISSIONS.map(p => p.key);
+  return user.permissions || DEFAULT_PERMISSIONS;
+}
+
+function hasPageAccess(page) {
+  if (!currentUser) return false;
+  return getUserPermissions(currentUser).includes(page);
+}
+
 function isVjmSmartmoldUser() {
-  if (isAdminUser()) return true;
-  const u = (currentUser?.username || '').toLowerCase();
-  return u === 'junior' || u === 'cesar';
+  return hasPageAccess('vjm') || hasPageAccess('smartmold');
+}
+
+function isCreditOnlyUser() {
+  if (!currentUser || isAdminUser()) return false;
+  const perms = getUserPermissions(currentUser);
+  return perms.includes('credit') && !perms.some(p => ['home','smartmold','plano','fvc','risk','vjm'].includes(p));
 }
 
 function responsibleMatchesCurrentUser(responsavel) {
@@ -3397,9 +3471,7 @@ function exportCreditPDF() {
 
 // ---- PAGE NAV ----
 function showPage(page) {
-  if (isCreditOnlyUser() && page !== 'credit') page = 'credit';
-  if (page === 'prazos' && !isAdminUser()) page = 'home';
-  if ((page === 'vjm' || page === 'smartmold') && !isVjmSmartmoldUser()) page = 'home';
+  if (!hasPageAccess(page)) page = hasPageAccess('home') ? 'home' : (hasPageAccess('credit') ? 'credit' : 'home');
   document.getElementById('page-home').classList.toggle('hidden', page !== 'home');
   document.getElementById('page-smartmold')?.classList.toggle('hidden', page !== 'smartmold');
   document.getElementById('page-plano').classList.toggle('hidden', page !== 'plano');
