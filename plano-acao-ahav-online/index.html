@@ -497,22 +497,8 @@ td.wrap{white-space:normal}
     <button class="nav-btn active" id="nav-home" onclick="showPage('home')">Executivo</button>
     <button class="nav-btn hidden" id="nav-smartmold" onclick="showSmartModule('dashboard')">Smartmold</button>
 
-    <div class="nav-group nav-group-red" id="nav-group-gestao">
-      <span class="nav-group-label">Gestão Ahav</span>
-      <div class="nav-group-btns">
-        <button class="nav-btn" id="nav-plano"  onclick="showPage('plano')">Plano de Ação</button>
-        <button class="nav-btn" id="nav-fvc"    onclick="showPage('fvc')">FVC - Valor Gerado</button>
-        <button class="nav-btn" id="nav-risk"   onclick="showPage('risk')">Gestão de Riscos</button>
-        <button class="nav-btn hidden" id="nav-prazos" onclick="showPage('prazos')">Aprovação de Prazos</button>
-      </div>
-    </div>
-
-    <div class="nav-group nav-group-green" id="nav-group-rede-epi">
-      <span class="nav-group-label">Rede EPI</span>
-      <div class="nav-group-btns">
-        <button class="nav-btn" id="nav-credit" onclick="showPage('credit')">Análise de Crédito</button>
-      </div>
-    </div>
+    <button class="nav-btn hidden" id="nav-gestao" onclick="showPage(['plano','fvc','risk','prazos'].find(p=>hasPageAccess(p))||'plano')">Gestão Ahav</button>
+    <button class="nav-btn hidden" id="nav-rede-epi" onclick="showPage('credit')">Rede EPI</button>
 
     <button class="nav-btn hidden" id="nav-vjm" onclick="showPage('vjm')">VJM</button>
   </div>
@@ -695,6 +681,7 @@ td.wrap{white-space:normal}
 </div>
 
 <div class="container page hidden" id="page-plano">
+  <div class="smart-tabs" id="gestao-tabs-plano"></div>
   <div class="page-actions">
     <div class="page-actions-title">Plano de Ação</div>
     <div class="page-actions-buttons">
@@ -799,6 +786,7 @@ td.wrap{white-space:normal}
 </div>
 
 <div class="container page hidden" id="page-fvc">
+  <div class="smart-tabs" id="gestao-tabs-fvc"></div>
   <div class="page-actions">
     <div class="page-actions-title">FVC - Valor Gerado</div>
     <div class="page-actions-buttons">
@@ -848,6 +836,7 @@ td.wrap{white-space:normal}
 </div>
 
 <div class="container page hidden" id="page-risk">
+  <div class="smart-tabs" id="gestao-tabs-risk"></div>
   <div class="page-actions">
     <div class="page-actions-title">Gestão de Riscos</div>
     <div class="page-actions-buttons">
@@ -896,6 +885,7 @@ td.wrap{white-space:normal}
 </div>
 
 <div class="container page hidden" id="page-prazos">
+  <div class="smart-tabs" id="gestao-tabs-prazos"></div>
   <div class="page-actions">
     <div>
       <div class="page-actions-title">Aprovação de Prazos</div>
@@ -928,6 +918,7 @@ td.wrap{white-space:normal}
 </div>
 
 <div class="container page hidden" id="page-credit">
+  <div class="smart-tabs" id="rede-tabs-credit"></div>
   <div class="credit-grid">
     <div class="credit-panel">
       <button class="credit-param-gear hidden" id="btn-credit-params" onclick="openCreditParamsScreen()" title="Parâmetros e alçadas">&#9881;</button>
@@ -1772,17 +1763,12 @@ function applyNavPermissions() {
   document.getElementById('nav-smartmold')?.classList.toggle('hidden', !hasPageAccess('smartmold'));
   document.getElementById('nav-vjm')?.classList.toggle('hidden', !hasPageAccess('vjm'));
 
-  // grupo Gestão Ahav (vermelho)
-  document.getElementById('nav-plano')?.classList.toggle('hidden', !hasPageAccess('plano'));
-  document.getElementById('nav-fvc')?.classList.toggle('hidden', !hasPageAccess('fvc'));
-  document.getElementById('nav-risk')?.classList.toggle('hidden', !hasPageAccess('risk'));
-  document.getElementById('nav-prazos')?.classList.toggle('hidden', !hasPageAccess('prazos'));
+  // grupo Gestão Ahav — botão único no nav
   const showGestaoGroup = ['plano','fvc','risk','prazos'].some(p => hasPageAccess(p));
-  document.getElementById('nav-group-gestao')?.classList.toggle('hidden', !showGestaoGroup);
+  document.getElementById('nav-gestao')?.classList.toggle('hidden', !showGestaoGroup);
 
-  // grupo Rede EPI (verde)
-  document.getElementById('nav-credit')?.classList.toggle('hidden', !hasPageAccess('credit'));
-  document.getElementById('nav-group-rede-epi')?.classList.toggle('hidden', !hasPageAccess('credit'));
+  // grupo Rede EPI — botão único no nav
+  document.getElementById('nav-rede-epi')?.classList.toggle('hidden', !hasPageAccess('credit'));
 
   // mobile nav
   document.querySelectorAll('.mobile-menu-panel .nav-btn').forEach(btn => {
@@ -3484,6 +3470,36 @@ function exportCreditPDF() {
   doc.save('parecer-credito-'+new Date().toISOString().split('T')[0]+'.pdf');
 }
 
+// ---- SUB-NAV RENDERERS ----
+function renderGestaoSubNav(activePage) {
+  const tabs = [
+    {key:'plano', label:'Plano de Ação'},
+    {key:'fvc',   label:'FVC - Valor Gerado'},
+    {key:'risk',  label:'Gestão de Riscos'},
+    {key:'prazos',label:'Aprovação de Prazos'},
+  ];
+  const visible = tabs.filter(t => hasPageAccess(t.key));
+  const html = visible.map(t =>
+    `<button class="smart-tab${t.key===activePage?' active':''}" onclick="showPage('${t.key}')">${t.label}</button>`
+  ).join('');
+  ['plano','fvc','risk','prazos'].forEach(p => {
+    const el = document.getElementById(`gestao-tabs-${p}`);
+    if (el) { el.innerHTML = html; el.style.display = visible.length > 1 ? '' : 'none'; }
+  });
+}
+
+function renderRedeSubNav() {
+  const tabs = [
+    {key:'credit', label:'Análise de Crédito'},
+  ];
+  const visible = tabs.filter(t => hasPageAccess(t.key));
+  const html = visible.map(t =>
+    `<button class="smart-tab active" onclick="showPage('${t.key}')">${t.label}</button>`
+  ).join('');
+  const el = document.getElementById('rede-tabs-credit');
+  if (el) { el.innerHTML = html; el.style.display = visible.length > 1 ? '' : 'none'; }
+}
+
 // ---- PAGE NAV ----
 function showPage(page) {
   if (!hasPageAccess(page)) page = hasPageAccess('home') ? 'home' : (hasPageAccess('credit') ? 'credit' : 'home');
@@ -3495,8 +3511,12 @@ function showPage(page) {
   document.getElementById('page-prazos').classList.toggle('hidden', page !== 'prazos');
   document.getElementById('page-credit').classList.toggle('hidden', page !== 'credit');
   document.getElementById('page-vjm')?.classList.toggle('hidden', page !== 'vjm');
-  ['home','smartmold','plano','fvc','risk','prazos','credit','vjm'].forEach(key => document.getElementById(`nav-${key}`)?.classList.toggle('active', page === key));
-  document.getElementById('nav-smartmold')?.classList.toggle('active', page === 'smartmold');
+  ['home','smartmold','vjm'].forEach(key => document.getElementById(`nav-${key}`)?.classList.toggle('active', page === key));
+  const gestaoPages = ['plano','fvc','risk','prazos'];
+  document.getElementById('nav-gestao')?.classList.toggle('active', gestaoPages.includes(page));
+  document.getElementById('nav-rede-epi')?.classList.toggle('active', page === 'credit');
+  if (gestaoPages.includes(page)) renderGestaoSubNav(page);
+  if (page === 'credit') renderRedeSubNav();
   document.querySelectorAll('.mobile-menu-panel .nav-btn').forEach(btn => {
     const text = btn.textContent || '';
     const active = (page === 'home' && text.includes('Executivo')) ||
