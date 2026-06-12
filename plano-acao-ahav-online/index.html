@@ -491,24 +491,14 @@ td.wrap{white-space:normal}
     <h1 id="page-title">FINANCE - Executivo</h1>
   </div>
   <div class="page-nav">
-    <button class="nav-btn active" id="nav-home" onclick="showPage('home')">Executivo</button>
-    <button class="nav-btn hidden" id="nav-smartmold" onclick="showSmartModule('dashboard')">Smartmold</button>
-    <details class="nav-menu" id="nav-menu-gestao">
-      <summary id="nav-gestao">Gestão Ahav</summary>
-      <div class="nav-menu-panel">
-        <button class="nav-btn" id="nav-plano" onclick="showPage('plano'); closeDesktopMenus()">Plano de Ação</button>
-        <button class="nav-btn" id="nav-fvc" onclick="showPage('fvc'); closeDesktopMenus()">FVC - Valor Gerado</button>
-        <button class="nav-btn" id="nav-risk" onclick="showPage('risk'); closeDesktopMenus()">Gestão de Riscos</button>
-        <button class="nav-btn hidden" id="nav-prazos" onclick="showPage('prazos'); closeDesktopMenus()">Aprovação de Prazos</button>
-      </div>
-    </details>
-    <details class="nav-menu" id="nav-menu-rede-epi">
-      <summary id="nav-rede-epi">Rede EPI</summary>
-      <div class="nav-menu-panel">
-        <button class="nav-btn" id="nav-credit" onclick="showPage('credit'); closeDesktopMenus()">Análise de Crédito</button>
-      </div>
-    </details>
-    <button class="nav-btn hidden" id="nav-vjm" onclick="showPage('vjm')">VJM</button>
+    <button class="nav-btn active" id="nav-home"      onclick="showPage('home')">Executivo</button>
+    <button class="nav-btn hidden"  id="nav-smartmold" onclick="showSmartModule('dashboard')">Smartmold</button>
+    <button class="nav-btn"         id="nav-plano"     onclick="showPage('plano')">Plano de Ação</button>
+    <button class="nav-btn"         id="nav-fvc"       onclick="showPage('fvc')">FVC - Valor Gerado</button>
+    <button class="nav-btn"         id="nav-risk"      onclick="showPage('risk')">Gestão de Riscos</button>
+    <button class="nav-btn hidden"  id="nav-prazos"    onclick="showPage('prazos')">Aprovação de Prazos</button>
+    <button class="nav-btn"         id="nav-credit"    onclick="showPage('credit')">Análise de Crédito</button>
+    <button class="nav-btn hidden"  id="nav-vjm"       onclick="showPage('vjm')">VJM</button>
   </div>
   <div class="mobile-top-menus">
     <details class="mobile-menu mobile-menu-single">
@@ -1713,7 +1703,14 @@ async function persistAuthUser(user) {
 }
 
 function isMissingMustChangeColumnError(error) {
-  return !!error && /must_change_password|schema cache/i.test(error.message || '');
+  return !!error && /schema cache/i.test(error.message || '');
+}
+
+function stripUnknownColumns(payload, errorMsg) {
+  const stripped = {...payload};
+  const match = (errorMsg || '').match(/'([^']+)' column/);
+  if (match) delete stripped[match[1]];
+  return stripped;
 }
 
 async function findAuthUser(username) {
@@ -1759,17 +1756,12 @@ function applyNavPermissions() {
   document.getElementById('nav-smartmold')?.classList.toggle('hidden', !hasPageAccess('smartmold'));
   document.getElementById('nav-vjm')?.classList.toggle('hidden', !hasPageAccess('vjm'));
 
-  // desktop nav — Gestão Ahav dropdown
+  // desktop nav — botões directos (gestão + crédito achatados)
   document.getElementById('nav-plano')?.classList.toggle('hidden', !hasPageAccess('plano'));
   document.getElementById('nav-fvc')?.classList.toggle('hidden', !hasPageAccess('fvc'));
   document.getElementById('nav-risk')?.classList.toggle('hidden', !hasPageAccess('risk'));
   document.getElementById('nav-prazos')?.classList.toggle('hidden', !hasPageAccess('prazos'));
-  const showGestao = ['plano','fvc','risk','prazos'].some(p => hasPageAccess(p));
-  document.getElementById('nav-menu-gestao')?.classList.toggle('hidden', !showGestao);
-
-  // desktop nav — Rede EPI dropdown
   document.getElementById('nav-credit')?.classList.toggle('hidden', !hasPageAccess('credit'));
-  document.getElementById('nav-menu-rede-epi')?.classList.toggle('hidden', !hasPageAccess('credit'));
 
   // mobile nav
   document.querySelectorAll('.mobile-menu-panel .nav-btn').forEach(btn => {
@@ -1783,6 +1775,7 @@ function applyNavPermissions() {
     else if (t === 'Análise de Crédito') btn.classList.toggle('hidden', !hasPageAccess('credit'));
     else if (t === 'VJM')            btn.classList.toggle('hidden', !hasPageAccess('vjm'));
   });
+  const showGestao = ['plano','fvc','risk','prazos'].some(p => hasPageAccess(p));
   document.querySelectorAll('.mobile-menu-panel .mobile-menu-section').forEach(section => {
     const t = section.textContent?.trim() || '';
     if (t === 'Gestão Ahav') section.classList.toggle('hidden', !showGestao);
@@ -1982,18 +1975,19 @@ async function saveUserAdmin() {
     permissions
   };
   if (authUsesSupabase) {
-    let result = current
-      ? await supabase.from('app_users').update(payload).eq('username', username)
-      : await supabase.from('app_users').insert([payload]);
-    if (isMissingMustChangeColumnError(result.error)) {
-      const fallbackPayload = {...payload};
-      delete fallbackPayload.must_change_password;
+    let p = {...payload};
+    let result, attempts = 0;
+    do {
       result = current
-        ? await supabase.from('app_users').update(fallbackPayload).eq('username', username)
-        : await supabase.from('app_users').insert([fallbackPayload]);
-      if (!result.error) showToast('Usuário salvo. Rode o SQL da coluna must_change_password para exigir troca de senha.', true);
-    }
+        ? await supabase.from('app_users').update(p).eq('username', username)
+        : await supabase.from('app_users').insert([p]);
+      if (result.error && isMissingMustChangeColumnError(result.error)) {
+        p = stripUnknownColumns(p, result.error.message);
+        attempts++;
+      } else break;
+    } while (attempts < 5);
     if (result.error) { showToast('Erro ao salvar usuário: ' + result.error.message, true); return; }
+    if (attempts > 0) showToast('Usuário salvo. Rode o SQL para adicionar colunas novas no Supabase.', true);
   } else {
     const next = current ? users.map(u => u.username === username ? payload : u) : [...users, payload];
     writeLocalUsers(next);
@@ -3482,8 +3476,6 @@ function showPage(page) {
   document.getElementById('page-vjm')?.classList.toggle('hidden', page !== 'vjm');
   ['home','smartmold','plano','fvc','risk','prazos','credit','vjm'].forEach(key => document.getElementById(`nav-${key}`)?.classList.toggle('active', page === key));
   document.getElementById('nav-smartmold')?.classList.toggle('active', page === 'smartmold');
-  document.getElementById('nav-gestao')?.classList.toggle('active', ['plano','fvc','risk','prazos'].includes(page));
-  document.getElementById('nav-rede-epi')?.classList.toggle('active', page === 'credit');
   document.querySelectorAll('.mobile-menu-panel .nav-btn').forEach(btn => {
     const text = btn.textContent || '';
     const active = (page === 'home' && text.includes('Executivo')) ||
