@@ -1066,6 +1066,29 @@ td.wrap{white-space:normal}
 </div>
 
 <!-- Users Admin Modal -->
+<!-- Sub-modal: troca de senha -->
+<div id="reset-pass-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1100;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#1e293b;border:1px solid #475569;border-radius:16px;width:100%;max-width:400px;padding:0">
+    <div style="padding:18px 22px;border-bottom:1px solid #334155;display:flex;align-items:center;justify-content:space-between">
+      <h2 style="font-size:15px;font-weight:700;color:#f1f5f9">Alterar senha — <span id="reset-pass-username"></span></h2>
+      <button class="btn btn-ghost btn-sm" onclick="closeResetPassModal()">✕</button>
+    </div>
+    <div style="padding:22px;display:flex;flex-direction:column;gap:14px">
+      <div>
+        <label style="font-size:12px;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Nova senha</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" id="reset-pass-input" placeholder="Digite a nova senha" style="flex:1" onkeydown="if(event.key==='Enter')confirmResetPass()">
+          <button type="button" onclick="(()=>{const i=document.getElementById('reset-pass-input');i.type=i.type==='text'?'password':'text';this.textContent=i.type==='text'?'👁':'🔒'})()" style="padding:7px 10px;flex-shrink:0" title="Mostrar/ocultar">👁</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="closeResetPassModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="confirmResetPass()">Salvar senha</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay hidden" id="users-admin-modal" onclick="if(event.target===this)closeUsersAdmin()">
   <div class="modal">
     <div class="modal-header">
@@ -1095,7 +1118,10 @@ td.wrap{white-space:normal}
       </div>
       <div class="field full">
         <label>Nova senha</label>
-        <input type="password" id="adm-password" placeholder="Preencha para criar ou alterar senha">
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" id="adm-password" placeholder="Preencha para criar ou alterar senha" style="flex:1">
+          <button type="button" onclick="(()=>{const i=document.getElementById('adm-password');i.type=i.type==='text'?'password':'text';this.textContent=i.type==='text'?'👁':'🔒'})()" style="padding:7px 10px;flex-shrink:0" title="Mostrar/ocultar senha">👁</button>
+        </div>
       </div>
       <div class="field full">
         <button class="btn btn-primary" onclick="saveUserAdmin()">Salvar usuário</button>
@@ -1866,12 +1892,30 @@ async function saveUserAdmin() {
   showToast('Usuário salvo');
 }
 
-async function resetUserPassword(username) {
-  const newPass = prompt('Nova senha para ' + username + ':');
-  if (!newPass) return;
+function openResetPassModal(username) {
+  document.getElementById('reset-pass-username').textContent = username;
+  document.getElementById('reset-pass-input').value = '';
+  document.getElementById('reset-pass-input').type = 'text';
+  document.getElementById('reset-pass-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('reset-pass-input').focus(), 50);
+}
+
+function closeResetPassModal() {
+  document.getElementById('reset-pass-modal').style.display = 'none';
+}
+
+async function confirmResetPass() {
+  const username = document.getElementById('reset-pass-username').textContent;
+  const newPass = document.getElementById('reset-pass-input').value.trim();
+  if (!newPass) { alert('Digite a nova senha.'); return; }
   await editUserAdmin(username);
   document.getElementById('adm-password').value = newPass;
   await saveUserAdmin();
+  closeResetPassModal();
+}
+
+async function resetUserPassword(username) {
+  openResetPassModal(username);
 }
 
 async function deleteUserAdmin(username) {
