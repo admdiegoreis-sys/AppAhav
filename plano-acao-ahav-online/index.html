@@ -492,7 +492,7 @@ td.wrap{white-space:normal}
   </div>
   <div class="page-nav">
     <button class="nav-btn active" id="nav-home" onclick="showPage('home')">Executivo</button>
-    <button class="nav-btn" id="nav-smartmold" onclick="showSmartModule('dashboard')">Smartmold</button>
+    <button class="nav-btn hidden" id="nav-smartmold" onclick="showSmartModule('dashboard')">Smartmold</button>
     <details class="nav-menu" id="nav-menu-gestao">
       <summary id="nav-gestao">Gestão Ahav</summary>
       <div class="nav-menu-panel">
@@ -508,7 +508,7 @@ td.wrap{white-space:normal}
         <button class="nav-btn" id="nav-credit" onclick="showPage('credit'); closeDesktopMenus()">Análise de Crédito</button>
       </div>
     </details>
-    <button class="nav-btn" id="nav-vjm" onclick="showPage('vjm')">VJM</button>
+    <button class="nav-btn hidden" id="nav-vjm" onclick="showPage('vjm')">VJM</button>
   </div>
   <div class="mobile-top-menus">
     <details class="mobile-menu mobile-menu-single">
@@ -1698,6 +1698,14 @@ function enterApp() {
   document.getElementById('btn-credit-params')?.classList.toggle('hidden', !admin);
   document.getElementById('nav-prazos')?.classList.toggle('hidden', !admin);
   document.getElementById('mobile-nav-prazos')?.classList.toggle('hidden', !admin);
+  const vjmSmart = isVjmSmartmoldUser();
+  document.getElementById('nav-vjm')?.classList.toggle('hidden', !vjmSmart);
+  document.getElementById('nav-smartmold')?.classList.toggle('hidden', !vjmSmart);
+  document.querySelectorAll('.mobile-menu-panel .nav-btn').forEach(btn => {
+    const t = btn.textContent || '';
+    if (t.includes('Smartmold') || t.includes('VJM'))
+      btn.classList.toggle('hidden', !vjmSmart);
+  });
   applyCreditOnlyAccess();
   loadData();
   subscribeRealtime();
@@ -2072,6 +2080,12 @@ function currentUserKeys() {
 
 function isAdminUser() {
   return currentUser?.role === 'admin';
+}
+
+function isVjmSmartmoldUser() {
+  if (isAdminUser()) return true;
+  const u = (currentUser?.username || '').toLowerCase();
+  return u === 'junior' || u === 'cesar';
 }
 
 function responsibleMatchesCurrentUser(responsavel) {
@@ -3276,6 +3290,7 @@ function exportCreditPDF() {
 function showPage(page) {
   if (isCreditOnlyUser() && page !== 'credit') page = 'credit';
   if (page === 'prazos' && !isAdminUser()) page = 'home';
+  if ((page === 'vjm' || page === 'smartmold') && !isVjmSmartmoldUser()) page = 'home';
   document.getElementById('page-home').classList.toggle('hidden', page !== 'home');
   document.getElementById('page-smartmold')?.classList.toggle('hidden', page !== 'smartmold');
   document.getElementById('page-plano').classList.toggle('hidden', page !== 'plano');
