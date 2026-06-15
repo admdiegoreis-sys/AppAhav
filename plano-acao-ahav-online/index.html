@@ -1462,6 +1462,7 @@ let smartChartCategoria = null, smartChartEstoque = null, smartChartProdutos = n
 let smartChartFaturamentoMes = null, smartChartTopClientes = null, smartChartProdutosFaturados = null, smartChartProdVend = null;
 let currentUser = null;
 let authUsesSupabase = false;
+let cachedUserNames = [];
 
 // ---- CONFIG ----
 const DEFAULT_URL = 'https://oerpavlivsplrpxbhqne.supabase.co';
@@ -1756,6 +1757,7 @@ function enterApp() {
   applyNavPermissions();
   loadData();
   subscribeRealtime();
+  loadCachedUserNames();
   // Para não-admin sem acesso à home, navegar para a primeira página acessível
   if (!isAdminUser() && !hasPageAccess('home')) {
     const firstPage = ['smartmold','plano','fvc','risk','prazos','credit','vjm'].find(p => hasPageAccess(p));
@@ -1764,6 +1766,17 @@ function enterApp() {
       else showPage(firstPage);
     }, 50);
   }
+}
+
+async function loadCachedUserNames() {
+  if (!supabase) return;
+  try {
+    const {data} = await supabase.from('app_users').select('full_name,username').eq('active', true);
+    if (Array.isArray(data)) {
+      cachedUserNames = data.map(u => (u.full_name || u.username || '').trim()).filter(Boolean);
+      updateCadastroOptions();
+    }
+  } catch(e) {}
 }
 
 function applyNavPermissions() {
@@ -2325,6 +2338,7 @@ function optionHtml(value, selectedValue) {
 
 function getResponsaveis() {
   return uniqueSorted([
+    ...cachedUserNames,
     ...DEFAULT_RESPONSAVEIS,
     ...readCadastro(CAD_RESP_KEY),
     ...dados.map(a => a.quem)
