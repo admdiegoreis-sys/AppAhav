@@ -4463,7 +4463,7 @@ function renderSmartSales() {
       && (!inicio || (data && data >= inicio))
       && (!fim || (data && data <= fim))
       && (!busca || JSON.stringify(v).toLowerCase().includes(busca));
-  });
+  }).sort((a,b) => (smartDateSerial(b.Data)||0) - (smartDateSerial(a.Data)||0));
   const title = document.getElementById('smart-vendas-title');
   if (title) title.textContent = `Pedidos de Venda (${rows.length}/${baseRows.length})`;
   smartTable('smart-vendas-head', 'smart-vendas-body', rows, {
