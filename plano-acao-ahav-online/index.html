@@ -5392,9 +5392,11 @@ async function saveAcao() {
   const prazoDigitado = document.getElementById('m-prazo').value || null;
   const prazoAtual = currentAction ? (currentAction.prazo || currentAction.prazo_original || null) : null;
   const prazoOriginal = currentAction ? (currentAction.prazo_original || currentAction.prazo || null) : prazoDigitado;
+  const admin = isAdminUser();
   const prazoAlterado = !!currentAction && (prazoDigitado || null) !== (prazoAtual || null);
   const prazoMotivo = document.getElementById('m-prazo-motivo').value.trim();
-  if (prazoAlterado && !prazoMotivo) {
+  // Não-admin precisa informar motivo para alterar data; admin altera direto
+  if (!admin && prazoAlterado && !prazoMotivo) {
     alert('Informe o motivo da alteração da data de previsão.');
     document.getElementById('m-prazo-motivo').focus();
     return;
@@ -5402,10 +5404,12 @@ async function saveAcao() {
 
   const payload = {
     oque, projeto: document.getElementById('m-projeto').value,
-    quem: normalizeResponsibleName(isAdminUser() ? document.getElementById('m-quem').value : (currentUser?.full_name || currentUser?.username || document.getElementById('m-quem').value)),
+    // Qualquer usuário pode delegar (mudar quem); normaliza o nome
+    quem: normalizeResponsibleName(document.getElementById('m-quem').value),
     prioridade: document.getElementById('m-prioridade').value,
     status_resumido: document.getElementById('m-status-resumido').value,
-    prazo: currentAction ? prazoAtual : prazoDigitado,
+    // Admin aplica a data diretamente; não-admin mantém prazo atual e solicita aprovação
+    prazo: admin ? (prazoDigitado || prazoAtual) : (currentAction ? prazoAtual : prazoDigitado),
     prazo_original: prazoOriginal,
     conclusao,
     tags: document.getElementById('m-tags').value,
@@ -5418,7 +5422,14 @@ async function saveAcao() {
 
   if (!currentAction) {
     payload.prazo_change_status = 'none';
-  } else if (prazoAlterado) {
+  } else if (admin && prazoAlterado) {
+    // Admin aplica direto, sem fluxo de aprovação
+    payload.prazo_change_status = 'none';
+    payload.prazo_solicitado = null;
+    payload.prazo_change_reviewed_by = currentUserLabel();
+    payload.prazo_change_reviewed_at = new Date().toISOString();
+  } else if (!admin && prazoAlterado) {
+    // Não-admin solicita aprovação
     payload.prazo_solicitado = prazoDigitado;
     payload.prazo_change_status = 'pending';
     payload.prazo_change_requested_by = currentUserLabel();
@@ -5432,15 +5443,23 @@ async function saveAcao() {
   btn.textContent = 'Salvando...'; btn.disabled = true;
 
   try {
-    let error;
-    if (!editingId) {
-      ({error} = await supabase.from('acoes').insert([payload]));
-    } else {
-      ({error} = await supabase.from('acoes').update(payload).eq('id', editingId));
-    }
-    if (error) throw error;
+    let p = {...payload};
+    let result, attempts = 0;
+    do {
+      result = editingId
+        ? await supabase.from('acoes').update(p).eq('id', editingId)
+        : await supabase.from('acoes').insert([p]);
+      if (result.error && isMissingMustChangeColumnError(result.error)) {
+        p = stripUnknownColumns(p, result.error.message);
+        attempts++;
+      } else break;
+    } while (attempts < 8);
+    if (result.error) throw result.error;
     closeModal();
-    showToast(prazoAlterado ? '✓ Solicitação de alteração de prazo enviada para aprovação!' : (editingId ? '✓ Ação atualizada!' : '✓ Ação criada!'));
+    const msg = (!admin && prazoAlterado)
+      ? '✓ Solicitação de alteração de prazo enviada para aprovação!'
+      : (editingId ? '✓ Ação atualizada!' : '✓ Ação criada!');
+    showToast(msg);
     await loadData();
   } catch(e) {
     showToast('Erro: ' + e.message, true);
