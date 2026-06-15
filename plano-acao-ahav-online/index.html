@@ -544,7 +544,7 @@ td.wrap{white-space:normal}
 
 <div class="container page" id="page-home">
   <!-- Wallpaper de boas-vindas para usuários não-admin -->
-  <div id="home-welcome-logo" class="hidden" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;background:radial-gradient(ellipse at 50% 40%,#1e293b 0%,#0f172a 70%);z-index:1;pointer-events:none">
+  <div id="home-welcome-logo" class="hidden" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;min-height:80vh;width:100%">
     <img src="logo-ahav.png" alt="Grupo AHAV" style="height:130px;width:auto;object-fit:contain;filter:drop-shadow(0 4px 32px rgba(59,130,246,.35))">
     <div style="color:#64748b;font-size:13px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;margin-top:4px">Sistema de Gestão Integrada</div>
     <div style="width:48px;height:2px;background:linear-gradient(90deg,transparent,#3b82f6,transparent);border-radius:2px"></div>
@@ -1754,6 +1754,10 @@ function enterApp() {
   document.getElementById('global-settings-menu')?.classList.toggle('hidden', !admin);
   document.getElementById('btn-credit-params')?.classList.toggle('hidden', !admin);
   applyNavPermissions();
+  // Navegar para a primeira página acessível do usuário
+  const firstPage = ['home','smartmold','plano','fvc','risk','prazos','credit','vjm'].find(p => hasPageAccess(p)) || 'home';
+  showPage(firstPage);
+  if (firstPage === 'smartmold') showSmartModule('dashboard');
   loadData();
   subscribeRealtime();
 }
