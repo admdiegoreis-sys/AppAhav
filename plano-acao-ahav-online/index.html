@@ -1754,12 +1754,16 @@ function enterApp() {
   document.getElementById('global-settings-menu')?.classList.toggle('hidden', !admin);
   document.getElementById('btn-credit-params')?.classList.toggle('hidden', !admin);
   applyNavPermissions();
-  // Navegar para a primeira página acessível do usuário
-  const firstPage = ['home','smartmold','plano','fvc','risk','prazos','credit','vjm'].find(p => hasPageAccess(p)) || 'home';
-  showPage(firstPage);
-  if (firstPage === 'smartmold') showSmartModule('dashboard');
   loadData();
   subscribeRealtime();
+  // Para não-admin sem acesso à home, navegar para a primeira página acessível
+  if (!isAdminUser() && !hasPageAccess('home')) {
+    const firstPage = ['smartmold','plano','fvc','risk','prazos','credit','vjm'].find(p => hasPageAccess(p));
+    if (firstPage) setTimeout(() => {
+      if (firstPage === 'smartmold') showSmartModule('dashboard');
+      else showPage(firstPage);
+    }, 50);
+  }
 }
 
 function applyNavPermissions() {
