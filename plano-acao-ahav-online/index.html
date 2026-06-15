@@ -543,6 +543,14 @@ td.wrap{white-space:normal}
 </div>
 
 <div class="container page" id="page-home">
+  <!-- Wallpaper de boas-vindas para usuários não-admin -->
+  <div id="home-welcome-logo" class="hidden" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;background:radial-gradient(ellipse at 50% 40%,#1e293b 0%,#0f172a 70%);z-index:1;pointer-events:none">
+    <img src="logo-ahav.png" alt="Grupo AHAV" style="height:130px;width:auto;object-fit:contain;filter:drop-shadow(0 4px 32px rgba(59,130,246,.35))">
+    <div style="color:#64748b;font-size:13px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;margin-top:4px">Sistema de Gestão Integrada</div>
+    <div style="width:48px;height:2px;background:linear-gradient(90deg,transparent,#3b82f6,transparent);border-radius:2px"></div>
+  </div>
+  <!-- Dashboard completo — somente admin -->
+  <div id="home-dashboard-content">
   <div class="page-actions">
     <div class="page-actions-title">Executivo</div>
     <div class="page-actions-buttons">
@@ -783,6 +791,7 @@ td.wrap{white-space:normal}
     </table>
     </div>
   </div>
+  </div><!-- /home-dashboard-content -->
 </div>
 
 <div class="container page hidden" id="page-fvc">
@@ -1759,9 +1768,14 @@ function applyNavPermissions() {
   document.getElementById('btn-credit-params')?.classList.toggle('hidden', !admin);
 
   // desktop nav — direct buttons
-  document.getElementById('nav-home')?.classList.toggle('hidden', !hasPageAccess('home'));
+  const adminUser = isAdminUser();
+  document.getElementById('nav-home')?.classList.toggle('hidden', !adminUser);
   document.getElementById('nav-smartmold')?.classList.toggle('hidden', !hasPageAccess('smartmold'));
   document.getElementById('nav-vjm')?.classList.toggle('hidden', !hasPageAccess('vjm'));
+
+  // home: wallpaper para não-admin, dashboard para admin
+  document.getElementById('home-welcome-logo')?.classList.toggle('hidden', adminUser);
+  document.getElementById('home-dashboard-content')?.classList.toggle('hidden', !adminUser);
 
   // grupo Gestão Ahav — botão único no nav
   const showGestaoGroup = ['plano','fvc','risk','prazos'].some(p => hasPageAccess(p));
