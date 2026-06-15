@@ -5343,7 +5343,7 @@ function openModal(id) {
     ['m-oque','m-tags','m-porque','m-situacao','m-onde','m-como','m-prazo','m-conclusao'].forEach(f=>document.getElementById(f).value='');
     document.getElementById('m-quanto').value='';
     document.getElementById('m-projeto').value='';
-    document.getElementById('m-quem').value= isAdminUser() ? '' : normalizeResponsibleName(currentUser?.full_name || currentUser?.username || '');
+    document.getElementById('m-quem').value = '';
     document.getElementById('m-prioridade').value='Média';
     document.getElementById('m-status-resumido').value='Em andamento';
     document.getElementById('m-prazo-motivo').value = '';
@@ -5414,7 +5414,14 @@ async function saveAcao() {
     conclusao,
     tags: document.getElementById('m-tags').value,
     porque: document.getElementById('m-porque').value,
-    situacao: document.getElementById('m-situacao').value,
+    situacao: !editingId
+      ? (() => {
+          const autor = currentUser?.full_name || currentUser?.username || 'Usuário';
+          const nota = `[Criado por ${autor}]`;
+          const digitado = document.getElementById('m-situacao').value.trim();
+          return digitado ? `${nota}\n${digitado}` : nota;
+        })()
+      : document.getElementById('m-situacao').value,
     onde: document.getElementById('m-onde').value,
     como: document.getElementById('m-como').value,
     quanto: document.getElementById('m-quanto').value ? parsePtBrNumber(document.getElementById('m-quanto').value) : null,
