@@ -2324,9 +2324,6 @@ function optionHtml(value, selectedValue) {
 }
 
 function getResponsaveis() {
-  if (!isAdminUser() && currentUser) {
-    return uniqueSorted([normalizeResponsibleName(currentUser.full_name || currentUser.username)]);
-  }
   return uniqueSorted([
     ...DEFAULT_RESPONSAVEIS,
     ...readCadastro(CAD_RESP_KEY),
