@@ -2249,12 +2249,15 @@ const PAGE_PERMISSIONS = [
   {key:'vjm',      label:'VJM'},
 ];
 
-const DEFAULT_PERMISSIONS = ['home','plano','fvc','risk','credit'];
+const DEFAULT_PERMISSIONS = ['home','plano','fvc','risk'];
 
 function getUserPermissions(user) {
   if (!user) return [];
   if (user.role === 'admin') return PAGE_PERMISSIONS.map(p => p.key);
-  return user.permissions || DEFAULT_PERMISSIONS;
+  // Se permissions já foi salvo no banco (array), usa ele; caso contrário usa o default
+  // NUNCA dá acesso extra a crédito/vjm/smartmold por default
+  if (Array.isArray(user.permissions) && user.permissions.length > 0) return user.permissions;
+  return DEFAULT_PERMISSIONS;
 }
 
 function hasPageAccess(page) {
