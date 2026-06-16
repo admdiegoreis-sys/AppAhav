@@ -6424,192 +6424,274 @@ function genteRenderOrg() {
 }
 
 // ── INDICADORES ──────────────────────────────────────────────
-const GENTE_IND_KEY = 'ahav_gente_indicadores';
+const GENTE_IND_KEY = 'ahav_gente_indicadores_v2';
+
+const GENTE_IND_TEMPLATES = {
+  'Analista de Crédito': { objetivos: [
+    { id:1, obj:'Redução de Inadimplência',               meta:'≤ 4%',                                     peso:0.70, vlrBonus:400, extra:'Manter ≤ 4% por 3 semanas consecutivas', vlrExtra:1000 },
+    { id:2, obj:'Prazo de análise de crédito',            meta:'≤ 24h (95% dos casos)',                    peso:0.15, vlrBonus:500 },
+    { id:3, obj:'Revisão de carteira e ajuste de limites',meta:'100% clientes com compras (últ. 6 meses)', peso:0.15, vlrBonus:600 },
+  ]},
+  'Analista de Cobrança': { objetivos: [
+    { id:1, obj:'Redução de Inadimplência',      meta:'≤ 4%',                                peso:0.70, vlrBonus:400, extra:'Manter ≤ 4% por 3 semanas consecutivas', vlrExtra:700 },
+    { id:2, obj:'Recuperação de PDD',             meta:'≥ 1,5%/mês do valor em atraso',     peso:0.15, vlrBonus:500 },
+    { id:3, obj:'Tempo de ação (cobrança ativa)', meta:'1º contato ≤ D+5 e reg. no sistema', peso:0.15, vlrBonus:600 },
+  ]},
+  'Analista de Gastos': { objetivos: [
+    { id:1, obj:'Lançamentos sem erros', meta:'98% sem erros',                        peso:0.70, vlrBonus:400 },
+    { id:2, obj:'Programação no prazo',  meta:'2 dias antes do vencimento',           peso:0.15, vlrBonus:500 },
+    { id:3, obj:'Prazo de lançamento',   meta:'Dentro de 48h do recebimento',         peso:0.15, vlrBonus:600 },
+    { id:4, obj:'Sugestão de Melhoria',  meta:'1 sugestão de redução de custos/trim.',peso:0,    vlrBonus:200, opcional:true },
+  ]},
+  'Tesouraria': { objetivos: [
+    { id:1, obj:'Segurança e Conformidade', meta:'Zero pagamentos errados/duplicados',       peso:0.70, vlrBonus:400 },
+    { id:2, obj:'Gestão dos adiantamentos', meta:'Relatório mensal de adiantamentos',        peso:0.15, vlrBonus:500 },
+    { id:3, obj:'Gestão de tarifas',        meta:'Monitoramento mensal de tarifas bancárias',peso:0.15, vlrBonus:600 },
+    { id:4, obj:'Sugestão de Melhoria',     meta:'1 sugestão de automação/trimestre',        peso:0,    vlrBonus:200, opcional:true },
+  ]},
+  'Assistente Conciliação Bancária': { objetivos: [
+    { id:1, obj:'Conciliação D+2',           meta:'100% das contas conciliadas até D+2',                peso:0.40, vlrBonus:400, extra:'100% adiantamentos abertos (até abr/2026)', vlrExtra:500 },
+    { id:2, obj:'Baixas sem erros',           meta:'100% das baixas sem erros',                         peso:0.10, vlrBonus:500 },
+    { id:3, obj:'Adiantamentos a Fornecedor', meta:'100% adiantamentos conciliados no mês do pagamento',peso:0.50, vlrBonus:600 },
+  ]},
+};
 
 function genteIndLoad() {
   try { return JSON.parse(localStorage.getItem(GENTE_IND_KEY) || '{}'); } catch(e) { return {}; }
 }
 function genteIndSave(all) { localStorage.setItem(GENTE_IND_KEY, JSON.stringify(all)); }
 
-function genteIndGetMes(mes) {
-  const all = genteIndLoad();
-  if (all[mes]) return all[mes];
-  // inicializa mês com pessoas cadastradas
-  const pessoas = genteLoadPessoas();
-  return {
-    metaColetiva: 100, resultadoColetivo: 0,
-    pessoas: pessoas.map(p => ({ nome: p.nome, cargo: p.cargo||'', metaPct: 100, resultPct: 0, notaInd: 0, notaComp: 0, vlrMax: 0 }))
-  };
-}
-
-function genteIndCalc(p, metaCol, resultCol) {
-  const meta = Number(p.metaPct) || 100;
-  const res  = Number(p.resultPct) || 0;
-  const nInd = Number(p.notaInd) || 0;
-  const nCom = Number(p.notaComp) || 0;
-  const vlr  = Number(p.vlrMax) || 0;
-  const ratio = res / meta;
-  const elegivel = ratio >= 0.8 ? 1 : 0;
-  const score = ratio * 0.5 + (nInd / 10) * 0.3 + (nCom / 10) * 0.2;
-  const bonusInd = elegivel ? score * vlr : 0;
-  const teamOk = Number(resultCol) / Number(metaCol) >= 0.9;
-  const bonusFinal = teamOk ? bonusInd + vlr * 0.2 : bonusInd;
-  return { elegivel, score, bonusInd, bonusFinal, teamOk };
-}
-
 function genteIndCurrentMes() {
   const el = document.getElementById('gind-mes');
   return el ? el.value : new Date().toISOString().slice(0,7);
 }
 
+// Bonus por faixa de atingimento (%)
+function genteIndBonusObj(ating, vlrBonus) {
+  if (ating >= 90) return vlrBonus;
+  if (ating >= 80) return Math.round(vlrBonus * 0.7);
+  return 0;
+}
+
+function genteIndCalcPessoa(realizacoes, extras, funcao) {
+  const tpl = GENTE_IND_TEMPLATES[funcao];
+  if (!tpl) return { total:0, objs:[] };
+  let total = 0;
+  const objs = tpl.objetivos.map(o => {
+    const ating = Number(realizacoes[o.id] || 0);
+    const bonus = o.opcional ? (ating >= 1 ? o.vlrBonus : 0) : genteIndBonusObj(ating, o.vlrBonus);
+    const extraBonus = (o.vlrExtra && extras[o.id]) ? o.vlrExtra : 0;
+    total += bonus + extraBonus;
+    return { ...o, ating, bonus, extraBonus };
+  });
+  return { total, objs };
+}
+
+function genteIndGetMes(mes) {
+  const all = genteIndLoad();
+  if (all[mes]) return all[mes];
+  const pessoas = genteLoadPessoas();
+  return {
+    metaColetiva: 100, resultadoColetivo: 0,
+    pessoas: pessoas.reduce((acc, p) => {
+      acc[p.nome] = { funcao: '', realizacoes: {}, extras: {} };
+      return acc;
+    }, {})
+  };
+}
+
 function genteIndSaveAll() {
   const mes = genteIndCurrentMes();
   const all = genteIndLoad();
-  const metaCol = Number(document.getElementById('gind-meta-col').value) || 100;
-  const resCol  = Number(document.getElementById('gind-res-col').value) || 0;
-  const rows = document.querySelectorAll('.gind-row');
-  const pessoas = Array.from(rows).map(row => ({
-    nome:     row.dataset.nome,
-    cargo:    row.dataset.cargo,
-    metaPct:  Number(row.querySelector('.gind-meta').value)   || 0,
-    resultPct:Number(row.querySelector('.gind-res').value)    || 0,
-    notaInd:  Number(row.querySelector('.gind-nind').value)   || 0,
-    notaComp: Number(row.querySelector('.gind-ncomp').value)  || 0,
-    vlrMax:   Number(row.querySelector('.gind-vlr').value)    || 0,
-  }));
-  all[mes] = { metaColetiva: metaCol, resultadoColetivo: resCol, pessoas };
+  const d = all[mes] || genteIndGetMes(mes);
+  d.metaColetiva     = Number(document.getElementById('gind-meta-col').value) || 100;
+  d.resultadoColetivo= Number(document.getElementById('gind-res-col').value)  || 0;
+  // collect per-person data from DOM
+  document.querySelectorAll('.gind-pessoa').forEach(card => {
+    const nome   = card.dataset.nome;
+    const funcao = card.querySelector('.gind-funcao-sel').value;
+    const realizacoes = {}, extras = {};
+    card.querySelectorAll('.gind-realiz').forEach(inp => {
+      realizacoes[inp.dataset.id] = Number(inp.value) || 0;
+    });
+    card.querySelectorAll('.gind-extra-chk').forEach(chk => {
+      extras[chk.dataset.id] = chk.checked ? 1 : 0;
+    });
+    d.pessoas[nome] = { funcao, realizacoes, extras };
+  });
+  all[mes] = d;
   genteIndSave(all);
   genteRenderIndicadores();
+}
+
+function genteIndChangeFuncao(selEl) {
+  const card = selEl.closest('.gind-pessoa');
+  const nome = card.dataset.nome;
+  const funcao = selEl.value;
+  const mes = genteIndCurrentMes();
+  const all = genteIndLoad();
+  const d = all[mes] || genteIndGetMes(mes);
+  if (!d.pessoas[nome]) d.pessoas[nome] = { funcao:'', realizacoes:{}, extras:{} };
+  d.pessoas[nome].funcao = funcao;
+  all[mes] = d;
+  genteIndSave(all);
+  genteRenderIndicadores();
+}
+
+function genteIndLiveUpdate(el) {
+  const card = el.closest('.gind-pessoa');
+  const nome  = card.dataset.nome;
+  const funcao= card.querySelector('.gind-funcao-sel').value;
+  const realizacoes = {}, extras = {};
+  card.querySelectorAll('.gind-realiz').forEach(i => { realizacoes[i.dataset.id] = Number(i.value)||0; });
+  card.querySelectorAll('.gind-extra-chk').forEach(c => { extras[c.dataset.id] = c.checked ? 1 : 0; });
+  const { total, objs } = genteIndCalcPessoa(realizacoes, extras, funcao);
+  const fmt = v => v.toLocaleString('pt-BR', {style:'currency', currency:'BRL', maximumFractionDigits:0});
+  card.querySelector('.gind-total-val').textContent = fmt(total);
+  objs.forEach(o => {
+    const bEl = card.querySelector(`.gind-bonus-obj[data-id="${o.id}"]`);
+    if (bEl) bEl.textContent = fmt(o.bonus + o.extraBonus);
+    const aEl = card.querySelector(`.gind-ating-obj[data-id="${o.id}"]`);
+    if (aEl) {
+      const pct = o.opcional ? (o.ating >= 1 ? '✓' : '—') : o.ating.toFixed(0) + '%';
+      const col = o.opcional ? (o.ating>=1?'#22c55e':'#475569') : (o.ating>=90?'#22c55e':o.ating>=80?'#eab308':'#ef4444');
+      aEl.textContent = pct;
+      aEl.style.color = col;
+    }
+  });
 }
 
 function genteRenderIndicadores() {
   const el = document.getElementById('gente-ind-content');
   const hoje = new Date().toISOString().slice(0,7);
-  const mes = genteIndCurrentMes() || hoje;
-  const d = genteIndGetMes(mes);
-  const metaCol = d.metaColetiva;
-  const resCol  = d.resultadoColetivo;
-  const teamOk  = resCol / metaCol >= 0.9;
-
-  // KPIs
-  const calcs = d.pessoas.map(p => genteIndCalc(p, metaCol, resCol));
-  const totalBonus = calcs.reduce((s,c) => s + c.bonusFinal, 0);
-  const mediaScore = calcs.length ? calcs.reduce((s,c) => s + c.score, 0) / calcs.length : 0;
-  const nElegiveis = calcs.filter(c => c.elegivel).length;
-
+  const mes  = genteIndCurrentMes() || hoje;
+  const d    = genteIndGetMes(mes);
+  const teamOk = d.resultadoColetivo / d.metaColetiva >= 0.9;
   const fmt = v => v.toLocaleString('pt-BR', {style:'currency', currency:'BRL', maximumFractionDigits:0});
-  const pct = v => (v*100).toFixed(1) + '%';
+  const INP = 'background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;padding:4px 8px;font-size:12px';
 
-  const rows = d.pessoas.map((p,i) => {
-    const c = calcs[i];
-    const eColor = c.elegivel ? '#22c55e' : '#ef4444';
-    const eLabel = c.elegivel ? 'Sim' : 'Não';
-    return `<tr class="gind-row" data-nome="${p.nome}" data-cargo="${p.cargo||''}">
-      <td style="padding:8px 10px;color:#e2e8f0;font-weight:500;white-space:nowrap">${abbreviateName(p.nome)}</td>
-      <td style="padding:8px 6px;color:#64748b;font-size:11px">${p.cargo||'—'}</td>
-      <td style="padding:4px 6px"><input class="gind-meta" type="number" min="0" max="200" value="${p.metaPct}" onchange="genteIndLiveCalc(this)" style="width:60px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;padding:4px 6px;font-size:12px;text-align:center"></td>
-      <td style="padding:4px 6px"><input class="gind-res" type="number" min="0" max="200" value="${p.resultPct}" onchange="genteIndLiveCalc(this)" style="width:60px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;padding:4px 6px;font-size:12px;text-align:center"></td>
-      <td style="padding:4px 6px"><input class="gind-nind" type="number" min="0" max="10" step="0.1" value="${p.notaInd}" onchange="genteIndLiveCalc(this)" style="width:56px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;padding:4px 6px;font-size:12px;text-align:center"></td>
-      <td style="padding:4px 6px"><input class="gind-ncomp" type="number" min="0" max="10" step="0.1" value="${p.notaComp}" onchange="genteIndLiveCalc(this)" style="width:56px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;padding:4px 6px;font-size:12px;text-align:center"></td>
-      <td style="padding:4px 6px"><input class="gind-vlr" type="number" min="0" value="${p.vlrMax}" onchange="genteIndLiveCalc(this)" style="width:80px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;padding:4px 6px;font-size:12px;text-align:center"></td>
-      <td class="gind-cell-elig" style="padding:8px 6px;text-align:center"><span style="background:${eColor}22;color:${eColor};border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700">${eLabel}</span></td>
-      <td class="gind-cell-score" style="padding:8px 8px;text-align:center;color:#e2e8f0;font-weight:700">${pct(c.score)}</td>
-      <td class="gind-cell-bind" style="padding:8px 8px;text-align:right;color:#eab308;font-weight:600">${fmt(c.bonusInd)}</td>
-      <td class="gind-cell-bfin" style="padding:8px 8px;text-align:right;color:#22c55e;font-weight:700">${fmt(c.bonusFinal)}</td>
-    </tr>`;
+  const pessoas = genteLoadPessoas();
+  const funcaoOpts = ['', ...Object.keys(GENTE_IND_TEMPLATES)].map(f =>
+    `<option value="${f}">${f || '— Selecionar função —'}</option>`
+  ).join('');
+
+  let totalGeral = 0;
+  const cards = pessoas.map(p => {
+    const pd     = d.pessoas[p.nome] || { funcao:'', realizacoes:{}, extras:{} };
+    const funcao = pd.funcao || '';
+    const tpl    = GENTE_IND_TEMPLATES[funcao];
+    const { total, objs } = genteIndCalcPessoa(pd.realizacoes, pd.extras, funcao);
+    totalGeral += total;
+
+    const objRows = tpl ? tpl.objetivos.map(o => {
+      const ating = Number(pd.realizacoes[o.id] || 0);
+      const bonus  = o.opcional ? (ating>=1?o.vlrBonus:0) : genteIndBonusObj(ating, o.vlrBonus);
+      const extraBonus = (o.vlrExtra && pd.extras[o.id]) ? o.vlrExtra : 0;
+      const pctLabel = o.opcional ? (ating>=1?'✓':'—') : ating.toFixed(0)+'%';
+      const pctColor = o.opcional ? (ating>=1?'#22c55e':'#475569') : (ating>=90?'#22c55e':ating>=80?'#eab308':'#ef4444');
+      const realizInput = o.opcional
+        ? `<input class="gind-realiz" data-id="${o.id}" type="number" min="0" max="1" value="${ating}" oninput="genteIndLiveUpdate(this)" style="${INP};width:52px;text-align:center" placeholder="0/1">`
+        : `<input class="gind-realiz" data-id="${o.id}" type="number" min="0" max="150" value="${ating}" oninput="genteIndLiveUpdate(this)" style="${INP};width:64px;text-align:center" placeholder="%">`;
+      const extraRow = o.vlrExtra ? `
+        <tr style="background:#0f172a22">
+          <td colspan="3" style="padding:4px 8px 4px 20px;color:#64748b;font-size:11px;font-style:italic">↳ Extra: ${o.extra}</td>
+          <td style="padding:4px 8px;text-align:center">
+            <label style="display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer">
+              <input class="gind-extra-chk" data-id="${o.id}" type="checkbox" ${pd.extras[o.id]?'checked':''} onchange="genteIndLiveUpdate(this)">
+              <span style="font-size:11px;color:#a78bfa">+${fmt(o.vlrExtra)}</span>
+            </label>
+          </td>
+          <td class="gind-bonus-obj" data-id="${o.id}" style="padding:4px 8px;text-align:right;color:#a78bfa;font-size:11px;font-weight:600">${fmt(bonus+extraBonus)}</td>
+        </tr>` : '';
+      return `<tr style="border-bottom:1px solid #1e293b">
+        <td style="padding:7px 8px;color:#e2e8f0;font-size:12px">${o.obj}</td>
+        <td style="padding:7px 8px;color:#64748b;font-size:11px">${o.meta}</td>
+        <td style="padding:7px 8px;text-align:center;color:#94a3b8;font-size:11px">${o.peso>0?(o.peso*100).toFixed(0)+'%':'—'}</td>
+        <td style="padding:4px 8px;text-align:center">${realizInput}</td>
+        <td class="gind-ating-obj" data-id="${o.id}" style="padding:7px 8px;text-align:center;font-weight:700;font-size:12px;color:${pctColor}">${pctLabel}</td>
+        <td class="gind-bonus-obj" data-id="${o.id}" style="padding:7px 8px;text-align:right;color:#22c55e;font-weight:700;font-size:12px">${fmt(bonus+extraBonus)}</td>
+      </tr>${o.vlrExtra?extraRow:''}`;
+    }).join('') : `<tr><td colspan="6" style="padding:16px;text-align:center;color:#475569;font-size:12px">Selecione a função para ver os objetivos</td></tr>`;
+
+    const funcaoSel = `<select class="gind-funcao-sel" onchange="genteIndChangeFuncao(this)" style="${INP};width:220px">
+      ${['', ...Object.keys(GENTE_IND_TEMPLATES)].map(f =>
+        `<option value="${f}" ${f===funcao?'selected':''}>${f||'— Selecionar função —'}</option>`
+      ).join('')}
+    </select>`;
+
+    return `<div class="chart-card gind-pessoa" data-nome="${p.nome}" style="margin-bottom:16px;padding:16px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;color:#e2e8f0;font-size:14px">${abbreviateName(p.nome)}</div>
+          <div style="color:#64748b;font-size:11px;margin-top:2px">${p.cargo||''}</div>
+        </div>
+        ${funcaoSel}
+        <div style="text-align:right">
+          <div style="font-size:10px;color:#64748b;margin-bottom:2px">Bônus total</div>
+          <div class="gind-total-val" style="font-size:18px;font-weight:800;color:#22c55e">${fmt(total)}</div>
+        </div>
+      </div>
+      ${tpl ? `<table style="width:100%;border-collapse:collapse">
+        <thead><tr style="border-bottom:2px solid #334155">
+          <th style="text-align:left;padding:6px 8px;color:#64748b;font-size:11px;font-weight:600">Objetivo</th>
+          <th style="text-align:left;padding:6px 8px;color:#64748b;font-size:11px;font-weight:600">Meta</th>
+          <th style="text-align:center;padding:6px 8px;color:#64748b;font-size:11px;font-weight:600">Peso</th>
+          <th style="text-align:center;padding:6px 8px;color:#64748b;font-size:11px;font-weight:600">Realização</th>
+          <th style="text-align:center;padding:6px 8px;color:#64748b;font-size:11px;font-weight:600">Ating.</th>
+          <th style="text-align:right;padding:6px 8px;color:#22c55e;font-size:11px;font-weight:600">Bônus</th>
+        </tr></thead>
+        <tbody>${objRows}</tbody>
+        <tfoot><tr style="border-top:2px solid #334155">
+          <td colspan="5" style="padding:8px;font-size:10px;color:#475569">
+            Faixas: ≥90% → 100% bônus · 80–89% → 70% · &lt;80% → R$0
+            ${teamOk ? ' · <span style="color:#22c55e">✓ Bônus equipe ativo</span>' : ''}
+          </td>
+          <td style="padding:8px;text-align:right;font-weight:800;color:#22c55e;font-size:14px">${fmt(total)}</td>
+        </tr></tfoot>
+      </table>` : ''}
+    </div>`;
   }).join('');
 
+  // KPIs
+  const nComFuncao = pessoas.filter(p => (d.pessoas[p.nome]||{}).funcao).length;
+
   el.innerHTML = `
-  <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap">
+  <div style="display:flex;align-items:flex-end;gap:14px;margin-bottom:20px;flex-wrap:wrap">
     <div>
       <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px">Mês de referência</label>
       <input type="month" id="gind-mes" value="${mes}" onchange="genteRenderIndicadores()" style="background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:6px 10px;font-size:13px">
     </div>
     <div>
       <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px">Meta Coletiva (%)</label>
-      <input type="number" id="gind-meta-col" value="${metaCol}" min="1" max="200" style="width:90px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:6px 10px;font-size:13px">
+      <input type="number" id="gind-meta-col" value="${d.metaColetiva}" min="1" style="width:80px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:6px 10px;font-size:13px">
     </div>
     <div>
       <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px">Resultado Coletivo (%)</label>
-      <input type="number" id="gind-res-col" value="${resCol}" min="0" max="200" style="width:90px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:6px 10px;font-size:13px">
+      <input type="number" id="gind-res-col" value="${d.resultadoColetivo}" min="0" style="width:80px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:6px 10px;font-size:13px">
     </div>
-    <div style="margin-top:18px">
-      <span style="background:${teamOk?'#22c55e22':'#ef444422'};color:${teamOk?'#22c55e':'#ef4444'};border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700">
-        Bônus Equipe: ${teamOk?'✓ Ativado':'✗ Não atingido'} (≥90% meta coletiva)
-      </span>
-    </div>
-    <div style="margin-top:18px;margin-left:auto">
-      <button class="btn btn-primary" onclick="genteIndSaveAll()">Salvar mês</button>
-    </div>
+    <span style="background:${teamOk?'#22c55e22':'#ef444422'};color:${teamOk?'#22c55e':'#ef4444'};border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700">
+      Bônus Equipe: ${teamOk?'✓ Ativado':'✗ Não atingido'} (≥ 90%)
+    </span>
+    <button class="btn btn-primary" style="margin-left:auto" onclick="genteIndSaveAll()">💾 Salvar mês</button>
   </div>
 
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px">
     <div class="kpi" style="border-top:3px solid #22c55e">
       <div class="kpi-label" style="color:#22c55e">Total Bônus</div>
-      <div class="kpi-value" style="color:#22c55e;font-size:24px">${fmt(totalBonus)}</div>
+      <div class="kpi-value" style="color:#22c55e;font-size:22px">${fmt(totalGeral)}</div>
     </div>
     <div class="kpi" style="border-top:3px solid #38bdf8">
-      <div class="kpi-label" style="color:#38bdf8">Média Score</div>
-      <div class="kpi-value" style="color:#38bdf8;font-size:24px">${pct(mediaScore)}</div>
-    </div>
-    <div class="kpi" style="border-top:3px solid #a78bfa">
-      <div class="kpi-label" style="color:#a78bfa">Elegíveis</div>
-      <div class="kpi-value" style="color:#a78bfa;font-size:24px">${nElegiveis} / ${d.pessoas.length}</div>
+      <div class="kpi-label" style="color:#38bdf8">Pessoas</div>
+      <div class="kpi-value" style="color:#38bdf8;font-size:22px">${nComFuncao} / ${pessoas.length}</div>
+      <div style="font-size:10px;color:#475569">com função definida</div>
     </div>
     <div class="kpi" style="border-top:3px solid ${teamOk?'#22c55e':'#ef4444'}">
       <div class="kpi-label" style="color:${teamOk?'#22c55e':'#ef4444'}">Bônus Equipe</div>
-      <div class="kpi-value" style="color:${teamOk?'#22c55e':'#ef4444'};font-size:22px">${teamOk?'Ativado':'Pendente'}</div>
+      <div class="kpi-value" style="color:${teamOk?'#22c55e':'#ef4444'};font-size:20px">${teamOk?'Ativado':'Pendente'}</div>
     </div>
   </div>
 
-  <div style="overflow-x:auto">
-  <table style="width:100%;border-collapse:collapse;font-size:12px">
-    <thead>
-      <tr style="border-bottom:2px solid #334155">
-        <th style="text-align:left;padding:8px 10px;color:#64748b">Colaborador</th>
-        <th style="text-align:left;padding:8px 6px;color:#64748b">Cargo</th>
-        <th style="text-align:center;padding:8px 6px;color:#64748b">Meta %</th>
-        <th style="text-align:center;padding:8px 6px;color:#64748b">Result %</th>
-        <th style="text-align:center;padding:8px 6px;color:#64748b">N. Ind</th>
-        <th style="text-align:center;padding:8px 6px;color:#64748b">N. Comp</th>
-        <th style="text-align:center;padding:8px 6px;color:#64748b">Vlr Máx</th>
-        <th style="text-align:center;padding:8px 6px;color:#64748b">Elegível</th>
-        <th style="text-align:center;padding:8px 6px;color:#64748b">Score</th>
-        <th style="text-align:right;padding:8px 8px;color:#eab308">Bônus Ind</th>
-        <th style="text-align:right;padding:8px 8px;color:#22c55e">Bônus Final</th>
-      </tr>
-    </thead>
-    <tbody id="gind-tbody">${rows}</tbody>
-    <tfoot>
-      <tr style="border-top:2px solid #334155">
-        <td colspan="9" style="padding:10px 10px;color:#64748b;font-size:11px">Score = Resultado×0,5 + Nota Individual×0,3 + Nota Comportamento×0,2 · Elegível se Resultado/Meta ≥ 80% · Bônus Equipe: +20% do Vlr Máx se meta coletiva ≥ 90%</td>
-        <td style="padding:10px 8px;text-align:right;color:#eab308;font-weight:700">${fmt(calcs.reduce((s,c)=>s+c.bonusInd,0))}</td>
-        <td style="padding:10px 8px;text-align:right;color:#22c55e;font-weight:700">${fmt(totalBonus)}</td>
-      </tr>
-    </tfoot>
-  </table>
-  </div>`;
-}
-
-function genteIndLiveCalc(inputEl) {
-  const row = inputEl.closest('.gind-row');
-  const metaCol = Number(document.getElementById('gind-meta-col').value) || 100;
-  const resCol  = Number(document.getElementById('gind-res-col').value)  || 0;
-  const p = {
-    metaPct:   Number(row.querySelector('.gind-meta').value)  || 0,
-    resultPct: Number(row.querySelector('.gind-res').value)   || 0,
-    notaInd:   Number(row.querySelector('.gind-nind').value)  || 0,
-    notaComp:  Number(row.querySelector('.gind-ncomp').value) || 0,
-    vlrMax:    Number(row.querySelector('.gind-vlr').value)   || 0,
-  };
-  const c = genteIndCalc(p, metaCol, resCol);
-  const fmt = v => v.toLocaleString('pt-BR', {style:'currency', currency:'BRL', maximumFractionDigits:0});
-  const pct = v => (v*100).toFixed(1) + '%';
-  const eColor = c.elegivel ? '#22c55e' : '#ef4444';
-  row.querySelector('.gind-cell-elig').innerHTML = `<span style="background:${eColor}22;color:${eColor};border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700">${c.elegivel?'Sim':'Não'}</span>`;
-  row.querySelector('.gind-cell-score').textContent = pct(c.score);
-  row.querySelector('.gind-cell-bind').textContent  = fmt(c.bonusInd);
-  row.querySelector('.gind-cell-bfin').textContent  = fmt(c.bonusFinal);
+  ${cards}`;
 }
 // ─────────────────────────────────────────────────────────────
 
