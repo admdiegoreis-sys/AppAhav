@@ -6729,33 +6729,45 @@ function genteSaveOrgMembro() {
         </div>
 
         <!-- DISC scores + preview -->
-        <div style="background:#0f172a;border-radius:10px;padding:14px">
-          <div style="font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px">Resultado DISC</div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
-            <div style="text-align:center">
-              <label class="form-label" style="color:#ef4444;font-size:13px;font-weight:700">D %</label>
-              <input id="gp-d" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()" style="text-align:center;font-size:18px;font-weight:700;color:#ef4444;background:#1e293b;border-color:#334155;padding:8px 4px">
+        <div style="background:#0f172a;border-radius:10px;padding:16px">
+          <div style="font-size:11px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">Resultado DISC</div>
+          <!-- inputs + barras por coluna -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+              <div style="font-size:13px;font-weight:800;color:#ef4444">D</div>
+              <input id="gp-d" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()"
+                style="width:100%;box-sizing:border-box;text-align:center;font-size:22px;font-weight:700;color:#ef4444;background:#1e293b;border:2px solid #ef444444;border-radius:8px;padding:10px 4px">
+              <div style="width:100%;height:52px;display:flex;align-items:flex-end;padding:0 4px;box-sizing:border-box">
+                <div id="gp-bar-d" style="width:100%;background:#ef4444;border-radius:4px 4px 0 0;height:3px;transition:height .25s ease"></div>
+              </div>
             </div>
-            <div style="text-align:center">
-              <label class="form-label" style="color:#eab308;font-size:13px;font-weight:700">I %</label>
-              <input id="gp-i" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()" style="text-align:center;font-size:18px;font-weight:700;color:#eab308;background:#1e293b;border-color:#334155;padding:8px 4px">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+              <div style="font-size:13px;font-weight:800;color:#eab308">I</div>
+              <input id="gp-i" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()"
+                style="width:100%;box-sizing:border-box;text-align:center;font-size:22px;font-weight:700;color:#eab308;background:#1e293b;border:2px solid #eab30844;border-radius:8px;padding:10px 4px">
+              <div style="width:100%;height:52px;display:flex;align-items:flex-end;padding:0 4px;box-sizing:border-box">
+                <div id="gp-bar-i" style="width:100%;background:#eab308;border-radius:4px 4px 0 0;height:3px;transition:height .25s ease"></div>
+              </div>
             </div>
-            <div style="text-align:center">
-              <label class="form-label" style="color:#22c55e;font-size:13px;font-weight:700">S %</label>
-              <input id="gp-s" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()" style="text-align:center;font-size:18px;font-weight:700;color:#22c55e;background:#1e293b;border-color:#334155;padding:8px 4px">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+              <div style="font-size:13px;font-weight:800;color:#22c55e">S</div>
+              <input id="gp-s" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()"
+                style="width:100%;box-sizing:border-box;text-align:center;font-size:22px;font-weight:700;color:#22c55e;background:#1e293b;border:2px solid #22c55e44;border-radius:8px;padding:10px 4px">
+              <div style="width:100%;height:52px;display:flex;align-items:flex-end;padding:0 4px;box-sizing:border-box">
+                <div id="gp-bar-s" style="width:100%;background:#22c55e;border-radius:4px 4px 0 0;height:3px;transition:height .25s ease"></div>
+              </div>
             </div>
-            <div style="text-align:center">
-              <label class="form-label" style="color:#38bdf8;font-size:13px;font-weight:700">C %</label>
-              <input id="gp-c" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()" style="text-align:center;font-size:18px;font-weight:700;color:#38bdf8;background:#1e293b;border-color:#334155;padding:8px 4px">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+              <div style="font-size:13px;font-weight:800;color:#38bdf8">C</div>
+              <input id="gp-c" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()"
+                style="width:100%;box-sizing:border-box;text-align:center;font-size:22px;font-weight:700;color:#38bdf8;background:#1e293b;border:2px solid #38bdf844;border-radius:8px;padding:10px 4px">
+              <div style="width:100%;height:52px;display:flex;align-items:flex-end;padding:0 4px;box-sizing:border-box">
+                <div id="gp-bar-c" style="width:100%;background:#38bdf8;border-radius:4px 4px 0 0;height:3px;transition:height .25s ease"></div>
+              </div>
             </div>
           </div>
-          <!-- barra visual -->
-          <div id="gp-disc-preview" style="display:flex;align-items:flex-end;gap:6px;height:56px;margin-bottom:12px">
-            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div id="gp-bar-d" style="width:100%;background:#ef4444;border-radius:3px 3px 0 0;height:0;min-height:3px;transition:height .3s"></div><div style="font-size:11px;font-weight:700;color:#ef4444">D</div></div>
-            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div id="gp-bar-i" style="width:100%;background:#eab308;border-radius:3px 3px 0 0;height:0;min-height:3px;transition:height .3s"></div><div style="font-size:11px;font-weight:700;color:#eab308">I</div></div>
-            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div id="gp-bar-s" style="width:100%;background:#22c55e;border-radius:3px 3px 0 0;height:0;min-height:3px;transition:height .3s"></div><div style="font-size:11px;font-weight:700;color:#22c55e">S</div></div>
-            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div id="gp-bar-c" style="width:100%;background:#38bdf8;border-radius:3px 3px 0 0;height:0;min-height:3px;transition:height .3s"></div><div style="font-size:11px;font-weight:700;color:#38bdf8">C</div></div>
-          </div>
+          <!-- linha de base -->
+          <div style="border-top:1px solid #334155;margin:4px 0 14px"></div>
           <!-- resultado automático -->
           <div id="gp-disc-resultado" style="display:none;background:#1e293b;border-radius:8px;padding:10px 14px">
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
