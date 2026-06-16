@@ -6045,21 +6045,21 @@ function genteAutoDiscProfile(D, I, S, C) {
   const vals = {D, I, S, C};
   const active = ['D','I','S','C'].filter(k => vals[k] >= threshold);
   const PROFILES = {
-    'D':   {fator:'Monofatorial D',    perfil:'Executor'},
-    'I':   {fator:'Monofatorial I',    perfil:'Comunicador'},
-    'S':   {fator:'Monofatorial S',    perfil:'Estável Puro'},
-    'C':   {fator:'Monofatorial C',    perfil:'Analista'},
-    'DI':  {fator:'Bifatorial DI',     perfil:'Motivador'},
-    'DS':  {fator:'Bifatorial DS',     perfil:'Investigador'},
-    'DC':  {fator:'Bifatorial DC',     perfil:'Perfeccionista'},
-    'IS':  {fator:'Bifatorial IS',     perfil:'Suporte Influente'},
-    'IC':  {fator:'Bifatorial IC',     perfil:'Questionador'},
-    'SC':  {fator:'Bifatorial SC',     perfil:'Especialista'},
-    'DIS': {fator:'Trifatorial DIS',   perfil:'Realizador'},
-    'DIC': {fator:'Trifatorial DIC',   perfil:'Criativo Crítico'},
-    'DSC': {fator:'Trifatorial DSC',   perfil:'Executor Metódico'},
-    'ISC': {fator:'Trifatorial ISC',   perfil:'Analista Harmonizador'},
-    'DISC':{fator:'Perfil Equilibrado',perfil:'Perfil Equilibrado'},
+    'D':   {fator:'Monofatorial D',    perfil:'Executor',             medo:'Perder o controle',              motiv:'Resultados e autonomia'},
+    'I':   {fator:'Monofatorial I',    perfil:'Comunicador',          medo:'Rejeição social',                motiv:'Reconhecimento e aprovação'},
+    'S':   {fator:'Monofatorial S',    perfil:'Estável Puro',         medo:'Insegurança',                    motiv:'Previsibilidade'},
+    'C':   {fator:'Monofatorial C',    perfil:'Analista',             medo:'Erros e críticas sem base',      motiv:'Precisão e qualidade'},
+    'DI':  {fator:'Bifatorial DI',     perfil:'Motivador',            medo:'Perda de influência',            motiv:'Liderança com impacto'},
+    'DS':  {fator:'Bifatorial DS',     perfil:'Investigador',         medo:'Ineficiência',                   motiv:'Resultados consistentes'},
+    'DC':  {fator:'Bifatorial DC',     perfil:'Perfeccionista',       medo:'Incompetência',                  motiv:'Excelência e controle'},
+    'IS':  {fator:'Bifatorial IS',     perfil:'Suporte Influente',    medo:'Conflito e rejeição',            motiv:'Harmonia e colaboração'},
+    'IC':  {fator:'Bifatorial IC',     perfil:'Questionador',         medo:'Imprecisão e superficialidade',  motiv:'Ideias com embasamento'},
+    'SC':  {fator:'Bifatorial SC',     perfil:'Especialista',         medo:'Caos Operacional',               motiv:'Domínio Técnico'},
+    'DIS': {fator:'Trifatorial DIS',   perfil:'Realizador',           medo:'Estagnação',                     motiv:'Crescimento com pessoas'},
+    'DIC': {fator:'Trifatorial DIC',   perfil:'Criativo Crítico',     medo:'Mediocridade',                   motiv:'Inovação com rigor'},
+    'DSC': {fator:'Trifatorial DSC',   perfil:'Executor Metódico',    medo:'Caos e improvisação',            motiv:'Execução estruturada'},
+    'ISC': {fator:'Trifatorial ISC',   perfil:'Analista Harmonizador',medo:'Desorientação Operacional',      motiv:'Equilíbrio entre Técnica e Pessoas'},
+    'DISC':{fator:'Perfil Equilibrado',perfil:'Perfil Equilibrado',   medo:'Julgamento Precipitado',         motiv:'Moderação e Equilíbrio'},
   };
   const key = active.join('');
   return PROFILES[key] || null;
@@ -6074,6 +6074,8 @@ function genteApplyAutoDisc() {
   if (!result) return;
   document.getElementById('gp-perfil').value = result.perfil;
   document.getElementById('gp-fator').value  = result.fator;
+  document.getElementById('gp-medo').value   = result.medo;
+  document.getElementById('gp-motiv').value  = result.motiv;
 }
 
 function genteInit() {
