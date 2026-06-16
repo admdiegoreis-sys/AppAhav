@@ -6348,8 +6348,38 @@ function genteRenderOrg() {
   const levelColors = ['#38bdf8','#a78bfa','#22c55e','#f59e0b','#64748b'];
   const LINE = '#334155';
 
+  // Renders a node as a vertical list item (level 2+)
+  function renderVertical(node, level) {
+    const color = levelColors[Math.min(level, levelColors.length-1)];
+    const box = `<div class="org-box" style="border-color:${color}">
+      <div class="org-nome" title="${node.nome}">${abbreviateName(node.nome)}</div>
+      ${genteCargoBadge(node.cargo)}
+    </div>`;
+    if (!node.children.length) {
+      return `<div style="display:flex;align-items:center;margin:4px 0">
+        <div style="width:14px;height:2px;background:${LINE};flex-shrink:0"></div>
+        ${box}
+      </div>`;
+    }
+    const kidColor = levelColors[Math.min(level+1, levelColors.length-1)];
+    const kids = node.children.map(k => renderVertical(k, level+1)).join('');
+    return `<div style="display:flex;align-items:flex-start;margin:4px 0">
+      <div style="width:14px;height:2px;background:${LINE};flex-shrink:0;margin-top:20px"></div>
+      <div>
+        ${box}
+        <div style="display:flex">
+          <div style="width:80px;flex-shrink:0"></div>
+          <div>
+            <div style="width:2px;height:8px;background:${LINE}"></div>
+            <div style="border-left:2px solid ${LINE};">${kids}</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
   // Each root gets its own <ul> so roots are never connected horizontally.
-  // Children share a <ul> so their ::before/::after connectors align perfectly.
+  // Level 0→1: horizontal with T-connectors. Level 1+: vertical list.
   function renderNode(node, level, isRoot) {
     const color = levelColors[Math.min(level, levelColors.length-1)];
     const box = `<div class="org-box" style="border-color:${color}">
@@ -6361,6 +6391,22 @@ function genteRenderOrg() {
     if (!node.children.length) {
       return `<li>${topVert}${box}</li>`;
     }
+    if (level >= 1) {
+      // Vertical children: tree branch aligned under center of box
+      const kidColor = levelColors[Math.min(level+1, levelColors.length-1)];
+      const kids = node.children.map(k => renderVertical(k, level+1)).join('');
+      return `<li>
+        ${topVert}${box}
+        <div style="display:flex;width:100%">
+          <div style="width:80px;flex-shrink:0"></div>
+          <div>
+            <div style="width:2px;height:12px;background:${LINE}"></div>
+            <div style="border-left:2px solid ${LINE}">${kids}</div>
+          </div>
+        </div>
+      </li>`;
+    }
+    // Level 0: horizontal children with T-connectors
     return `<li>
       ${topVert}${box}
       <div class="org-vert"></div>
