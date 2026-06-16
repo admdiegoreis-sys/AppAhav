@@ -6039,7 +6039,7 @@ function genteAutoDiscProfile(D, I, S, C) {
   const max = Math.max(D, I, S, C);
   const min = Math.min(D, I, S, C);
   // Spread pequeno com todos moderados = equilibrado
-  if ((max - min) <= 22 && min >= 30) return {fator:'Perfil Equilibrado', perfil:'Perfil Equilibrado'};
+  if ((max - min) <= 22 && min >= 30) return {fator:'Perfil Equilibrado', perfil:'Perfil Equilibrado', medo:'Julgamento Precipitado', motiv:'Moderação e Equilíbrio'};
   // Fatores ativos: dentro de 15% do máximo
   const threshold = max * 0.85;
   const vals = {D, I, S, C};
