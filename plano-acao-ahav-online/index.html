@@ -6078,7 +6078,25 @@ function genteApplyAutoDisc() {
   document.getElementById('gp-motiv').value  = result.motiv;
 }
 
+function genteReprocessarDisc() {
+  const pessoas = genteLoadPessoas();
+  let updated = 0;
+  pessoas.forEach(p => {
+    const result = genteAutoDiscProfile(p.D, p.I, p.S, p.C);
+    if (result) {
+      p.perfil = result.perfil;
+      p.fator  = result.fator;
+      p.medo   = result.medo;
+      p.motiv  = result.motiv;
+      updated++;
+    }
+  });
+  genteSavePessoas(pessoas);
+  return updated;
+}
+
 function genteInit() {
+  genteReprocessarDisc();
   genteShowTab('pessoas');
 }
 
