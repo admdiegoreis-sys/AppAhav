@@ -501,6 +501,7 @@ td.wrap{white-space:normal}
     <button class="nav-btn hidden" id="nav-rede-epi" onclick="showPage('credit')">Rede EPI</button>
 
     <button class="nav-btn hidden" id="nav-vjm" onclick="showPage('vjm')">VJM</button>
+    <button class="nav-btn hidden" id="nav-gente" onclick="showPage('gente')">Gente</button>
   </div>
   <div class="mobile-top-menus">
     <details class="mobile-menu mobile-menu-single">
@@ -518,6 +519,8 @@ td.wrap{white-space:normal}
         <button class="nav-btn" onclick="showPage('credit'); closeMobileMenus()">Análise de Crédito</button>
         <div class="mobile-menu-section">Geologia</div>
         <button class="nav-btn" onclick="showPage('vjm'); closeMobileMenus()">VJM</button>
+        <div class="mobile-menu-section hidden" id="mobile-section-gente">Gestão de Pessoas</div>
+        <button class="nav-btn hidden" id="mobile-nav-gente" onclick="showPage('gente'); closeMobileMenus()">Gente</button>
         <div class="mobile-menu-section">Ações</div>
         <button class="btn btn-ghost btn-sm" onclick="logout()">Sair</button>
       </div>
@@ -1793,6 +1796,9 @@ function applyNavPermissions() {
   document.getElementById('nav-home')?.classList.toggle('hidden', !adminUser);
   document.getElementById('nav-smartmold')?.classList.toggle('hidden', !hasPageAccess('smartmold'));
   document.getElementById('nav-vjm')?.classList.toggle('hidden', !hasPageAccess('vjm'));
+  document.getElementById('nav-gente')?.classList.toggle('hidden', !adminUser);
+  document.getElementById('mobile-nav-gente')?.classList.toggle('hidden', !adminUser);
+  document.getElementById('mobile-section-gente')?.classList.toggle('hidden', !adminUser);
 
   // home: wallpaper para não-admin, dashboard para admin
   document.getElementById('home-welcome-logo')?.classList.toggle('hidden', adminUser);
@@ -2282,6 +2288,7 @@ const PAGE_PERMISSIONS = [
   {key:'prazos',   label:'Aprovação de Prazos'},
   {key:'credit',   label:'Análise de Crédito'},
   {key:'vjm',      label:'VJM'},
+  {key:'gente',    label:'Gente'},
 ];
 
 const DEFAULT_PERMISSIONS = ['home','plano','fvc','risk'];
@@ -3547,7 +3554,8 @@ function showPage(page) {
   document.getElementById('page-prazos').classList.toggle('hidden', page !== 'prazos');
   document.getElementById('page-credit').classList.toggle('hidden', page !== 'credit');
   document.getElementById('page-vjm')?.classList.toggle('hidden', page !== 'vjm');
-  ['home','smartmold','vjm'].forEach(key => document.getElementById(`nav-${key}`)?.classList.toggle('active', page === key));
+  document.getElementById('page-gente')?.classList.toggle('hidden', page !== 'gente');
+  ['home','smartmold','vjm','gente'].forEach(key => document.getElementById(`nav-${key}`)?.classList.toggle('active', page === key));
   const gestaoPages = ['plano','fvc','risk','prazos'];
   document.getElementById('nav-gestao')?.classList.toggle('active', gestaoPages.includes(page));
   document.getElementById('nav-rede-epi')?.classList.toggle('active', page === 'credit');
@@ -3562,7 +3570,8 @@ function showPage(page) {
       (page === 'risk' && text.includes('Gestão de Riscos')) ||
       (page === 'prazos' && text.includes('Aprovação de Prazos')) ||
       (page === 'credit' && text.includes('Análise de Crédito')) ||
-      (page === 'vjm' && text.includes('VJM'));
+      (page === 'vjm' && text.includes('VJM')) ||
+      (page === 'gente' && text.includes('Gente'));
     btn.classList.toggle('active', active);
   });
   const titles = {
@@ -3573,7 +3582,8 @@ function showPage(page) {
     risk: 'FINANCE - Gestão de Riscos',
     prazos: 'FINANCE - Aprovação de Prazos',
     credit: 'FINANCE - Análise de Crédito',
-    vjm: 'VJM - Controle de Amostras'
+    vjm: 'VJM - Controle de Amostras',
+    gente: 'AHAV - Gestão de Pessoas'
   };
   document.getElementById('page-title').textContent = titles[page] || titles.home;
   if (page === 'home') renderExecutiveDashboard();
@@ -3587,6 +3597,7 @@ function showPage(page) {
   if (page === 'risk') renderRiskPage();
   if (page === 'prazos') renderPrazoApprovals();
   if (page === 'credit') renderCreditPage();
+  if (page === 'gente') genteInit();
 }
 
 // ---- EXECUTIVE DASHBOARD ----
@@ -5976,6 +5987,297 @@ function vjmExportCSV() {
 // Init
 setupDesktopMenus();
 loadConfig();
+
+// ===== GENTE =====
+const GENTE_PESSOAS_KEY = 'ahav_gente_pessoas';
+const GENTE_ORG_KEY     = 'ahav_gente_org';
+
+const GENTE_DISC_DEFAULT = [
+  {nome:'Ana Kelly',                  cargo:'',  area:'', perfil:'Estável Puro',         fator:'Monofatorial S',    D:20, I:52, S:68, C:20, medo:'Insegurança',                        motiv:'Previsibilidade',                     notas:''},
+  {nome:'Carlos Antonio do Nascimento',cargo:'', area:'', perfil:'Especialista',          fator:'Bifatorial SC',     D:15, I:30, S:60, C:58, medo:'Caos Operacional',                    motiv:'Domínio Técnico',                     notas:''},
+  {nome:'Danilo',                     cargo:'',  area:'', perfil:'Analista Harmonizador', fator:'Trifatorial SCI',   D:10, I:50, S:57, C:57, medo:'Desorientação Operacional',            motiv:'Equilíbrio entre Técnica e Pessoas',  notas:''},
+  {nome:'Dayane',                     cargo:'',  area:'', perfil:'Especialista',          fator:'Bifatorial SC',     D:5,  I:10, S:67, C:62, medo:'Caos Operacional',                    motiv:'Domínio Técnico',                     notas:''},
+  {nome:'Marco',                      cargo:'',  area:'', perfil:'Especialista',          fator:'Bifatorial SC',     D:15, I:5,  S:65, C:62, medo:'',                                   motiv:'',                                    notas:''},
+  {nome:'Mayara',                     cargo:'',  area:'', perfil:'Perfil Equilibrado',    fator:'Perfil Equilibrado',D:52, I:50, S:52, C:40, medo:'Julgamento Precipitado',              motiv:'Moderação e Equilíbrio',              notas:''},
+];
+
+const GENTE_ORG_DEFAULT = [
+  {id:'diego',    nome:'Diego',     cargo:'Diretor Geral',  pai:null},
+  {id:'flavia',   nome:'Flávia',    cargo:'Gestora',        pai:'diego'},
+  {id:'douglas',  nome:'Douglas',   cargo:'Gestor',         pai:'diego'},
+  {id:'joao',     nome:'João',      cargo:'Gestor',         pai:'diego'},
+  {id:'mayara',   nome:'Mayara',    cargo:'',               pai:'flavia'},
+  {id:'ariena',   nome:'Ariena',    cargo:'',               pai:'flavia'},
+  {id:'anajulia', nome:'Ana Julia', cargo:'',               pai:'joao'},
+];
+
+function genteLoadPessoas() {
+  try {
+    const stored = localStorage.getItem(GENTE_PESSOAS_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch(e) {}
+  const d = GENTE_DISC_DEFAULT.map(p => ({...p}));
+  localStorage.setItem(GENTE_PESSOAS_KEY, JSON.stringify(d));
+  return d;
+}
+function genteSavePessoas(list) { localStorage.setItem(GENTE_PESSOAS_KEY, JSON.stringify(list)); }
+
+function genteLoadOrg() {
+  try {
+    const stored = localStorage.getItem(GENTE_ORG_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch(e) {}
+  const d = GENTE_ORG_DEFAULT.map(o => ({...o}));
+  localStorage.setItem(GENTE_ORG_KEY, JSON.stringify(d));
+  return d;
+}
+function genteSaveOrg(list) { localStorage.setItem(GENTE_ORG_KEY, JSON.stringify(list)); }
+
+function genteInit() {
+  genteShowTab('pessoas');
+}
+
+function genteShowTab(tab) {
+  ['pessoas','disc','organograma','feedback','material'].forEach(t => {
+    document.getElementById(`gente-pane-${t}`)?.classList.toggle('hidden', t !== tab);
+    document.getElementById(`gente-tab-${t}`)?.classList.toggle('active', t === tab);
+  });
+  if (tab === 'pessoas')     genteRenderPessoas();
+  if (tab === 'disc')        genteRenderDisc();
+  if (tab === 'organograma') genteRenderOrg();
+}
+
+function genteRenderPessoas() {
+  const pessoas = genteLoadPessoas();
+  const el = document.getElementById('gente-pessoas-list');
+  if (!pessoas.length) { el.innerHTML = '<p style="color:#64748b">Nenhuma pessoa cadastrada ainda.</p>'; return; }
+  el.innerHTML = `
+    <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr style="border-bottom:2px solid #334155">
+        <th style="text-align:left;padding:10px 12px;color:#64748b">Nome</th>
+        <th style="text-align:left;padding:10px 12px;color:#64748b">Cargo</th>
+        <th style="text-align:left;padding:10px 12px;color:#64748b">Área</th>
+        <th style="text-align:left;padding:10px 12px;color:#64748b">Perfil DISC</th>
+        <th style="text-align:center;padding:10px 12px;color:#ef4444">D</th>
+        <th style="text-align:center;padding:10px 12px;color:#eab308">I</th>
+        <th style="text-align:center;padding:10px 12px;color:#22c55e">S</th>
+        <th style="text-align:center;padding:10px 12px;color:#38bdf8">C</th>
+        <th style="padding:10px 12px"></th>
+      </tr></thead>
+      <tbody>
+        ${pessoas.map((p,i) => `
+          <tr style="border-bottom:1px solid #1e293b;cursor:pointer" onclick="genteOpenPessoaModal(${i})">
+            <td style="padding:10px 12px;color:#e2e8f0;font-weight:500">${p.nome}</td>
+            <td style="padding:10px 12px;color:#94a3b8">${p.cargo||'—'}</td>
+            <td style="padding:10px 12px;color:#94a3b8">${p.area||'—'}</td>
+            <td style="padding:10px 12px">
+              <span style="background:#1e293b;border-radius:20px;padding:3px 10px;font-size:12px;color:#e2e8f0">${p.perfil||'—'}</span>
+            </td>
+            <td style="text-align:center;padding:10px 8px;color:#ef4444;font-weight:600">${p.D||'—'}</td>
+            <td style="text-align:center;padding:10px 8px;color:#eab308;font-weight:600">${p.I||'—'}</td>
+            <td style="text-align:center;padding:10px 8px;color:#22c55e;font-weight:600">${p.S||'—'}</td>
+            <td style="text-align:center;padding:10px 8px;color:#38bdf8;font-weight:600">${p.C||'—'}</td>
+            <td style="padding:10px 8px"><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();genteOpenPessoaModal(${i})">✏️</button></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+    </div>`;
+}
+
+function genteOpenPessoaModal(idx) {
+  const pessoas = genteLoadPessoas();
+  const p = idx !== undefined ? pessoas[idx] : {};
+  document.getElementById('gente-pessoa-modal-title').textContent = idx !== undefined ? 'Editar Pessoa' : 'Nova Pessoa';
+  document.getElementById('gp-idx').value   = idx !== undefined ? idx : '';
+  document.getElementById('gp-nome').value  = p.nome  || '';
+  document.getElementById('gp-cargo').value = p.cargo || '';
+  document.getElementById('gp-area').value  = p.area  || '';
+  document.getElementById('gp-perfil').value= p.perfil|| '';
+  document.getElementById('gp-fator').value = p.fator || '';
+  document.getElementById('gp-d').value     = p.D !== undefined ? p.D : '';
+  document.getElementById('gp-i').value     = p.I !== undefined ? p.I : '';
+  document.getElementById('gp-s').value     = p.S !== undefined ? p.S : '';
+  document.getElementById('gp-c').value     = p.C !== undefined ? p.C : '';
+  document.getElementById('gp-medo').value  = p.medo  || '';
+  document.getElementById('gp-motiv').value = p.motiv || '';
+  document.getElementById('gp-notas').value = p.notas || '';
+  document.getElementById('gp-btn-del').classList.toggle('hidden', idx === undefined);
+  document.getElementById('gente-pessoa-modal').classList.remove('hidden');
+}
+function genteClosePessoaModal() { document.getElementById('gente-pessoa-modal').classList.add('hidden'); }
+
+function genteSavePessoa() {
+  const nome = document.getElementById('gp-nome').value.trim();
+  if (!nome) { alert('Nome é obrigatório.'); return; }
+  const pessoas = genteLoadPessoas();
+  const obj = {
+    nome,
+    cargo:  document.getElementById('gp-cargo').value.trim(),
+    area:   document.getElementById('gp-area').value.trim(),
+    perfil: document.getElementById('gp-perfil').value.trim(),
+    fator:  document.getElementById('gp-fator').value.trim(),
+    D:      Number(document.getElementById('gp-d').value) || 0,
+    I:      Number(document.getElementById('gp-i').value) || 0,
+    S:      Number(document.getElementById('gp-s').value) || 0,
+    C:      Number(document.getElementById('gp-c').value) || 0,
+    medo:   document.getElementById('gp-medo').value.trim(),
+    motiv:  document.getElementById('gp-motiv').value.trim(),
+    notas:  document.getElementById('gp-notas').value.trim(),
+  };
+  const idxStr = document.getElementById('gp-idx').value;
+  if (idxStr !== '') pessoas[Number(idxStr)] = obj;
+  else pessoas.push(obj);
+  genteSavePessoas(pessoas);
+  genteClosePessoaModal();
+  genteRenderPessoas();
+}
+
+function genteDeletePessoa() {
+  const idxStr = document.getElementById('gp-idx').value;
+  if (idxStr === '') return;
+  if (!confirm('Excluir esta pessoa?')) return;
+  const pessoas = genteLoadPessoas();
+  pessoas.splice(Number(idxStr), 1);
+  genteSavePessoas(pessoas);
+  genteClosePessoaModal();
+  genteRenderPessoas();
+}
+
+function genteRenderDisc() {
+  const pessoas = genteLoadPessoas().filter(p => p.D || p.I || p.S || p.C);
+  const el = document.getElementById('gente-disc-content');
+  if (!pessoas.length) { el.innerHTML = '<p style="color:#64748b">Cadastre pessoas com dados DISC para visualizar.</p>'; return; }
+
+  // Summary counts by dominant letter
+  const counts = {D:0, I:0, S:0, C:0, Eq:0};
+  pessoas.forEach(p => {
+    const max = Math.max(p.D||0, p.I||0, p.S||0, p.C||0);
+    const dom = ['D','I','S','C'].filter(k => (p[k]||0) >= max - 5);
+    if (dom.length >= 3) counts.Eq++;
+    else if (dom.length === 1) counts[dom[0]]++;
+    else { dom.forEach(k => counts[k] += 0.5); }
+  });
+
+  const discColors = {D:'#ef4444', I:'#eab308', S:'#22c55e', C:'#38bdf8'};
+
+  el.innerHTML = `
+    <h2 style="font-size:18px;color:#e2e8f0;margin-bottom:16px">Visão Geral do Time</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:28px">
+      ${['D','I','S','C'].map(k => `
+        <div class="kpi" style="border-top:3px solid ${discColors[k]}">
+          <div class="kpi-label" style="color:${discColors[k]}">${k === 'D' ? 'Dominância' : k === 'I' ? 'Influência' : k === 'S' ? 'Estabilidade' : 'Conformidade'}</div>
+          <div class="kpi-value" style="color:${discColors[k]};font-size:30px">${Math.round(counts[k])}</div>
+          <div style="font-size:11px;color:#64748b">dominante${Math.round(counts[k])!==1?'s':''}</div>
+        </div>`).join('')}
+    </div>
+
+    <h2 style="font-size:18px;color:#e2e8f0;margin-bottom:16px">Perfis Individuais</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
+      ${pessoas.map(p => `
+        <div class="chart-card" style="padding:16px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+            <div>
+              <div style="font-weight:700;color:#e2e8f0;font-size:15px">${p.nome}</div>
+              <div style="color:#64748b;font-size:12px">${p.cargo||''}${p.cargo&&p.area?' · ':''}${p.area||''}</div>
+            </div>
+            <span style="background:#1e293b;border-radius:20px;padding:3px 10px;font-size:11px;color:#94a3b8;white-space:nowrap">${p.fator||p.perfil||''}</span>
+          </div>
+          <div style="display:flex;align-items:flex-end;gap:6px;height:80px;margin-bottom:10px">
+            ${['D','I','S','C'].map(k => {
+              const val = p[k]||0;
+              const color = discColors[k];
+              return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+                <div style="font-size:11px;color:${color};font-weight:700">${val}%</div>
+                <div style="width:100%;background:${color};border-radius:3px 3px 0 0;height:${Math.round(val*0.6)}px;min-height:4px"></div>
+                <div style="font-size:12px;font-weight:700;color:${color}">${k}</div>
+              </div>`;
+            }).join('')}
+          </div>
+          <div style="font-weight:600;color:#e2e8f0;font-size:13px;margin-bottom:6px">${p.perfil||''}</div>
+          ${p.medo || p.motiv ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px">
+            ${p.medo ? `<div style="background:#0f172a;border-radius:6px;padding:6px"><div style="color:#64748b;margin-bottom:2px">Medo básico</div><div style="color:#fca5a5">${p.medo}</div></div>` : ''}
+            ${p.motiv ? `<div style="background:#0f172a;border-radius:6px;padding:6px"><div style="color:#64748b;margin-bottom:2px">Motivação</div><div style="color:#86efac">${p.motiv}</div></div>` : ''}
+          </div>` : ''}
+          ${p.notas ? `<div style="margin-top:8px;font-size:12px;color:#64748b;border-top:1px solid #1e293b;padding-top:8px">${p.notas}</div>` : ''}
+        </div>`).join('')}
+    </div>`;
+}
+
+function genteRenderOrg() {
+  const org = genteLoadOrg();
+  const el = document.getElementById('gente-org-content');
+
+  // Build tree
+  const byId = {};
+  org.forEach(m => { byId[m.id] = {...m, children: []}; });
+  const roots = [];
+  org.forEach(m => {
+    if (m.pai && byId[m.pai]) byId[m.pai].children.push(byId[m.id]);
+    else if (!m.pai) roots.push(byId[m.id]);
+  });
+
+  function renderNode(node, level) {
+    const colors = ['#38bdf8','#a78bfa','#22c55e','#f59e0b'];
+    const color = colors[Math.min(level, colors.length-1)];
+    const childrenHtml = node.children.length
+      ? `<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:0;position:relative">
+          <div style="position:absolute;top:0;left:50%;width:0;border-left:2px dashed #334155;height:24px;transform:translateX(-50%)"></div>
+          <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:12px;padding-top:24px;position:relative">
+            ${node.children.length > 1 ? `<div style="position:absolute;top:0;left:0;right:0;height:2px;border-top:2px dashed #334155;margin:0 ${100/(node.children.length*2)}%"></div>` : ''}
+            ${node.children.map(c => renderNode(c, level+1)).join('')}
+          </div>
+        </div>` : '';
+    return `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0">
+        <div style="background:#1e293b;border:2px solid ${color};border-radius:10px;padding:10px 16px;text-align:center;min-width:120px;cursor:pointer" onclick="genteOrgNodeClick('${node.id}')">
+          <div style="font-weight:700;color:#e2e8f0;font-size:13px">${node.nome}</div>
+          ${node.cargo ? `<div style="color:#64748b;font-size:11px;margin-top:2px">${node.cargo}</div>` : ''}
+        </div>
+        ${node.children.length ? `<div style="width:2px;height:20px;background:#334155"></div>${childrenHtml}` : ''}
+      </div>`;
+  }
+
+  el.innerHTML = `<div style="overflow-x:auto;padding:20px 0">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:0">
+      ${roots.map(r => renderNode(r, 0)).join('')}
+    </div>
+  </div>`;
+}
+
+function genteOrgNodeClick(id) {
+  const org = genteLoadOrg();
+  const node = org.find(o => o.id === id);
+  if (!node) return;
+  const cargo = prompt(`Cargo de "${node.nome}":`, node.cargo || '');
+  if (cargo === null) return;
+  node.cargo = cargo.trim();
+  genteSaveOrg(org);
+  genteRenderOrg();
+}
+
+function genteOpenOrgModal() {
+  const org = genteLoadOrg();
+  document.getElementById('go-nome').value = '';
+  document.getElementById('go-cargo').value = '';
+  const sel = document.getElementById('go-pai');
+  sel.innerHTML = org.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
+  document.getElementById('gente-org-modal').classList.remove('hidden');
+}
+
+function genteSaveOrgMembro() {
+  const nome = document.getElementById('go-nome').value.trim();
+  if (!nome) { alert('Nome é obrigatório.'); return; }
+  const cargo = document.getElementById('go-cargo').value.trim();
+  const pai   = document.getElementById('go-pai').value;
+  const org   = genteLoadOrg();
+  const id    = 'p_' + Date.now();
+  org.push({id, nome, cargo, pai});
+  genteSaveOrg(org);
+  document.getElementById('gente-org-modal').classList.add('hidden');
+  genteRenderOrg();
+}
 </script>
 <div class="container page hidden" id="page-vjm">
 
@@ -6095,6 +6397,269 @@ loadConfig();
   </div>
 
 </div>
+
+<!-- ===== PAGE: GENTE ===== -->
+<div class="container page hidden" id="page-gente">
+
+  <div class="smart-tabs" id="gente-tabs" style="margin-bottom:20px">
+    <button class="smart-tab active" id="gente-tab-pessoas"      onclick="genteShowTab('pessoas')">Pessoas</button>
+    <button class="smart-tab"        id="gente-tab-disc"         onclick="genteShowTab('disc')">DISC do Time</button>
+    <button class="smart-tab"        id="gente-tab-organograma"  onclick="genteShowTab('organograma')">Organograma</button>
+    <button class="smart-tab"        id="gente-tab-feedback"     onclick="genteShowTab('feedback')">Feedback</button>
+    <button class="smart-tab"        id="gente-tab-material"     onclick="genteShowTab('material')">Material DISC</button>
+  </div>
+
+  <!-- TAB: PESSOAS -->
+  <div id="gente-pane-pessoas">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <h2 style="margin:0;font-size:18px;color:#e2e8f0">Diretório de Pessoas</h2>
+      <button class="btn btn-primary" onclick="genteOpenPessoaModal()">+ Adicionar Pessoa</button>
+    </div>
+    <div id="gente-pessoas-list"></div>
+  </div>
+
+  <!-- TAB: DISC DO TIME -->
+  <div id="gente-pane-disc" class="hidden">
+    <div id="gente-disc-content"></div>
+  </div>
+
+  <!-- TAB: ORGANOGRAMA -->
+  <div id="gente-pane-organograma" class="hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <h2 style="margin:0;font-size:18px;color:#e2e8f0">Organograma</h2>
+      <button class="btn btn-primary" onclick="genteOpenOrgModal()">+ Adicionar Membro</button>
+    </div>
+    <div id="gente-org-content"></div>
+  </div>
+
+  <!-- TAB: FEEDBACK -->
+  <div id="gente-pane-feedback" class="hidden">
+    <div class="chart-card" style="max-width:780px">
+      <h2 style="color:#38bdf8;margin-bottom:18px">Guia de Boas Práticas de Feedback</h2>
+
+      <h3 style="color:#e2e8f0;margin-bottom:8px">O que é Feedback?</h3>
+      <p style="color:#94a3b8;line-height:1.7">Feedback é uma informação que damos ao outro sobre como o seu comportamento nos afeta ou como percebemos a sua performance, com o objetivo de ajudá-lo a crescer e melhorar. Não é crítica, não é julgamento — é uma ferramenta de desenvolvimento.</p>
+
+      <h3 style="color:#e2e8f0;margin:18px 0 8px">Tipos de Feedback</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:18px">
+        <div style="background:#0f172a;border-radius:10px;padding:14px;border-left:3px solid #22c55e">
+          <div style="font-weight:600;color:#22c55e;margin-bottom:6px">Feedback Positivo</div>
+          <div style="color:#94a3b8;font-size:13px">Reconhece e reforça comportamentos e atitudes que devem ser mantidos. Aumenta a motivação e autoconfiança.</div>
+        </div>
+        <div style="background:#0f172a;border-radius:10px;padding:14px;border-left:3px solid #f59e0b">
+          <div style="font-weight:600;color:#f59e0b;margin-bottom:6px">Feedback de Desenvolvimento</div>
+          <div style="color:#94a3b8;font-size:13px">Aponta comportamentos que precisam ser ajustados ou melhorados. Foca em fatos, não em julgamentos pessoais.</div>
+        </div>
+        <div style="background:#0f172a;border-radius:10px;padding:14px;border-left:3px solid #38bdf8">
+          <div style="font-weight:600;color:#38bdf8;margin-bottom:6px">Feedback 360°</div>
+          <div style="color:#94a3b8;font-size:13px">Coleta percepções de múltiplas fontes — pares, líderes e liderados — para uma visão mais completa do desempenho.</div>
+        </div>
+      </div>
+
+      <h3 style="color:#e2e8f0;margin-bottom:8px">Modelo SCI (Situação → Comportamento → Impacto)</h3>
+      <p style="color:#94a3b8;font-size:13px;margin-bottom:10px">Estruture seu feedback em 3 etapas para ser claro, específico e construtivo:</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:18px">
+        <div style="background:#0f172a;border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:#38bdf8">S</div>
+          <div style="font-weight:600;color:#e2e8f0;margin-bottom:4px">Situação</div>
+          <div style="color:#94a3b8;font-size:12px">Descreva o contexto específico. Quando, onde e em qual circunstância o comportamento ocorreu.</div>
+        </div>
+        <div style="background:#0f172a;border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:#a78bfa">C</div>
+          <div style="font-weight:600;color:#e2e8f0;margin-bottom:4px">Comportamento</div>
+          <div style="color:#94a3b8;font-size:12px">Descreva o que a pessoa fez ou disse. Atenha-se ao comportamento observável, sem interpretações.</div>
+        </div>
+        <div style="background:#0f172a;border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:#22c55e">I</div>
+          <div style="font-weight:600;color:#e2e8f0;margin-bottom:4px">Impacto</div>
+          <div style="color:#94a3b8;font-size:12px">Explique qual foi o efeito desse comportamento — em você, na equipe ou nos resultados.</div>
+        </div>
+      </div>
+
+      <h3 style="color:#e2e8f0;margin-bottom:8px">Boas Práticas</h3>
+      <ul style="color:#94a3b8;line-height:2;padding-left:20px;font-size:14px">
+        <li>Seja específico — evite generalizações como "você sempre" ou "você nunca"</li>
+        <li>Foque no comportamento, não na personalidade</li>
+        <li>Escolha o momento certo — logo após o evento, em ambiente privado</li>
+        <li>Seja empático — comece reconhecendo algo positivo antes do ponto de melhoria</li>
+        <li>Ouça a perspectiva do outro após dar o feedback</li>
+        <li>Combine os próximos passos — o que fazer diferente?</li>
+        <li>Acompanhe — follow-up é parte do processo</li>
+      </ul>
+
+      <h3 style="color:#e2e8f0;margin:18px 0 8px">Como adaptar pelo DISC</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
+        <div style="background:#0f172a;border-radius:8px;padding:12px;border-top:3px solid #ef4444">
+          <div style="font-weight:700;color:#ef4444;margin-bottom:6px">D — Dominância</div>
+          <div style="color:#94a3b8;font-size:12px">Seja direto e objetivo. Vá ao ponto rapidamente. Foque em resultados e soluções. Evite rodeios.</div>
+        </div>
+        <div style="background:#0f172a;border-radius:8px;padding:12px;border-top:3px solid #eab308">
+          <div style="font-weight:700;color:#eab308;margin-bottom:6px">I — Influência</div>
+          <div style="color:#94a3b8;font-size:12px">Seja caloroso e encorajador. Reconheça o esforço. Use exemplos concretos. Mantenha o tom positivo mesmo no feedback de melhoria.</div>
+        </div>
+        <div style="background:#0f172a;border-radius:8px;padding:12px;border-top:3px solid #22c55e">
+          <div style="font-weight:700;color:#22c55e;margin-bottom:6px">S — Estabilidade</div>
+          <div style="color:#94a3b8;font-size:12px">Seja gentil e paciente. Dê tempo para processar. Explique como a mudança beneficia a equipe. Evite pressão ou urgência excessiva.</div>
+        </div>
+        <div style="background:#0f172a;border-radius:8px;padding:12px;border-top:3px solid #38bdf8">
+          <div style="font-weight:700;color:#38bdf8;margin-bottom:6px">C — Conformidade</div>
+          <div style="color:#94a3b8;font-size:12px">Seja lógico e baseado em fatos. Forneça dados e exemplos específicos. Dê tempo para análise. Evite críticas sem embasamento.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: MATERIAL DISC -->
+  <div id="gente-pane-material" class="hidden">
+    <div class="chart-card" style="max-width:780px">
+      <h2 style="color:#38bdf8;margin-bottom:18px">Material DISC para Líderes</h2>
+
+      <h3 style="color:#e2e8f0;margin-bottom:10px">Os 4 Perfis Comportamentais</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:24px">
+        <div style="background:#0f172a;border-radius:10px;padding:16px;border-top:4px solid #ef4444">
+          <div style="font-size:28px;font-weight:800;color:#ef4444">D</div>
+          <div style="font-weight:700;color:#e2e8f0;margin-bottom:6px">Dominância</div>
+          <div style="color:#94a3b8;font-size:13px;line-height:1.6"><b style="color:#e2e8f0">Palavras-chave:</b> direto, decidido, competitivo, orientado a resultados<br><b style="color:#e2e8f0">Motiva:</b> desafios, autonomia, poder de decisão<br><b style="color:#e2e8f0">Teme:</b> ser controlado, perder status<br><b style="color:#e2e8f0">Comunique:</b> de forma direta, foque nos resultados, respeite o tempo deles</div>
+        </div>
+        <div style="background:#0f172a;border-radius:10px;padding:16px;border-top:4px solid #eab308">
+          <div style="font-size:28px;font-weight:800;color:#eab308">I</div>
+          <div style="font-weight:700;color:#e2e8f0;margin-bottom:6px">Influência</div>
+          <div style="color:#94a3b8;font-size:13px;line-height:1.6"><b style="color:#e2e8f0">Palavras-chave:</b> entusiasta, sociável, otimista, persuasivo<br><b style="color:#e2e8f0">Motiva:</b> reconhecimento, colaboração, variedade<br><b style="color:#e2e8f0">Teme:</b> rejeição, perda de popularidade<br><b style="color:#e2e8f0">Comunique:</b> com entusiasmo, valorize as ideias, inclua nas decisões</div>
+        </div>
+        <div style="background:#0f172a;border-radius:10px;padding:16px;border-top:4px solid #22c55e">
+          <div style="font-size:28px;font-weight:800;color:#22c55e">S</div>
+          <div style="font-weight:700;color:#e2e8f0;margin-bottom:6px">Estabilidade</div>
+          <div style="color:#94a3b8;font-size:13px;line-height:1.6"><b style="color:#e2e8f0">Palavras-chave:</b> leal, paciente, consistente, colaborativo<br><b style="color:#e2e8f0">Motiva:</b> segurança, harmonia, rotina previsível<br><b style="color:#e2e8f0">Teme:</b> mudanças bruscas, conflitos<br><b style="color:#e2e8f0">Comunique:</b> com calma, explique o porquê das mudanças, valorize a lealdade</div>
+        </div>
+        <div style="background:#0f172a;border-radius:10px;padding:16px;border-top:4px solid #38bdf8">
+          <div style="font-size:28px;font-weight:800;color:#38bdf8">C</div>
+          <div style="font-weight:700;color:#e2e8f0;margin-bottom:6px">Conformidade</div>
+          <div style="color:#94a3b8;font-size:13px;line-height:1.6"><b style="color:#e2e8f0">Palavras-chave:</b> analítico, preciso, sistemático, cuidadoso<br><b style="color:#e2e8f0">Motiva:</b> qualidade, domínio técnico, processos claros<br><b style="color:#e2e8f0">Teme:</b> erros, críticas sem embasamento<br><b style="color:#e2e8f0">Comunique:</b> com dados e fatos, dê tempo para analisar, respeite os processos</div>
+        </div>
+      </div>
+
+      <h3 style="color:#e2e8f0;margin-bottom:10px">Perfis Compostos Comuns</h3>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr style="border-bottom:1px solid #334155">
+              <th style="text-align:left;padding:8px 10px;color:#64748b">Perfil</th>
+              <th style="text-align:left;padding:8px 10px;color:#64748b">Nome</th>
+              <th style="text-align:left;padding:8px 10px;color:#64748b">Características principais</th>
+            </tr>
+          </thead>
+          <tbody style="color:#94a3b8">
+            <tr style="border-bottom:1px solid #1e293b"><td style="padding:8px 10px;color:#e2e8f0">Monofatorial S</td><td style="padding:8px 10px">Estável Puro</td><td style="padding:8px 10px">Máxima lealdade, paciência e consistência. Porto seguro da equipe.</td></tr>
+            <tr style="border-bottom:1px solid #1e293b"><td style="padding:8px 10px;color:#e2e8f0">Bifatorial SC</td><td style="padding:8px 10px">Especialista</td><td style="padding:8px 10px">Une estabilidade com rigor técnico. Confiável, metódico e preciso.</td></tr>
+            <tr style="border-bottom:1px solid #1e293b"><td style="padding:8px 10px;color:#e2e8f0">Bifatorial SI</td><td style="padding:8px 10px">Suporte Influente</td><td style="padding:8px 10px">Equilibra estabilidade com entusiasmo. Excelente em trabalho em equipe.</td></tr>
+            <tr style="border-bottom:1px solid #1e293b"><td style="padding:8px 10px;color:#e2e8f0">Trifatorial SCI</td><td style="padding:8px 10px">Analista Harmonizador</td><td style="padding:8px 10px">Equilibra técnica, relacionamento e estabilidade. Facilita consensos.</td></tr>
+            <tr style="border-bottom:1px solid #1e293b"><td style="padding:8px 10px;color:#e2e8f0">Perfil Equilibrado</td><td style="padding:8px 10px">Perfil Equilibrado</td><td style="padding:8px 10px">Distribuição uniforme dos 4 fatores. Ponderado, moderado e adaptável.</td></tr>
+            <tr style="border-bottom:1px solid #1e293b"><td style="padding:8px 10px;color:#e2e8f0">Bifatorial DI</td><td style="padding:8px 10px">Motivador</td><td style="padding:8px 10px">Combina resultado com influência. Lidera pelo entusiasmo e pela ação.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="color:#e2e8f0;margin:20px 0 10px">Como usar o DISC na Gestão</h3>
+      <ul style="color:#94a3b8;line-height:2;padding-left:20px;font-size:14px">
+        <li><b style="color:#e2e8f0">Delegação:</b> perfis D e I preferem autonomia; S e C preferem instruções detalhadas</li>
+        <li><b style="color:#e2e8f0">Motivação:</b> D quer resultados e desafios; I quer reconhecimento; S quer segurança; C quer qualidade</li>
+        <li><b style="color:#e2e8f0">Comunicação:</b> adapte o estilo ao perfil do receptor, não ao seu próprio perfil</li>
+        <li><b style="color:#e2e8f0">Conflitos:</b> D vs S (ritmo), I vs C (intuição vs dados), D vs C (velocidade vs precisão)</li>
+        <li><b style="color:#e2e8f0">Times:</b> equipes com perfis variados são mais resilientes e criativas, mas precisam de mediação</li>
+        <li><b style="color:#e2e8f0">Atenção:</b> o DISC descreve comportamentos, não capacidade. Não use para limitar pessoas.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- MODAL: PESSOA -->
+  <div id="gente-pessoa-modal" class="modal-overlay hidden">
+    <div class="modal" style="max-width:520px">
+      <div class="modal-header">
+        <h3 id="gente-pessoa-modal-title">Nova Pessoa</h3>
+        <button class="modal-close" onclick="genteClosePessoaModal()">✕</button>
+      </div>
+      <div class="modal-body" style="display:grid;gap:12px">
+        <input type="hidden" id="gp-idx">
+        <div>
+          <label class="form-label">Nome *</label>
+          <input id="gp-nome" placeholder="Nome completo">
+        </div>
+        <div>
+          <label class="form-label">Cargo / Função</label>
+          <input id="gp-cargo" placeholder="Ex: Analista Financeiro">
+        </div>
+        <div>
+          <label class="form-label">Área / Departamento</label>
+          <input id="gp-area" placeholder="Ex: Financeiro, Operações...">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <label class="form-label">Perfil DISC</label>
+            <input id="gp-perfil" placeholder="Ex: Especialista">
+          </div>
+          <div>
+            <label class="form-label">Fator</label>
+            <input id="gp-fator" placeholder="Ex: Bifatorial SC">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+          <div><label class="form-label" style="color:#ef4444">D %</label><input id="gp-d" type="number" min="0" max="100" placeholder="0"></div>
+          <div><label class="form-label" style="color:#eab308">I %</label><input id="gp-i" type="number" min="0" max="100" placeholder="0"></div>
+          <div><label class="form-label" style="color:#22c55e">S %</label><input id="gp-s" type="number" min="0" max="100" placeholder="0"></div>
+          <div><label class="form-label" style="color:#38bdf8">C %</label><input id="gp-c" type="number" min="0" max="100" placeholder="0"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <label class="form-label">Medo Básico</label>
+            <input id="gp-medo" placeholder="Ex: Caos Operacional">
+          </div>
+          <div>
+            <label class="form-label">Motivação Principal</label>
+            <input id="gp-motiv" placeholder="Ex: Domínio Técnico">
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Anotações Gerais</label>
+          <textarea id="gp-notas" style="width:100%;height:80px;resize:vertical;background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:6px;padding:8px;font-family:inherit;font-size:13px" placeholder="Observações sobre a pessoa, pontos de desenvolvimento, projetos..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="genteClosePessoaModal()">Cancelar</button>
+        <button class="btn btn-danger hidden" id="gp-btn-del" onclick="genteDeletePessoa()">Excluir</button>
+        <button class="btn btn-primary" onclick="genteSavePessoa()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ORG -->
+  <div id="gente-org-modal" class="modal-overlay hidden">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header">
+        <h3>Adicionar ao Organograma</h3>
+        <button class="modal-close" onclick="document.getElementById('gente-org-modal').classList.add('hidden')">✕</button>
+      </div>
+      <div class="modal-body" style="display:grid;gap:12px">
+        <div>
+          <label class="form-label">Nome *</label>
+          <input id="go-nome" placeholder="Nome completo">
+        </div>
+        <div>
+          <label class="form-label">Cargo</label>
+          <input id="go-cargo" placeholder="Ex: Analista">
+        </div>
+        <div>
+          <label class="form-label">Reporta para (superior direto)</label>
+          <select id="go-pai" style="width:100%"></select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="document.getElementById('gente-org-modal').classList.add('hidden')">Cancelar</button>
+        <button class="btn btn-primary" onclick="genteSaveOrgMembro()">Adicionar</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page-gente -->
 
 </body>
 </html>
