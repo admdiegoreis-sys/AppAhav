@@ -6039,27 +6039,27 @@ function genteAutoDiscProfile(D, I, S, C) {
   const max = Math.max(D, I, S, C);
   const min = Math.min(D, I, S, C);
   // Spread pequeno com todos moderados = equilibrado
-  if ((max - min) <= 22 && min >= 30) return {fator:'Perfil Equilibrado', perfil:'Perfil Equilibrado', medo:'Julgamento Precipitado', motiv:'Moderação e Equilíbrio'};
+  if ((max - min) <= 22 && min >= 30) return {fator:'Perfil Equilibrado', perfil:'Perfil Equilibrado', medo:'Julgamento Precipitado', motiv:'Moderação e Equilíbrio', valor:'Visão 360° e decisões ponderadas', vendas:'Adaptação ao perfil do cliente', comunicacao:'Adapte o estilo conforme o contexto. Transita entre diferentes perfis com facilidade.', feedback_tipo:'FEED', feedback_dica:'Favorece reflexão equilibrada. Combine escuta, dados e espaço para posicionamento.'};
   // Fatores ativos: dentro de 15% do máximo
   const threshold = max * 0.85;
   const vals = {D, I, S, C};
   const active = ['D','I','S','C'].filter(k => vals[k] >= threshold);
   const PROFILES = {
-    'D':   {fator:'Monofatorial D',    perfil:'Executor',             medo:'Perder o controle',              motiv:'Resultados e autonomia'},
-    'I':   {fator:'Monofatorial I',    perfil:'Comunicador',          medo:'Rejeição social',                motiv:'Reconhecimento e aprovação'},
-    'S':   {fator:'Monofatorial S',    perfil:'Estável Puro',         medo:'Insegurança',                    motiv:'Previsibilidade'},
-    'C':   {fator:'Monofatorial C',    perfil:'Analista',             medo:'Erros e críticas sem base',      motiv:'Precisão e qualidade'},
-    'DI':  {fator:'Bifatorial DI',     perfil:'Motivador',            medo:'Perda de influência',            motiv:'Liderança com impacto'},
-    'DS':  {fator:'Bifatorial DS',     perfil:'Investigador',         medo:'Ineficiência',                   motiv:'Resultados consistentes'},
-    'DC':  {fator:'Bifatorial DC',     perfil:'Perfeccionista',       medo:'Incompetência',                  motiv:'Excelência e controle'},
-    'IS':  {fator:'Bifatorial IS',     perfil:'Suporte Influente',    medo:'Conflito e rejeição',            motiv:'Harmonia e colaboração'},
-    'IC':  {fator:'Bifatorial IC',     perfil:'Questionador',         medo:'Imprecisão e superficialidade',  motiv:'Ideias com embasamento'},
-    'SC':  {fator:'Bifatorial SC',     perfil:'Especialista',         medo:'Caos Operacional',               motiv:'Domínio Técnico'},
-    'DIS': {fator:'Trifatorial DIS',   perfil:'Realizador',           medo:'Estagnação',                     motiv:'Crescimento com pessoas'},
-    'DIC': {fator:'Trifatorial DIC',   perfil:'Criativo Crítico',     medo:'Mediocridade',                   motiv:'Inovação com rigor'},
-    'DSC': {fator:'Trifatorial DSC',   perfil:'Executor Metódico',    medo:'Caos e improvisação',            motiv:'Execução estruturada'},
-    'ISC': {fator:'Trifatorial ISC',   perfil:'Analista Harmonizador',medo:'Desorientação Operacional',      motiv:'Equilíbrio entre Técnica e Pessoas'},
-    'DISC':{fator:'Perfil Equilibrado',perfil:'Perfil Equilibrado',   medo:'Julgamento Precipitado',         motiv:'Moderação e Equilíbrio'},
+    'D':   {fator:'Monofatorial D',    perfil:'Executor',             medo:'Perder o controle',              motiv:'Resultados e autonomia',                   valor:'Decisões rápidas e foco em resultados',        vendas:'Fechamento direto e negociação assertiva',      comunicacao:'Seja direto, foque em resultados e respeite o tempo dele.',                                                     feedback_tipo:'SBI', feedback_dica:'Fatos claros e impacto nos resultados. Evite rodeios, mantenha foco em performance.'},
+    'I':   {fator:'Monofatorial I',    perfil:'Comunicador',          medo:'Rejeição social',                motiv:'Reconhecimento e aprovação',               valor:'Engajamento e clima positivo',                 vendas:'Relacionamento e persuasão',                    comunicacao:'Com entusiasmo, valorize as ideias e inclua nas decisões.',                                                     feedback_tipo:'FEED',feedback_dica:'Favorece diálogo, escuta e construção conjunta. Evite confronto direto.'},
+    'S':   {fator:'Monofatorial S',    perfil:'Estável Puro',         medo:'Insegurança e mudanças bruscas', motiv:'Previsibilidade e harmonia',               valor:'Consistência, lealdade e execução confiável',  vendas:'Atendimento e pós-venda com fidelização',       comunicacao:'Com calma, explique o porquê das mudanças e valorize a lealdade.',                                              feedback_tipo:'FEED',feedback_dica:'Estimula reflexão e alinhamento gradual. Mostre que a mudança é segura e planejada.'},
+    'C':   {fator:'Monofatorial C',    perfil:'Analista',             medo:'Erros e críticas sem base',      motiv:'Precisão e qualidade',                     valor:'Rigor técnico e garantia de qualidade',        vendas:'Argumentação técnica com dados e evidências',   comunicacao:'Com dados e fatos. Dê tempo para analisar. Respeite os processos.',                                             feedback_tipo:'SBI', feedback_dica:'Baseado em fatos e impactos objetivos. Atende à necessidade de lógica e evidência.'},
+    'DI':  {fator:'Bifatorial DI',     perfil:'Motivador',            medo:'Falhar e perder reconhecimento', motiv:'Desafios, poder e visibilidade',           valor:'Mobiliza pessoas e acelera resultados',         vendas:'Abertura e fechamento de negócios',             comunicacao:'Comunicação direta e rápida, com reconhecimento explícito. Dê protagonismo na solução.',                        feedback_tipo:'SBI', feedback_dica:'Fatos claros e impacto nos resultados. Mantém foco em performance e permite agir rapidamente.'},
+    'DS':  {fator:'Bifatorial DS',     perfil:'Investigador',         medo:'Falhar e mudanças inesperadas',  motiv:'Resultados com segurança',                valor:'Execução consistente e foco em entrega',        vendas:'Fechamento com sustentação do relacionamento',  comunicacao:'Seja firme, explique o porquê das decisões e dê tempo para adaptação. Evite pressão excessiva.',               feedback_tipo:'SBI', feedback_dica:'Mostra comportamento observado e impacto sem gerar insegurança emocional.'},
+    'DC':  {fator:'Bifatorial DC',     perfil:'Perfeccionista',       medo:'Falhar e perder numa discussão', motiv:'Resultados, controle e precisão',          valor:'Alta performance com qualidade técnica',        vendas:'Negociação técnica e contratos',                comunicacao:'Use dados, fatos e lógica. Evite emoção e improviso. Mostre redução de risco e ganho de eficiência.',          feedback_tipo:'SBI', feedback_dica:'Baseado em fatos e impactos objetivos. Atende à necessidade de lógica, evidência e racionalidade.'},
+    'IS':  {fator:'Bifatorial IS',     perfil:'Suporte Influente',    medo:'Rejeição e mudanças',            motiv:'Reconhecimento, pertencimento e segurança',valor:'Clima organizacional e colaboração',            vendas:'Relacionamento, atendimento e fidelização',     comunicacao:'Comece pelo acolhimento, valide sentimentos e construa consenso. Evite confronto direto.',                     feedback_tipo:'FEED',feedback_dica:'Favorece diálogo, escuta e construção conjunta. Reduz resistência e aumenta engajamento.'},
+    'IC':  {fator:'Bifatorial IC',     perfil:'Questionador',         medo:'Rejeição e conflitos',           motiv:'Reconhecimento com regras claras',         valor:'Comunicação qualificada com padrão',            vendas:'Argumentação com suporte técnico',              comunicacao:'Combine empatia com critérios objetivos. Explique regras, evite exposição pública e incentive perguntas.',      feedback_tipo:'FEED',feedback_dica:'Permite explicar expectativas sem confronto direto, preservando vínculo e clareza.'},
+    'SC':  {fator:'Bifatorial SC',     perfil:'Especialista',         medo:'Mudanças e conflitos',           motiv:'Segurança, regras e previsibilidade',      valor:'Sustentação de processos e qualidade',          vendas:'Atendimento técnico e pós-venda',               comunicacao:'Prepare a conversa, traga passo a passo e previsibilidade. Mostre que a mudança é segura e planejada.',        feedback_tipo:'FEED',feedback_dica:'Estimula reflexão, segurança psicológica e alinhamento gradual, evitando rupturas silenciosas.'},
+    'DIS': {fator:'Trifatorial DIS',   perfil:'Realizador',           medo:'Estagnação',                     motiv:'Crescimento com pessoas',                  valor:'Liderança orientada a resultado e pessoas',     vendas:'Fechamento com influência e confiança',         comunicacao:'Direto e entusiasta. Reconheça conquistas e desafie com metas claras.',                                        feedback_tipo:'SBI', feedback_dica:'Fatos + impacto + próximos passos. Mantenha tom positivo e foco em crescimento.'},
+    'DIC': {fator:'Trifatorial DIC',   perfil:'Criativo Crítico',     medo:'Mediocridade',                   motiv:'Inovação com rigor',                       valor:'Soluções criativas com qualidade técnica',     vendas:'Argumentação inovadora com dados',              comunicacao:'Desafie com dados e criatividade. Valorize o raciocínio e a originalidade.',                                    feedback_tipo:'SBI', feedback_dica:'Baseado em fatos e impacto. Valorize o raciocínio e aponte a melhoria com lógica.'},
+    'DSC': {fator:'Trifatorial DSC',   perfil:'Executor Metódico',    medo:'Caos e improvisação',            motiv:'Execução estruturada',                     valor:'Entrega confiável com controle de qualidade',  vendas:'Negociação estruturada com garantia de entrega',comunicacao:'Seja firme, estruturado e baseado em dados. Mostre o plano passo a passo.',                                     feedback_tipo:'SBI', feedback_dica:'Fatos e impacto objetivo. Mostre o plano de correção com clareza.'},
+    'ISC': {fator:'Trifatorial ISC',   perfil:'Analista Harmonizador',medo:'Desorientação Operacional',      motiv:'Equilíbrio entre Técnica e Pessoas',       valor:'Consenso técnico com harmonia de equipe',      vendas:'Relacionamento técnico e fidelização',          comunicacao:'Acolha primeiro, depois apresente dados. Construa consenso com paciência e lógica.',                           feedback_tipo:'FEED',feedback_dica:'Favorece diálogo e construção gradual. Combine escuta com dados concretos.'},
+    'DISC':{fator:'Perfil Equilibrado',perfil:'Perfil Equilibrado',   medo:'Julgamento Precipitado',         motiv:'Moderação e Equilíbrio',                   valor:'Visão 360° e decisões ponderadas',             vendas:'Adaptação ao perfil do cliente',                comunicacao:'Adapte o estilo conforme o contexto. Transita entre diferentes perfis com facilidade.',                        feedback_tipo:'FEED',feedback_dica:'Favorece reflexão equilibrada. Combine escuta, dados e espaço para posicionamento.'},
   };
   const key = active.join('');
   return PROFILES[key] || null;
@@ -6249,34 +6249,51 @@ function genteRenderDisc() {
     </div>
 
     <h2 style="font-size:18px;color:#e2e8f0;margin-bottom:16px">Perfis Individuais</h2>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
-      ${pessoas.map(p => `
-        <div class="chart-card" style="padding:16px">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px">
+      ${pessoas.map(p => {
+        const ftColor = p.feedback_tipo === 'SBI' ? '#38bdf8' : '#a78bfa';
+        return `
+        <div class="chart-card" style="padding:18px;display:flex;flex-direction:column;gap:0">
+          <!-- cabeçalho -->
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
             <div>
-              <div style="font-weight:700;color:#e2e8f0;font-size:15px">${p.nome}</div>
-              <div style="color:#64748b;font-size:12px">${p.cargo||''}${p.cargo&&p.area?' · ':''}${p.area||''}</div>
+              <div style="font-weight:700;color:#e2e8f0;font-size:16px">${p.nome}</div>
+              <div style="color:#64748b;font-size:12px;margin-top:2px">${p.cargo||''}${p.cargo&&p.area?' · ':''}${p.area||''}</div>
             </div>
-            <span style="background:#1e293b;border-radius:20px;padding:3px 10px;font-size:11px;color:#94a3b8;white-space:nowrap">${p.fator||p.perfil||''}</span>
+            <div style="text-align:right">
+              <span style="background:#1e293b;border-radius:20px;padding:3px 10px;font-size:11px;color:#94a3b8;display:block;margin-bottom:4px">${p.fator||''}</span>
+              ${p.feedback_tipo ? `<span style="background:${ftColor}22;border-radius:20px;padding:2px 10px;font-size:11px;color:${ftColor};font-weight:700">${p.feedback_tipo}</span>` : ''}
+            </div>
           </div>
-          <div style="display:flex;align-items:flex-end;gap:6px;height:80px;margin-bottom:10px">
+          <!-- barras DISC -->
+          <div style="display:flex;align-items:flex-end;gap:6px;height:72px;margin-bottom:10px">
             ${['D','I','S','C'].map(k => {
               const val = p[k]||0;
               const color = discColors[k];
-              return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+              return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
                 <div style="font-size:11px;color:${color};font-weight:700">${val}%</div>
-                <div style="width:100%;background:${color};border-radius:3px 3px 0 0;height:${Math.round(val*0.6)}px;min-height:4px"></div>
+                <div style="width:100%;background:${color};border-radius:3px 3px 0 0;height:${Math.round(val*0.55)}px;min-height:4px"></div>
                 <div style="font-size:12px;font-weight:700;color:${color}">${k}</div>
               </div>`;
             }).join('')}
           </div>
-          <div style="font-weight:600;color:#e2e8f0;font-size:13px;margin-bottom:6px">${p.perfil||''}</div>
-          ${p.medo || p.motiv ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px">
-            ${p.medo ? `<div style="background:#0f172a;border-radius:6px;padding:6px"><div style="color:#64748b;margin-bottom:2px">Medo básico</div><div style="color:#fca5a5">${p.medo}</div></div>` : ''}
-            ${p.motiv ? `<div style="background:#0f172a;border-radius:6px;padding:6px"><div style="color:#64748b;margin-bottom:2px">Motivação</div><div style="color:#86efac">${p.motiv}</div></div>` : ''}
-          </div>` : ''}
-          ${p.notas ? `<div style="margin-top:8px;font-size:12px;color:#64748b;border-top:1px solid #1e293b;padding-top:8px">${p.notas}</div>` : ''}
-        </div>`).join('')}
+          <!-- perfil -->
+          <div style="font-weight:700;color:#e2e8f0;font-size:14px;margin-bottom:10px">${p.perfil||''}</div>
+          <!-- grid de métricas -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;margin-bottom:8px">
+            ${p.medo  ? `<div style="background:#0f172a;border-radius:6px;padding:7px 8px"><div style="color:#64748b;margin-bottom:3px">Medo básico</div><div style="color:#fca5a5;font-weight:500">${p.medo}</div></div>` : ''}
+            ${p.motiv ? `<div style="background:#0f172a;border-radius:6px;padding:7px 8px"><div style="color:#64748b;margin-bottom:3px">Motivação</div><div style="color:#86efac;font-weight:500">${p.motiv}</div></div>` : ''}
+            ${p.valor ? `<div style="background:#0f172a;border-radius:6px;padding:7px 8px"><div style="color:#64748b;margin-bottom:3px">Valor p/ organização</div><div style="color:#e2e8f0">${p.valor}</div></div>` : ''}
+            ${p.vendas? `<div style="background:#0f172a;border-radius:6px;padding:7px 8px"><div style="color:#64748b;margin-bottom:3px">Eficiência em vendas</div><div style="color:#e2e8f0">${p.vendas}</div></div>` : ''}
+          </div>
+          <!-- comunicação -->
+          ${p.comunicacao ? `<div style="background:#0f172a;border-radius:6px;padding:7px 8px;font-size:11px;margin-bottom:6px"><div style="color:#64748b;margin-bottom:3px">Como se comunicar</div><div style="color:#cbd5e1">${p.comunicacao}</div></div>` : ''}
+          <!-- dica de feedback -->
+          ${p.feedback_dica ? `<div style="background:${ftColor}11;border:1px solid ${ftColor}33;border-radius:6px;padding:7px 8px;font-size:11px"><div style="color:${ftColor};font-weight:600;margin-bottom:3px">Feedback ${p.feedback_tipo||''}</div><div style="color:#cbd5e1">${p.feedback_dica}</div></div>` : ''}
+          <!-- anotações -->
+          ${p.notas ? `<div style="margin-top:8px;font-size:11px;color:#64748b;border-top:1px solid #1e293b;padding-top:8px">${p.notas}</div>` : ''}
+        </div>`;
+      }).join('')}
     </div>`;
 }
 
@@ -6643,6 +6660,45 @@ function genteSaveOrgMembro() {
         <li><b style="color:#e2e8f0">Times:</b> equipes com perfis variados são mais resilientes e criativas, mas precisam de mediação</li>
         <li><b style="color:#e2e8f0">Atenção:</b> o DISC descreve comportamentos, não capacidade. Não use para limitar pessoas.</li>
       </ul>
+
+      <h3 style="color:#e2e8f0;margin:24px 0 12px">Quadro de Gestão por Perfil — Conflitos, Comunicação e Feedback</h3>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:760px">
+          <thead>
+            <tr style="background:#0f172a">
+              <th style="padding:10px 12px;text-align:left;color:#38bdf8;border-bottom:2px solid #334155;white-space:nowrap">Perfil</th>
+              <th style="padding:10px 12px;text-align:left;color:#fca5a5;border-bottom:2px solid #334155">Medo Básico</th>
+              <th style="padding:10px 12px;text-align:left;color:#86efac;border-bottom:2px solid #334155">Motivação</th>
+              <th style="padding:10px 12px;text-align:left;color:#fde68a;border-bottom:2px solid #334155">Valor p/ Organização</th>
+              <th style="padding:10px 12px;text-align:left;color:#a78bfa;border-bottom:2px solid #334155">Eficiência em Vendas</th>
+              <th style="padding:10px 12px;text-align:left;color:#94a3b8;border-bottom:2px solid #334155">Comunicação Assertiva</th>
+              <th style="padding:10px 12px;text-align:left;color:#94a3b8;border-bottom:2px solid #334155;min-width:180px">Feedback</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${[
+              {perfil:'D + I', medo:'Falhar e perder reconhecimento',    motiv:'Desafios, poder, visibilidade',              valor:'Mobiliza pessoas e acelera resultados',        vendas:'Abertura e fechamento de negócios',              com:'Comunicação direta e rápida, com reconhecimento explícito. Foque em resultados e dê protagonismo na solução.',          ftipo:'SBI', fdica:'Responde melhor a fatos claros e impacto nos resultados. O SBI evita rodeios, mantém foco em performance e permite agir rapidamente.'},
+              {perfil:'D + S', medo:'Falhar e mudanças inesperadas',      motiv:'Resultados com segurança',                   valor:'Execução consistente e foco em entrega',       vendas:'Fechamento com sustentação do relacionamento',   com:'Seja firme, explique o porquê das decisões e dê tempo para adaptação. Evite pressão excessiva.',                        ftipo:'SBI', fdica:'O método traz clareza e reduz ansiedade, pois mostra exatamente o comportamento observado e o impacto, sem gerar insegurança emocional.'},
+              {perfil:'D + C', medo:'Falhar e perder numa discussão',     motiv:'Resultados, controle e precisão',            valor:'Alta performance com qualidade técnica',       vendas:'Negociação técnica e contratos',                 com:'Use dados, fatos e lógica. Evite emoção e improviso. Mostre redução de risco e ganho de eficiência.',                  ftipo:'SBI', fdica:'Baseado em fatos e impactos objetivos, atende à necessidade de lógica, evidência e racionalidade desse perfil.'},
+              {perfil:'I + S', medo:'Rejeição e mudanças',                motiv:'Reconhecimento, pertencimento e segurança',  valor:'Clima organizacional e colaboração',           vendas:'Relacionamento, atendimento e fidelização',      com:'Comece pelo acolhimento, valide sentimentos e construa consenso. Evite confronto direto.',                              ftipo:'FEED',fdica:'Favorece diálogo, escuta e construção conjunta, reduz resistência emocional e aumenta engajamento.'},
+              {perfil:'I + C', medo:'Rejeição e conflitos',               motiv:'Reconhecimento com regras claras',           valor:'Comunicação qualificada com padrão',          vendas:'Argumentação com suporte técnico',               com:'Combine empatia com critérios objetivos. Explique regras, evite exposição pública e incentive perguntas.',              ftipo:'FEED',fdica:'Permite explicar expectativas e combinar ajustes sem confronto direto, preservando vínculo e clareza.'},
+              {perfil:'S + C', medo:'Mudanças e conflitos',               motiv:'Segurança, regras e previsibilidade',        valor:'Sustentação de processos e qualidade',        vendas:'Atendimento técnico e pós-venda',                com:'Prepare a conversa, traga passo a passo e previsibilidade. Mostre que a mudança é segura e planejada.',                ftipo:'FEED',fdica:'Estimula reflexão, segurança psicológica e alinhamento gradual, evitando rupturas silenciosas.'},
+            ].map((r,i) => {
+              const ftColor = r.ftipo === 'SBI' ? '#38bdf8' : '#a78bfa';
+              const bg = i % 2 === 0 ? '#0f172a' : 'transparent';
+              return `<tr style="border-bottom:1px solid #1e293b;background:${bg}">
+                <td style="padding:10px 12px;font-weight:700;color:#e2e8f0;white-space:nowrap">${r.perfil}</td>
+                <td style="padding:10px 12px;color:#fca5a5">${r.medo}</td>
+                <td style="padding:10px 12px;color:#86efac">${r.motiv}</td>
+                <td style="padding:10px 12px;color:#fde68a">${r.valor}</td>
+                <td style="padding:10px 12px;color:#c4b5fd">${r.vendas}</td>
+                <td style="padding:10px 12px;color:#94a3b8">${r.com}</td>
+                <td style="padding:10px 12px"><span style="color:${ftColor};font-weight:700">${r.ftipo}</span> — <span style="color:#94a3b8">${r.fdica}</span></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
