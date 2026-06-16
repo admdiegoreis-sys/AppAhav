@@ -6014,11 +6014,11 @@ const GENTE_ORG_DEFAULT = [
 function genteLoadPessoas() {
   try {
     const stored = localStorage.getItem(GENTE_PESSOAS_KEY);
-    if (stored) return JSON.parse(stored);
+    if (stored) return JSON.parse(stored).sort((a,b) => (a.nome||'').localeCompare(b.nome||'', 'pt-BR'));
   } catch(e) {}
   const d = GENTE_DISC_DEFAULT.map(p => ({...p}));
   localStorage.setItem(GENTE_PESSOAS_KEY, JSON.stringify(d));
-  return d;
+  return d.sort((a,b) => (a.nome||'').localeCompare(b.nome||'', 'pt-BR'));
 }
 function genteSavePessoas(list) { localStorage.setItem(GENTE_PESSOAS_KEY, JSON.stringify(list)); }
 
