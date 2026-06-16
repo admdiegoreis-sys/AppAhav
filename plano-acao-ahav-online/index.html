@@ -6325,7 +6325,6 @@ function genteRenderOrg() {
   const el = document.getElementById('gente-org-content');
   if (!pessoas.length) { el.innerHTML = '<p style="color:#64748b">Nenhuma pessoa cadastrada.</p>'; return; }
 
-  // Build tree from lider field
   const byNome = {};
   pessoas.forEach(p => { byNome[p.nome] = {...p, children: []}; });
   const roots = [];
@@ -6333,45 +6332,82 @@ function genteRenderOrg() {
     if (p.lider && byNome[p.lider]) byNome[p.lider].children.push(byNome[p.nome]);
     else roots.push(byNome[p.nome]);
   });
+  // sort children alphabetically at each level
+  Object.values(byNome).forEach(n => n.children.sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR')));
 
   const levelColors = ['#38bdf8','#a78bfa','#22c55e','#f59e0b','#64748b'];
+  const LINE = '#334155';
 
   function renderNode(node, level) {
     const color = levelColors[Math.min(level, levelColors.length-1)];
-    const kids = node.children;
-    const childrenHtml = kids.length ? `
-      <div style="width:2px;height:20px;background:#334155;margin:0 auto"></div>
-      <div style="position:relative;display:flex;justify-content:center">
-        ${kids.length > 1 ? `<div style="position:absolute;top:0;left:calc(100%/${kids.length}/2);right:calc(100%/${kids.length}/2);height:2px;background:#334155"></div>` : ''}
-        <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:16px;padding-top:0">
-          ${kids.map(c => `
-            <div style="display:flex;flex-direction:column;align-items:center">
-              <div style="width:2px;height:20px;background:#334155"></div>
-              ${renderNode(c, level+1)}
-            </div>`).join('')}
-        </div>
-      </div>` : '';
-    return `
-      <div style="display:inline-flex;flex-direction:column;align-items:center">
-        <div style="background:#1e293b;border:2px solid ${color};border-radius:10px;padding:10px 18px;text-align:center;min-width:110px;max-width:160px">
-          <div style="font-weight:700;color:#e2e8f0;font-size:13px">${node.nome}</div>
-          ${genteCargoBadge(node.cargo)}
-          ${node.area ? `<div style="font-size:10px;color:#475569;margin-top:3px">${node.area}</div>` : ''}
-        </div>
-        ${childrenHtml}
+    const kids  = node.children;
+
+    const box = `<div style="background:#1e293b;border:2px solid ${color};border-radius:10px;padding:10px 16px;text-align:center;min-width:130px;max-width:175px;box-sizing:border-box">
+      <div style="font-weight:700;color:#e2e8f0;font-size:13px;line-height:1.35">${node.nome}</div>
+      ${genteCargoBadge(node.cargo)}
+      ${node.area ? `<div style="font-size:10px;color:#475569;margin-top:3px">${node.area}</div>` : ''}
+    </div>`;
+
+    if (!kids.length) return `<div style="display:inline-flex;flex-direction:column;align-items:center">${box}</div>`;
+
+    // connector from parent down to horizontal bar
+    const vertDown = `<div style="width:2px;height:22px;background:${LINE};flex-shrink:0"></div>`;
+
+    // build child cells with T-connectors using border technique
+    const childCells = kids.map((kid, idx) => {
+      const isFirst = idx === 0;
+      const isLast  = idx === kids.length - 1;
+      const isOnly  = kids.length === 1;
+
+      let topBar;
+      if (isOnly) {
+        topBar = `<div style="width:2px;height:22px;background:${LINE};margin:0 auto"></div>`;
+      } else if (isFirst) {
+        topBar = `<div style="display:flex;height:22px;align-items:flex-end">
+          <div style="flex:1"></div>
+          <div style="width:2px;height:22px;background:${LINE};flex-shrink:0"></div>
+          <div style="flex:1;border-top:2px solid ${LINE};height:0;align-self:flex-start;margin-top:0"></div>
+        </div>`;
+      } else if (isLast) {
+        topBar = `<div style="display:flex;height:22px;align-items:flex-end">
+          <div style="flex:1;border-top:2px solid ${LINE};height:0;align-self:flex-start"></div>
+          <div style="width:2px;height:22px;background:${LINE};flex-shrink:0"></div>
+          <div style="flex:1"></div>
+        </div>`;
+      } else {
+        topBar = `<div style="display:flex;height:22px;align-items:flex-end">
+          <div style="flex:1;border-top:2px solid ${LINE};height:0;align-self:flex-start"></div>
+          <div style="width:2px;height:22px;background:${LINE};flex-shrink:0"></div>
+          <div style="flex:1;border-top:2px solid ${LINE};height:0;align-self:flex-start"></div>
+        </div>`;
+      }
+
+      return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:150px;padding:0 4px;box-sizing:border-box">
+        ${topBar}
+        ${renderNode(kid, level + 1)}
       </div>`;
+    });
+
+    return `<div style="display:inline-flex;flex-direction:column;align-items:center">
+      ${box}
+      ${vertDown}
+      <div style="display:flex;align-items:flex-start">
+        ${childCells.join('')}
+      </div>
+    </div>`;
   }
 
   const orphans = roots.filter(r => !r.children.length && r.lider && !byNome[r.lider]);
   const trees   = roots.filter(r => r.children.length || !r.lider);
 
-  el.innerHTML = `<div style="overflow-x:auto;padding:24px 0;min-width:100%">
-    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:32px">
+  el.innerHTML = `<div style="overflow-x:auto;padding:28px 16px 28px;min-width:max-content">
+    <div style="display:flex;justify-content:center;gap:40px;flex-wrap:wrap">
       ${trees.map(r => renderNode(r, 0)).join('')}
     </div>
-    ${orphans.length ? `<div style="margin-top:24px;padding-top:16px;border-top:1px solid #334155">
-      <div style="font-size:11px;color:#475569;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">Sem líder encontrado</div>
-      <div style="display:flex;flex-wrap:wrap;gap:10px">${orphans.map(r => renderNode(r,0)).join('')}</div>
+    ${orphans.length ? `
+    <div style="margin-top:28px;padding-top:16px;border-top:1px solid #1e293b">
+      <div style="font-size:11px;color:#475569;margin-bottom:12px;text-transform:uppercase;letter-spacing:.06em">Líder não encontrado no cadastro</div>
+      <div style="display:flex;flex-wrap:wrap;gap:12px">${orphans.map(r => renderNode(r,0)).join('')}</div>
     </div>` : ''}
   </div>`;
 }
