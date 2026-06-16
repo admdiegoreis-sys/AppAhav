@@ -6413,7 +6413,7 @@ function genteRenderOrg() {
                 min-width: 130px; max-width: 175px; box-sizing: border-box; }
     .org-nome { font-weight: 700; color: #e2e8f0; font-size: 13px; line-height: 1.35; }
   </style>
-  <div style="overflow-x:auto;padding:28px 20px;min-width:max-content">
+  <div style="min-width:max-content">
     <div style="display:flex;justify-content:center;gap:48px;flex-wrap:wrap;align-items:flex-start">
       ${roots.map(r =>
         `<ul class="org-ul" style="justify-content:center">${renderNode(r, 0, true)}</ul>`
@@ -6785,7 +6785,7 @@ function genteSaveOrgMembro() {
       <h2 style="margin:0;font-size:18px;color:#e2e8f0">Organograma</h2>
       <button class="btn btn-primary" onclick="genteShowTab('pessoas');genteOpenPessoaModal()">+ Adicionar Pessoa</button>
     </div>
-    <div id="gente-org-content"></div>
+    <div id="gente-org-content" style="overflow:auto;height:calc(100vh - 220px);background:#0a1120;border:1px solid #1e293b;border-radius:12px;padding:28px 20px"></div>
   </div>
 
   <!-- TAB: FEEDBACK -->
