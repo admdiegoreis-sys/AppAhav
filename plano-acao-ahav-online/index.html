@@ -6116,13 +6116,14 @@ function genteInit() {
 }
 
 function genteShowTab(tab) {
-  ['pessoas','disc','organograma','feedback','material'].forEach(t => {
+  ['pessoas','disc','organograma','feedback','material','indicadores'].forEach(t => {
     document.getElementById(`gente-pane-${t}`)?.classList.toggle('hidden', t !== tab);
     document.getElementById(`gente-tab-${t}`)?.classList.toggle('active', t === tab);
   });
   if (tab === 'pessoas')     genteRenderPessoas();
   if (tab === 'disc')        genteRenderDisc();
   if (tab === 'organograma') genteRenderOrg();
+  if (tab === 'indicadores') genteRenderIndicadores();
 }
 
 function genteRenderPessoas() {
@@ -6263,13 +6264,13 @@ function genteRenderDisc() {
         return `
         <div class="chart-card" style="padding:18px;display:flex;flex-direction:column;gap:0">
           <!-- cabeçalho -->
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
-            <div>
-              <div style="font-weight:700;color:#e2e8f0;font-size:16px">${p.nome}</div>
-              <div style="color:#64748b;font-size:12px;margin-top:2px">${p.cargo||''}${p.cargo&&p.area?' · ':''}${p.area||''}</div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;min-height:60px">
+            <div style="flex:1;min-width:0;margin-right:10px">
+              <div style="font-weight:700;color:#e2e8f0;font-size:15px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${p.nome}">${abbreviateName(p.nome)}</div>
+              <div style="color:#64748b;font-size:12px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.cargo||''}${p.cargo&&p.area?' · ':''}${p.area||''}</div>
             </div>
-            <div style="text-align:right">
-              <span style="background:#1e293b;border-radius:20px;padding:3px 10px;font-size:11px;color:#94a3b8;display:block;margin-bottom:4px">${p.fator||''}</span>
+            <div style="text-align:right;flex-shrink:0">
+              <span style="background:#1e293b;border-radius:20px;padding:3px 10px;font-size:11px;color:#94a3b8;display:block;margin-bottom:4px;white-space:nowrap">${p.fator||''}</span>
               ${p.feedback_tipo ? `<span style="background:${ftColor}22;border-radius:20px;padding:2px 10px;font-size:11px;color:${ftColor};font-weight:700">${p.feedback_tipo}</span>` : ''}
             </div>
           </div>
@@ -6305,6 +6306,16 @@ function genteRenderDisc() {
     </div>`;
 }
 
+function abbreviateName(nome) {
+  const parts = (nome||'').trim().split(/\s+/);
+  if (parts.length <= 2) return nome;
+  const skip = new Set(['de','da','do','dos','das','e']);
+  const first = parts[0];
+  const last  = parts[parts.length - 1];
+  const mids  = parts.slice(1, -1).filter(w => !skip.has(w.toLowerCase())).map(w => w[0].toUpperCase() + '.');
+  return [first, ...mids, last].join(' ');
+}
+
 function genteCargoBadge(cargo) {
   if (!cargo) return '';
   const c = cargo.toLowerCase();
@@ -6332,85 +6343,274 @@ function genteRenderOrg() {
     if (p.lider && byNome[p.lider]) byNome[p.lider].children.push(byNome[p.nome]);
     else roots.push(byNome[p.nome]);
   });
-  // sort children alphabetically at each level
   Object.values(byNome).forEach(n => n.children.sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR')));
 
   const levelColors = ['#38bdf8','#a78bfa','#22c55e','#f59e0b','#64748b'];
   const LINE = '#334155';
 
-  function renderNode(node, level) {
+  // Each root gets its own <ul> so roots are never connected horizontally.
+  // Children share a <ul> so their ::before/::after connectors align perfectly.
+  function renderNode(node, level, isRoot) {
     const color = levelColors[Math.min(level, levelColors.length-1)];
-    const kids  = node.children;
-
-    const box = `<div style="background:#1e293b;border:2px solid ${color};border-radius:10px;padding:10px 16px;text-align:center;min-width:130px;max-width:175px;box-sizing:border-box">
-      <div style="font-weight:700;color:#e2e8f0;font-size:13px;line-height:1.35">${node.nome}</div>
+    const box = `<div class="org-box" style="border-color:${color}">
+      <div class="org-nome" title="${node.nome}">${abbreviateName(node.nome)}</div>
       ${genteCargoBadge(node.cargo)}
       ${node.area ? `<div style="font-size:10px;color:#475569;margin-top:3px">${node.area}</div>` : ''}
     </div>`;
-
-    if (!kids.length) return `<div style="display:inline-flex;flex-direction:column;align-items:center">${box}</div>`;
-
-    // connector from parent down to horizontal bar
-    const vertDown = `<div style="width:2px;height:22px;background:${LINE};flex-shrink:0"></div>`;
-
-    // build child cells with T-connectors using border technique
-    const childCells = kids.map((kid, idx) => {
-      const isFirst = idx === 0;
-      const isLast  = idx === kids.length - 1;
-      const isOnly  = kids.length === 1;
-
-      let topBar;
-      if (isOnly) {
-        topBar = `<div style="width:2px;height:22px;background:${LINE};margin:0 auto"></div>`;
-      } else if (isFirst) {
-        topBar = `<div style="display:flex;height:22px;align-items:flex-end">
-          <div style="flex:1"></div>
-          <div style="width:2px;height:22px;background:${LINE};flex-shrink:0"></div>
-          <div style="flex:1;border-top:2px solid ${LINE};height:0;align-self:flex-start;margin-top:0"></div>
-        </div>`;
-      } else if (isLast) {
-        topBar = `<div style="display:flex;height:22px;align-items:flex-end">
-          <div style="flex:1;border-top:2px solid ${LINE};height:0;align-self:flex-start"></div>
-          <div style="width:2px;height:22px;background:${LINE};flex-shrink:0"></div>
-          <div style="flex:1"></div>
-        </div>`;
-      } else {
-        topBar = `<div style="display:flex;height:22px;align-items:flex-end">
-          <div style="flex:1;border-top:2px solid ${LINE};height:0;align-self:flex-start"></div>
-          <div style="width:2px;height:22px;background:${LINE};flex-shrink:0"></div>
-          <div style="flex:1;border-top:2px solid ${LINE};height:0;align-self:flex-start"></div>
-        </div>`;
-      }
-
-      return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:150px;padding:0 4px;box-sizing:border-box">
-        ${topBar}
-        ${renderNode(kid, level + 1)}
-      </div>`;
-    });
-
-    return `<div style="display:inline-flex;flex-direction:column;align-items:center">
-      ${box}
-      ${vertDown}
-      <div style="display:flex;align-items:flex-start">
-        ${childCells.join('')}
-      </div>
-    </div>`;
+    const topVert = isRoot ? '' : `<div class="org-vert"></div>`;
+    if (!node.children.length) {
+      return `<li>${topVert}${box}</li>`;
+    }
+    return `<li>
+      ${topVert}${box}
+      <div class="org-vert"></div>
+      <ul class="org-ul">${node.children.map(kid => renderNode(kid, level+1, false)).join('')}</ul>
+    </li>`;
   }
 
-  const orphans = roots.filter(r => !r.children.length && r.lider && !byNome[r.lider]);
-  const trees   = roots.filter(r => r.children.length || !r.lider);
-
-  el.innerHTML = `<div style="overflow-x:auto;padding:28px 16px 28px;min-width:max-content">
-    <div style="display:flex;justify-content:center;gap:40px;flex-wrap:wrap">
-      ${trees.map(r => renderNode(r, 0)).join('')}
+  el.innerHTML = `
+  <style>
+    #gente-org-content .org-ul {
+      display: flex;
+      list-style: none;
+      margin: 0; padding: 0;
+      justify-content: center;
+    }
+    #gente-org-content .org-ul li {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      padding: 0 8px;
+      flex: 1;
+      min-width: 155px;
+    }
+    /* left half horizontal connector */
+    #gente-org-content .org-ul li::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 50%; height: 20px;
+      border-top: 2px solid ${LINE};
+    }
+    /* right half horizontal connector */
+    #gente-org-content .org-ul li::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 50%;
+      width: 50%; height: 20px;
+      border-top: 2px solid ${LINE};
+    }
+    /* remove outer edges so line doesn't float past the first/last child */
+    #gente-org-content .org-ul li:first-child::before { border: none; }
+    #gente-org-content .org-ul li:last-child::after   { border: none; }
+    /* single child: no horizontal at all */
+    #gente-org-content .org-ul li:only-child::before,
+    #gente-org-content .org-ul li:only-child::after   { border: none; }
+    .org-vert { width: 2px; height: 20px; background: ${LINE}; flex-shrink: 0; }
+    .org-box  { background: #1e293b; border: 2px solid; border-radius: 10px;
+                padding: 10px 14px; text-align: center;
+                min-width: 130px; max-width: 175px; box-sizing: border-box; }
+    .org-nome { font-weight: 700; color: #e2e8f0; font-size: 13px; line-height: 1.35; }
+  </style>
+  <div style="overflow-x:auto;padding:28px 20px;min-width:max-content">
+    <div style="display:flex;justify-content:center;gap:48px;flex-wrap:wrap;align-items:flex-start">
+      ${roots.map(r =>
+        `<ul class="org-ul" style="justify-content:center">${renderNode(r, 0, true)}</ul>`
+      ).join('')}
     </div>
-    ${orphans.length ? `
-    <div style="margin-top:28px;padding-top:16px;border-top:1px solid #1e293b">
-      <div style="font-size:11px;color:#475569;margin-bottom:12px;text-transform:uppercase;letter-spacing:.06em">Líder não encontrado no cadastro</div>
-      <div style="display:flex;flex-wrap:wrap;gap:12px">${orphans.map(r => renderNode(r,0)).join('')}</div>
-    </div>` : ''}
   </div>`;
 }
+
+// ── INDICADORES ──────────────────────────────────────────────
+const GENTE_IND_KEY = 'ahav_gente_indicadores';
+
+function genteIndLoad() {
+  try { return JSON.parse(localStorage.getItem(GENTE_IND_KEY) || '{}'); } catch(e) { return {}; }
+}
+function genteIndSave(all) { localStorage.setItem(GENTE_IND_KEY, JSON.stringify(all)); }
+
+function genteIndGetMes(mes) {
+  const all = genteIndLoad();
+  if (all[mes]) return all[mes];
+  // inicializa mês com pessoas cadastradas
+  const pessoas = genteLoadPessoas();
+  return {
+    metaColetiva: 100, resultadoColetivo: 0,
+    pessoas: pessoas.map(p => ({ nome: p.nome, cargo: p.cargo||'', metaPct: 100, resultPct: 0, notaInd: 0, notaComp: 0, vlrMax: 0 }))
+  };
+}
+
+function genteIndCalc(p, metaCol, resultCol) {
+  const meta = Number(p.metaPct) || 100;
+  const res  = Number(p.resultPct) || 0;
+  const nInd = Number(p.notaInd) || 0;
+  const nCom = Number(p.notaComp) || 0;
+  const vlr  = Number(p.vlrMax) || 0;
+  const ratio = res / meta;
+  const elegivel = ratio >= 0.8 ? 1 : 0;
+  const score = ratio * 0.5 + (nInd / 10) * 0.3 + (nCom / 10) * 0.2;
+  const bonusInd = elegivel ? score * vlr : 0;
+  const teamOk = Number(resultCol) / Number(metaCol) >= 0.9;
+  const bonusFinal = teamOk ? bonusInd + vlr * 0.2 : bonusInd;
+  return { elegivel, score, bonusInd, bonusFinal, teamOk };
+}
+
+function genteIndCurrentMes() {
+  const el = document.getElementById('gind-mes');
+  return el ? el.value : new Date().toISOString().slice(0,7);
+}
+
+function genteIndSaveAll() {
+  const mes = genteIndCurrentMes();
+  const all = genteIndLoad();
+  const metaCol = Number(document.getElementById('gind-meta-col').value) || 100;
+  const resCol  = Number(document.getElementById('gind-res-col').value) || 0;
+  const rows = document.querySelectorAll('.gind-row');
+  const pessoas = Array.from(rows).map(row => ({
+    nome:     row.dataset.nome,
+    cargo:    row.dataset.cargo,
+    metaPct:  Number(row.querySelector('.gind-meta').value)   || 0,
+    resultPct:Number(row.querySelector('.gind-res').value)    || 0,
+    notaInd:  Number(row.querySelector('.gind-nind').value)   || 0,
+    notaComp: Number(row.querySelector('.gind-ncomp').value)  || 0,
+    vlrMax:   Number(row.querySelector('.gind-vlr').value)    || 0,
+  }));
+  all[mes] = { metaColetiva: metaCol, resultadoColetivo: resCol, pessoas };
+  genteIndSave(all);
+  genteRenderIndicadores();
+}
+
+function genteRenderIndicadores() {
+  const el = document.getElementById('gente-ind-content');
+  const hoje = new Date().toISOString().slice(0,7);
+  const mes = genteIndCurrentMes() || hoje;
+  const d = genteIndGetMes(mes);
+  const metaCol = d.metaColetiva;
+  const resCol  = d.resultadoColetivo;
+  const teamOk  = resCol / metaCol >= 0.9;
+
+  // KPIs
+  const calcs = d.pessoas.map(p => genteIndCalc(p, metaCol, resCol));
+  const totalBonus = calcs.reduce((s,c) => s + c.bonusFinal, 0);
+  const mediaScore = calcs.length ? calcs.reduce((s,c) => s + c.score, 0) / calcs.length : 0;
+  const nElegiveis = calcs.filter(c => c.elegivel).length;
+
+  const fmt = v => v.toLocaleString('pt-BR', {style:'currency', currency:'BRL', maximumFractionDigits:0});
+  const pct = v => (v*100).toFixed(1) + '%';
+
+  const rows = d.pessoas.map((p,i) => {
+    const c = calcs[i];
+    const eColor = c.elegivel ? '#22c55e' : '#ef4444';
+    const eLabel = c.elegivel ? 'Sim' : 'Não';
+    return `<tr class="gind-row" data-nome="${p.nome}" data-cargo="${p.cargo||''}">
+      <td style="padding:8px 10px;color:#e2e8f0;font-weight:500;white-space:nowrap">${abbreviateName(p.nome)}</td>
+      <td style="padding:8px 6px;color:#64748b;font-size:11px">${p.cargo||'—'}</td>
+      <td style="padding:4px 6px"><input class="gind-meta" type="number" min="0" max="200" value="${p.metaPct}" onchange="genteIndLiveCalc(this)" style="width:60px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;padding:4px 6px;font-size:12px;text-align:center"></td>
+      <td style="padding:4px 6px"><input class="gind-res" type="number" min="0" max="200" value="${p.resultPct}" onchange="genteIndLiveCalc(this)" style="width:60px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;padding:4px 6px;font-size:12px;text-align:center"></td>
+      <td style="padding:4px 6px"><input class="gind-nind" type="number" min="0" max="10" step="0.1" value="${p.notaInd}" onchange="genteIndLiveCalc(this)" style="width:56px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;padding:4px 6px;font-size:12px;text-align:center"></td>
+      <td style="padding:4px 6px"><input class="gind-ncomp" type="number" min="0" max="10" step="0.1" value="${p.notaComp}" onchange="genteIndLiveCalc(this)" style="width:56px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;padding:4px 6px;font-size:12px;text-align:center"></td>
+      <td style="padding:4px 6px"><input class="gind-vlr" type="number" min="0" value="${p.vlrMax}" onchange="genteIndLiveCalc(this)" style="width:80px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;padding:4px 6px;font-size:12px;text-align:center"></td>
+      <td class="gind-cell-elig" style="padding:8px 6px;text-align:center"><span style="background:${eColor}22;color:${eColor};border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700">${eLabel}</span></td>
+      <td class="gind-cell-score" style="padding:8px 8px;text-align:center;color:#e2e8f0;font-weight:700">${pct(c.score)}</td>
+      <td class="gind-cell-bind" style="padding:8px 8px;text-align:right;color:#eab308;font-weight:600">${fmt(c.bonusInd)}</td>
+      <td class="gind-cell-bfin" style="padding:8px 8px;text-align:right;color:#22c55e;font-weight:700">${fmt(c.bonusFinal)}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `
+  <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap">
+    <div>
+      <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px">Mês de referência</label>
+      <input type="month" id="gind-mes" value="${mes}" onchange="genteRenderIndicadores()" style="background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:6px 10px;font-size:13px">
+    </div>
+    <div>
+      <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px">Meta Coletiva (%)</label>
+      <input type="number" id="gind-meta-col" value="${metaCol}" min="1" max="200" style="width:90px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:6px 10px;font-size:13px">
+    </div>
+    <div>
+      <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px">Resultado Coletivo (%)</label>
+      <input type="number" id="gind-res-col" value="${resCol}" min="0" max="200" style="width:90px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:6px 10px;font-size:13px">
+    </div>
+    <div style="margin-top:18px">
+      <span style="background:${teamOk?'#22c55e22':'#ef444422'};color:${teamOk?'#22c55e':'#ef4444'};border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700">
+        Bônus Equipe: ${teamOk?'✓ Ativado':'✗ Não atingido'} (≥90% meta coletiva)
+      </span>
+    </div>
+    <div style="margin-top:18px;margin-left:auto">
+      <button class="btn btn-primary" onclick="genteIndSaveAll()">Salvar mês</button>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px">
+    <div class="kpi" style="border-top:3px solid #22c55e">
+      <div class="kpi-label" style="color:#22c55e">Total Bônus</div>
+      <div class="kpi-value" style="color:#22c55e;font-size:24px">${fmt(totalBonus)}</div>
+    </div>
+    <div class="kpi" style="border-top:3px solid #38bdf8">
+      <div class="kpi-label" style="color:#38bdf8">Média Score</div>
+      <div class="kpi-value" style="color:#38bdf8;font-size:24px">${pct(mediaScore)}</div>
+    </div>
+    <div class="kpi" style="border-top:3px solid #a78bfa">
+      <div class="kpi-label" style="color:#a78bfa">Elegíveis</div>
+      <div class="kpi-value" style="color:#a78bfa;font-size:24px">${nElegiveis} / ${d.pessoas.length}</div>
+    </div>
+    <div class="kpi" style="border-top:3px solid ${teamOk?'#22c55e':'#ef4444'}">
+      <div class="kpi-label" style="color:${teamOk?'#22c55e':'#ef4444'}">Bônus Equipe</div>
+      <div class="kpi-value" style="color:${teamOk?'#22c55e':'#ef4444'};font-size:22px">${teamOk?'Ativado':'Pendente'}</div>
+    </div>
+  </div>
+
+  <div style="overflow-x:auto">
+  <table style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead>
+      <tr style="border-bottom:2px solid #334155">
+        <th style="text-align:left;padding:8px 10px;color:#64748b">Colaborador</th>
+        <th style="text-align:left;padding:8px 6px;color:#64748b">Cargo</th>
+        <th style="text-align:center;padding:8px 6px;color:#64748b">Meta %</th>
+        <th style="text-align:center;padding:8px 6px;color:#64748b">Result %</th>
+        <th style="text-align:center;padding:8px 6px;color:#64748b">N. Ind</th>
+        <th style="text-align:center;padding:8px 6px;color:#64748b">N. Comp</th>
+        <th style="text-align:center;padding:8px 6px;color:#64748b">Vlr Máx</th>
+        <th style="text-align:center;padding:8px 6px;color:#64748b">Elegível</th>
+        <th style="text-align:center;padding:8px 6px;color:#64748b">Score</th>
+        <th style="text-align:right;padding:8px 8px;color:#eab308">Bônus Ind</th>
+        <th style="text-align:right;padding:8px 8px;color:#22c55e">Bônus Final</th>
+      </tr>
+    </thead>
+    <tbody id="gind-tbody">${rows}</tbody>
+    <tfoot>
+      <tr style="border-top:2px solid #334155">
+        <td colspan="9" style="padding:10px 10px;color:#64748b;font-size:11px">Score = Resultado×0,5 + Nota Individual×0,3 + Nota Comportamento×0,2 · Elegível se Resultado/Meta ≥ 80% · Bônus Equipe: +20% do Vlr Máx se meta coletiva ≥ 90%</td>
+        <td style="padding:10px 8px;text-align:right;color:#eab308;font-weight:700">${fmt(calcs.reduce((s,c)=>s+c.bonusInd,0))}</td>
+        <td style="padding:10px 8px;text-align:right;color:#22c55e;font-weight:700">${fmt(totalBonus)}</td>
+      </tr>
+    </tfoot>
+  </table>
+  </div>`;
+}
+
+function genteIndLiveCalc(inputEl) {
+  const row = inputEl.closest('.gind-row');
+  const metaCol = Number(document.getElementById('gind-meta-col').value) || 100;
+  const resCol  = Number(document.getElementById('gind-res-col').value)  || 0;
+  const p = {
+    metaPct:   Number(row.querySelector('.gind-meta').value)  || 0,
+    resultPct: Number(row.querySelector('.gind-res').value)   || 0,
+    notaInd:   Number(row.querySelector('.gind-nind').value)  || 0,
+    notaComp:  Number(row.querySelector('.gind-ncomp').value) || 0,
+    vlrMax:    Number(row.querySelector('.gind-vlr').value)   || 0,
+  };
+  const c = genteIndCalc(p, metaCol, resCol);
+  const fmt = v => v.toLocaleString('pt-BR', {style:'currency', currency:'BRL', maximumFractionDigits:0});
+  const pct = v => (v*100).toFixed(1) + '%';
+  const eColor = c.elegivel ? '#22c55e' : '#ef4444';
+  row.querySelector('.gind-cell-elig').innerHTML = `<span style="background:${eColor}22;color:${eColor};border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700">${c.elegivel?'Sim':'Não'}</span>`;
+  row.querySelector('.gind-cell-score').textContent = pct(c.score);
+  row.querySelector('.gind-cell-bind').textContent  = fmt(c.bonusInd);
+  row.querySelector('.gind-cell-bfin').textContent  = fmt(c.bonusFinal);
+}
+// ─────────────────────────────────────────────────────────────
 
 function genteOpenOrgModal() {
   const org = genteLoadOrg();
@@ -6562,6 +6762,7 @@ function genteSaveOrgMembro() {
     <button class="smart-tab"        id="gente-tab-organograma"  onclick="genteShowTab('organograma')">Organograma</button>
     <button class="smart-tab"        id="gente-tab-feedback"     onclick="genteShowTab('feedback')">Feedback</button>
     <button class="smart-tab"        id="gente-tab-material"     onclick="genteShowTab('material')">Material DISC</button>
+    <button class="smart-tab"        id="gente-tab-indicadores"  onclick="genteShowTab('indicadores')">Indicadores</button>
   </div>
 
   <!-- TAB: PESSOAS -->
@@ -6940,6 +7141,11 @@ function genteSaveOrgMembro() {
         <button class="btn btn-primary" onclick="genteSaveOrgMembro()">Adicionar</button>
       </div>
     </div>
+  </div>
+
+  <!-- TAB: INDICADORES -->
+  <div id="gente-pane-indicadores" class="hidden">
+    <div id="gente-ind-content"></div>
   </div>
 
 </div><!-- /page-gente -->
