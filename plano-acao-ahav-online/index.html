@@ -6174,8 +6174,9 @@ function genteOpenPessoaModal(idx) {
   const todas = genteLoadPessoas();
   document.getElementById('gp-idx').value   = idx !== undefined ? idx : '';
   document.getElementById('gp-nome').value  = p.nome  || '';
-  document.getElementById('gp-cargo').value = p.cargo || '';
-  document.getElementById('gp-area').value  = p.area  || '';
+  document.getElementById('gp-cargo').value  = p.cargo  || '';
+  document.getElementById('gp-funcao').value = p.funcao || '';
+  document.getElementById('gp-area').value   = p.area   || '';
   document.getElementById('gp-d').value     = p.D !== undefined ? p.D : '';
   document.getElementById('gp-i').value     = p.I !== undefined ? p.I : '';
   document.getElementById('gp-s').value     = p.S !== undefined ? p.S : '';
@@ -6198,6 +6199,7 @@ function genteSavePessoa() {
   const obj = {
     nome,
     cargo:  document.getElementById('gp-cargo').value,
+    funcao: document.getElementById('gp-funcao').value,
     area:   document.getElementById('gp-area').value.trim(),
     lider:  document.getElementById('gp-lider').value,
     perfil: document.getElementById('gp-perfil').value.trim(),
@@ -6623,8 +6625,8 @@ function genteRenderIndicadores() {
 
   let totalGeral = 0;
   const cards = pessoas.map(p => {
-    const pd     = d.pessoas[p.nome] || { funcao:'', realizacoes:{}, extras:{} };
-    const funcao = pd.funcao || '';
+    const pd     = d.pessoas[p.nome] || { funcao: p.funcao||'', realizacoes:{}, extras:{} };
+    const funcao = pd.funcao || p.funcao || '';
     const tpl    = GENTE_IND_TEMPLATES[funcao];
     const { total, objs } = genteIndCalcPessoa(pd.realizacoes, pd.extras, funcao);
     totalGeral += total;
@@ -7146,7 +7148,7 @@ function genteSaveOrgMembro() {
             <input id="gp-nome" placeholder="Nome completo" style="width:100%">
           </div>
           <div>
-            <label class="form-label">Cargo / Função</label>
+            <label class="form-label">Cargo</label>
             <select id="gp-cargo" style="width:100%">
               <option value="">— Selecionar —</option>
               <option value="Diretor">Diretor</option>
@@ -7154,6 +7156,17 @@ function genteSaveOrgMembro() {
               <option value="Especialista">Especialista</option>
               <option value="Analista">Analista</option>
               <option value="Assistente">Assistente</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Função</label>
+            <select id="gp-funcao" style="width:100%">
+              <option value="">— Selecionar —</option>
+              <option value="Analista de Crédito">Analista de Crédito</option>
+              <option value="Analista de Cobrança">Analista de Cobrança</option>
+              <option value="Analista de Gastos">Analista de Gastos</option>
+              <option value="Tesouraria">Tesouraria</option>
+              <option value="Assistente Conciliação Bancária">Assistente Conciliação Bancária</option>
             </select>
           </div>
           <div>
