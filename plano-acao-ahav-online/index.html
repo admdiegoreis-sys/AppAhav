@@ -6676,26 +6676,60 @@ function genteSaveOrgMembro() {
             </tr>
           </thead>
           <tbody>
-            ${[
-              {perfil:'D + I', medo:'Falhar e perder reconhecimento',    motiv:'Desafios, poder, visibilidade',              valor:'Mobiliza pessoas e acelera resultados',        vendas:'Abertura e fechamento de negócios',              com:'Comunicação direta e rápida, com reconhecimento explícito. Foque em resultados e dê protagonismo na solução.',          ftipo:'SBI', fdica:'Responde melhor a fatos claros e impacto nos resultados. O SBI evita rodeios, mantém foco em performance e permite agir rapidamente.'},
-              {perfil:'D + S', medo:'Falhar e mudanças inesperadas',      motiv:'Resultados com segurança',                   valor:'Execução consistente e foco em entrega',       vendas:'Fechamento com sustentação do relacionamento',   com:'Seja firme, explique o porquê das decisões e dê tempo para adaptação. Evite pressão excessiva.',                        ftipo:'SBI', fdica:'O método traz clareza e reduz ansiedade, pois mostra exatamente o comportamento observado e o impacto, sem gerar insegurança emocional.'},
-              {perfil:'D + C', medo:'Falhar e perder numa discussão',     motiv:'Resultados, controle e precisão',            valor:'Alta performance com qualidade técnica',       vendas:'Negociação técnica e contratos',                 com:'Use dados, fatos e lógica. Evite emoção e improviso. Mostre redução de risco e ganho de eficiência.',                  ftipo:'SBI', fdica:'Baseado em fatos e impactos objetivos, atende à necessidade de lógica, evidência e racionalidade desse perfil.'},
-              {perfil:'I + S', medo:'Rejeição e mudanças',                motiv:'Reconhecimento, pertencimento e segurança',  valor:'Clima organizacional e colaboração',           vendas:'Relacionamento, atendimento e fidelização',      com:'Comece pelo acolhimento, valide sentimentos e construa consenso. Evite confronto direto.',                              ftipo:'FEED',fdica:'Favorece diálogo, escuta e construção conjunta, reduz resistência emocional e aumenta engajamento.'},
-              {perfil:'I + C', medo:'Rejeição e conflitos',               motiv:'Reconhecimento com regras claras',           valor:'Comunicação qualificada com padrão',          vendas:'Argumentação com suporte técnico',               com:'Combine empatia com critérios objetivos. Explique regras, evite exposição pública e incentive perguntas.',              ftipo:'FEED',fdica:'Permite explicar expectativas e combinar ajustes sem confronto direto, preservando vínculo e clareza.'},
-              {perfil:'S + C', medo:'Mudanças e conflitos',               motiv:'Segurança, regras e previsibilidade',        valor:'Sustentação de processos e qualidade',        vendas:'Atendimento técnico e pós-venda',                com:'Prepare a conversa, traga passo a passo e previsibilidade. Mostre que a mudança é segura e planejada.',                ftipo:'FEED',fdica:'Estimula reflexão, segurança psicológica e alinhamento gradual, evitando rupturas silenciosas.'},
-            ].map((r,i) => {
-              const ftColor = r.ftipo === 'SBI' ? '#38bdf8' : '#a78bfa';
-              const bg = i % 2 === 0 ? '#0f172a' : 'transparent';
-              return `<tr style="border-bottom:1px solid #1e293b;background:${bg}">
-                <td style="padding:10px 12px;font-weight:700;color:#e2e8f0;white-space:nowrap">${r.perfil}</td>
-                <td style="padding:10px 12px;color:#fca5a5">${r.medo}</td>
-                <td style="padding:10px 12px;color:#86efac">${r.motiv}</td>
-                <td style="padding:10px 12px;color:#fde68a">${r.valor}</td>
-                <td style="padding:10px 12px;color:#c4b5fd">${r.vendas}</td>
-                <td style="padding:10px 12px;color:#94a3b8">${r.com}</td>
-                <td style="padding:10px 12px"><span style="color:${ftColor};font-weight:700">${r.ftipo}</span> — <span style="color:#94a3b8">${r.fdica}</span></td>
-              </tr>`;
-            }).join('')}
+            <tr style="border-bottom:1px solid #1e293b;background:#0f172a">
+              <td style="padding:10px 12px;font-weight:700;color:#e2e8f0;white-space:nowrap">D + I</td>
+              <td style="padding:10px 12px;color:#fca5a5">Falhar e perder reconhecimento</td>
+              <td style="padding:10px 12px;color:#86efac">Desafios, poder, visibilidade</td>
+              <td style="padding:10px 12px;color:#fde68a">Mobiliza pessoas e acelera resultados</td>
+              <td style="padding:10px 12px;color:#c4b5fd">Abertura e fechamento de negócios</td>
+              <td style="padding:10px 12px;color:#94a3b8">Comunicação direta e rápida, com reconhecimento explícito. Foque em resultados e dê protagonismo na solução.</td>
+              <td style="padding:10px 12px"><span style="color:#38bdf8;font-weight:700">SBI</span> — <span style="color:#94a3b8">Responde melhor a fatos claros e impacto nos resultados. Evita rodeios, mantém foco em performance.</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid #1e293b">
+              <td style="padding:10px 12px;font-weight:700;color:#e2e8f0;white-space:nowrap">D + S</td>
+              <td style="padding:10px 12px;color:#fca5a5">Falhar e mudanças inesperadas</td>
+              <td style="padding:10px 12px;color:#86efac">Resultados com segurança</td>
+              <td style="padding:10px 12px;color:#fde68a">Execução consistente e foco em entrega</td>
+              <td style="padding:10px 12px;color:#c4b5fd">Fechamento com sustentação do relacionamento</td>
+              <td style="padding:10px 12px;color:#94a3b8">Seja firme, explique o porquê das decisões e dê tempo para adaptação. Evite pressão excessiva.</td>
+              <td style="padding:10px 12px"><span style="color:#38bdf8;font-weight:700">SBI</span> — <span style="color:#94a3b8">Traz clareza e reduz ansiedade. Mostra exatamente o comportamento e o impacto, sem gerar insegurança emocional.</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid #1e293b;background:#0f172a">
+              <td style="padding:10px 12px;font-weight:700;color:#e2e8f0;white-space:nowrap">D + C</td>
+              <td style="padding:10px 12px;color:#fca5a5">Falhar e perder numa discussão</td>
+              <td style="padding:10px 12px;color:#86efac">Resultados, controle e precisão</td>
+              <td style="padding:10px 12px;color:#fde68a">Alta performance com qualidade técnica</td>
+              <td style="padding:10px 12px;color:#c4b5fd">Negociação técnica e contratos</td>
+              <td style="padding:10px 12px;color:#94a3b8">Use dados, fatos e lógica. Evite emoção e improviso. Mostre redução de risco e ganho de eficiência.</td>
+              <td style="padding:10px 12px"><span style="color:#38bdf8;font-weight:700">SBI</span> — <span style="color:#94a3b8">Baseado em fatos e impactos objetivos. Atende à necessidade de lógica, evidência e racionalidade.</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid #1e293b">
+              <td style="padding:10px 12px;font-weight:700;color:#e2e8f0;white-space:nowrap">I + S</td>
+              <td style="padding:10px 12px;color:#fca5a5">Rejeição e mudanças</td>
+              <td style="padding:10px 12px;color:#86efac">Reconhecimento, pertencimento e segurança</td>
+              <td style="padding:10px 12px;color:#fde68a">Clima organizacional e colaboração</td>
+              <td style="padding:10px 12px;color:#c4b5fd">Relacionamento, atendimento e fidelização</td>
+              <td style="padding:10px 12px;color:#94a3b8">Comece pelo acolhimento, valide sentimentos e construa consenso. Evite confronto direto.</td>
+              <td style="padding:10px 12px"><span style="color:#a78bfa;font-weight:700">FEED</span> — <span style="color:#94a3b8">Favorece diálogo, escuta e construção conjunta. Reduz resistência emocional e aumenta engajamento.</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid #1e293b;background:#0f172a">
+              <td style="padding:10px 12px;font-weight:700;color:#e2e8f0;white-space:nowrap">I + C</td>
+              <td style="padding:10px 12px;color:#fca5a5">Rejeição e conflitos</td>
+              <td style="padding:10px 12px;color:#86efac">Reconhecimento com regras claras</td>
+              <td style="padding:10px 12px;color:#fde68a">Comunicação qualificada com padrão</td>
+              <td style="padding:10px 12px;color:#c4b5fd">Argumentação com suporte técnico</td>
+              <td style="padding:10px 12px;color:#94a3b8">Combine empatia com critérios objetivos. Explique regras, evite exposição pública e incentive perguntas.</td>
+              <td style="padding:10px 12px"><span style="color:#a78bfa;font-weight:700">FEED</span> — <span style="color:#94a3b8">Permite explicar expectativas e combinar ajustes sem confronto direto, preservando vínculo e clareza.</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid #1e293b">
+              <td style="padding:10px 12px;font-weight:700;color:#e2e8f0;white-space:nowrap">S + C</td>
+              <td style="padding:10px 12px;color:#fca5a5">Mudanças e conflitos</td>
+              <td style="padding:10px 12px;color:#86efac">Segurança, regras e previsibilidade</td>
+              <td style="padding:10px 12px;color:#fde68a">Sustentação de processos e qualidade</td>
+              <td style="padding:10px 12px;color:#c4b5fd">Atendimento técnico e pós-venda</td>
+              <td style="padding:10px 12px;color:#94a3b8">Prepare a conversa, traga passo a passo e previsibilidade. Mostre que a mudança é segura e planejada.</td>
+              <td style="padding:10px 12px"><span style="color:#a78bfa;font-weight:700">FEED</span> — <span style="color:#94a3b8">Estimula reflexão, segurança psicológica e alinhamento gradual, evitando rupturas silenciosas.</span></td>
+            </tr>
           </tbody>
         </table>
       </div>
