@@ -6066,12 +6066,27 @@ function genteAutoDiscProfile(D, I, S, C) {
 }
 
 function genteApplyAutoDisc() {
-  const D = document.getElementById('gp-d').value;
-  const I = document.getElementById('gp-i').value;
-  const S = document.getElementById('gp-s').value;
-  const C = document.getElementById('gp-c').value;
+  const D = Number(document.getElementById('gp-d').value) || 0;
+  const I = Number(document.getElementById('gp-i').value) || 0;
+  const S = Number(document.getElementById('gp-s').value) || 0;
+  const C = Number(document.getElementById('gp-c').value) || 0;
+  // atualiza barras visuais
+  const max = Math.max(D, I, S, C, 1);
+  const barH = 44; // px máximo da barra
+  document.getElementById('gp-bar-d').style.height = Math.round((D/max)*barH) + 'px';
+  document.getElementById('gp-bar-i').style.height = Math.round((I/max)*barH) + 'px';
+  document.getElementById('gp-bar-s').style.height = Math.round((S/max)*barH) + 'px';
+  document.getElementById('gp-bar-c').style.height = Math.round((C/max)*barH) + 'px';
+  // detecta perfil
   const result = genteAutoDiscProfile(D, I, S, C);
-  if (!result) return;
+  const res = document.getElementById('gp-disc-resultado');
+  if (!result) { res.style.display = 'none'; return; }
+  res.style.display = '';
+  document.getElementById('gp-perfil-display').textContent = result.perfil;
+  document.getElementById('gp-fator-display').textContent  = result.fator;
+  document.getElementById('gp-medo-display').textContent   = result.medo;
+  document.getElementById('gp-motiv-display').textContent  = result.motiv;
+  // salva nos hidden inputs
   document.getElementById('gp-perfil').value = result.perfil;
   document.getElementById('gp-fator').value  = result.fator;
   document.getElementById('gp-medo').value   = result.medo;
@@ -6157,17 +6172,14 @@ function genteOpenPessoaModal(idx) {
   document.getElementById('gp-nome').value  = p.nome  || '';
   document.getElementById('gp-cargo').value = p.cargo || '';
   document.getElementById('gp-area').value  = p.area  || '';
-  document.getElementById('gp-perfil').value= p.perfil|| '';
-  document.getElementById('gp-fator').value = p.fator || '';
   document.getElementById('gp-d').value     = p.D !== undefined ? p.D : '';
   document.getElementById('gp-i').value     = p.I !== undefined ? p.I : '';
   document.getElementById('gp-s').value     = p.S !== undefined ? p.S : '';
   document.getElementById('gp-c').value     = p.C !== undefined ? p.C : '';
-  document.getElementById('gp-medo').value  = p.medo  || '';
-  document.getElementById('gp-motiv').value = p.motiv || '';
   document.getElementById('gp-notas').value = p.notas || '';
   document.getElementById('gp-btn-del').classList.toggle('hidden', idx === undefined);
   document.getElementById('gente-pessoa-modal').classList.remove('hidden');
+  genteApplyAutoDisc();
 }
 function genteClosePessoaModal() { document.getElementById('gente-pessoa-modal').classList.add('hidden'); }
 
@@ -6636,54 +6648,84 @@ function genteSaveOrgMembro() {
 
   <!-- MODAL: PESSOA -->
   <div id="gente-pessoa-modal" class="modal-overlay hidden">
-    <div class="modal" style="max-width:520px">
+    <div class="modal" style="max-width:580px;width:95%">
       <div class="modal-header">
         <h3 id="gente-pessoa-modal-title">Nova Pessoa</h3>
         <button class="modal-close" onclick="genteClosePessoaModal()">✕</button>
       </div>
-      <div class="modal-body" style="display:grid;gap:12px">
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:16px">
         <input type="hidden" id="gp-idx">
-        <div>
-          <label class="form-label">Nome *</label>
-          <input id="gp-nome" placeholder="Nome completo">
-        </div>
-        <div>
-          <label class="form-label">Cargo / Função</label>
-          <input id="gp-cargo" placeholder="Ex: Analista Financeiro">
-        </div>
-        <div>
-          <label class="form-label">Área / Departamento</label>
-          <input id="gp-area" placeholder="Ex: Financeiro, Operações...">
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div>
-            <label class="form-label">Perfil DISC</label>
-            <input id="gp-perfil" placeholder="Ex: Especialista">
+
+        <!-- Identificação -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="grid-column:1/-1">
+            <label class="form-label">Nome *</label>
+            <input id="gp-nome" placeholder="Nome completo" style="width:100%">
           </div>
           <div>
-            <label class="form-label">Fator</label>
-            <input id="gp-fator" placeholder="Ex: Bifatorial SC">
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
-          <div><label class="form-label" style="color:#ef4444">D %</label><input id="gp-d" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()"></div>
-          <div><label class="form-label" style="color:#eab308">I %</label><input id="gp-i" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()"></div>
-          <div><label class="form-label" style="color:#22c55e">S %</label><input id="gp-s" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()"></div>
-          <div><label class="form-label" style="color:#38bdf8">C %</label><input id="gp-c" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()"></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div>
-            <label class="form-label">Medo Básico</label>
-            <input id="gp-medo" placeholder="Ex: Caos Operacional">
+            <label class="form-label">Cargo / Função</label>
+            <input id="gp-cargo" placeholder="Ex: Analista Financeiro" style="width:100%">
           </div>
           <div>
-            <label class="form-label">Motivação Principal</label>
-            <input id="gp-motiv" placeholder="Ex: Domínio Técnico">
+            <label class="form-label">Área / Departamento</label>
+            <input id="gp-area" placeholder="Ex: Financeiro, Operações" style="width:100%">
           </div>
         </div>
+
+        <!-- DISC scores + preview -->
+        <div style="background:#0f172a;border-radius:10px;padding:14px">
+          <div style="font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px">Resultado DISC</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
+            <div style="text-align:center">
+              <label class="form-label" style="color:#ef4444;font-size:13px;font-weight:700">D %</label>
+              <input id="gp-d" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()" style="text-align:center;font-size:18px;font-weight:700;color:#ef4444;background:#1e293b;border-color:#334155;padding:8px 4px">
+            </div>
+            <div style="text-align:center">
+              <label class="form-label" style="color:#eab308;font-size:13px;font-weight:700">I %</label>
+              <input id="gp-i" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()" style="text-align:center;font-size:18px;font-weight:700;color:#eab308;background:#1e293b;border-color:#334155;padding:8px 4px">
+            </div>
+            <div style="text-align:center">
+              <label class="form-label" style="color:#22c55e;font-size:13px;font-weight:700">S %</label>
+              <input id="gp-s" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()" style="text-align:center;font-size:18px;font-weight:700;color:#22c55e;background:#1e293b;border-color:#334155;padding:8px 4px">
+            </div>
+            <div style="text-align:center">
+              <label class="form-label" style="color:#38bdf8;font-size:13px;font-weight:700">C %</label>
+              <input id="gp-c" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()" style="text-align:center;font-size:18px;font-weight:700;color:#38bdf8;background:#1e293b;border-color:#334155;padding:8px 4px">
+            </div>
+          </div>
+          <!-- barra visual -->
+          <div id="gp-disc-preview" style="display:flex;align-items:flex-end;gap:6px;height:56px;margin-bottom:12px">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div id="gp-bar-d" style="width:100%;background:#ef4444;border-radius:3px 3px 0 0;height:0;min-height:3px;transition:height .3s"></div><div style="font-size:11px;font-weight:700;color:#ef4444">D</div></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div id="gp-bar-i" style="width:100%;background:#eab308;border-radius:3px 3px 0 0;height:0;min-height:3px;transition:height .3s"></div><div style="font-size:11px;font-weight:700;color:#eab308">I</div></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div id="gp-bar-s" style="width:100%;background:#22c55e;border-radius:3px 3px 0 0;height:0;min-height:3px;transition:height .3s"></div><div style="font-size:11px;font-weight:700;color:#22c55e">S</div></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div id="gp-bar-c" style="width:100%;background:#38bdf8;border-radius:3px 3px 0 0;height:0;min-height:3px;transition:height .3s"></div><div style="font-size:11px;font-weight:700;color:#38bdf8">C</div></div>
+          </div>
+          <!-- resultado automático -->
+          <div id="gp-disc-resultado" style="display:none;background:#1e293b;border-radius:8px;padding:10px 14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+              <div>
+                <div id="gp-perfil-display" style="font-size:15px;font-weight:700;color:#e2e8f0"></div>
+                <div id="gp-fator-display" style="font-size:12px;color:#64748b;margin-top:2px"></div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:11px;color:#64748b">Medo básico</div>
+                <div id="gp-medo-display" style="font-size:12px;color:#fca5a5"></div>
+                <div style="font-size:11px;color:#64748b;margin-top:4px">Motivação</div>
+                <div id="gp-motiv-display" style="font-size:12px;color:#86efac"></div>
+              </div>
+            </div>
+          </div>
+          <!-- campos ocultos que guardam o valor -->
+          <input type="hidden" id="gp-perfil">
+          <input type="hidden" id="gp-fator">
+          <input type="hidden" id="gp-medo">
+          <input type="hidden" id="gp-motiv">
+        </div>
+
+        <!-- Anotações -->
         <div>
           <label class="form-label">Anotações Gerais</label>
-          <textarea id="gp-notas" style="width:100%;height:80px;resize:vertical;background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:6px;padding:8px;font-family:inherit;font-size:13px" placeholder="Observações sobre a pessoa, pontos de desenvolvimento, projetos..."></textarea>
+          <textarea id="gp-notas" style="width:100%;height:90px;resize:vertical;background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:6px;padding:8px 10px;font-family:inherit;font-size:13px;box-sizing:border-box" placeholder="Pontos de desenvolvimento, projetos, observações..."></textarea>
         </div>
       </div>
       <div class="modal-footer">
