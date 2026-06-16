@@ -6033,6 +6033,49 @@ function genteLoadOrg() {
 }
 function genteSaveOrg(list) { localStorage.setItem(GENTE_ORG_KEY, JSON.stringify(list)); }
 
+function genteAutoDiscProfile(D, I, S, C) {
+  D = Number(D)||0; I = Number(I)||0; S = Number(S)||0; C = Number(C)||0;
+  if (!D && !I && !S && !C) return null;
+  const max = Math.max(D, I, S, C);
+  const min = Math.min(D, I, S, C);
+  // Spread pequeno com todos moderados = equilibrado
+  if ((max - min) <= 22 && min >= 30) return {fator:'Perfil Equilibrado', perfil:'Perfil Equilibrado'};
+  // Fatores ativos: dentro de 15% do máximo
+  const threshold = max * 0.85;
+  const vals = {D, I, S, C};
+  const active = ['D','I','S','C'].filter(k => vals[k] >= threshold);
+  const PROFILES = {
+    'D':   {fator:'Monofatorial D',    perfil:'Executor'},
+    'I':   {fator:'Monofatorial I',    perfil:'Comunicador'},
+    'S':   {fator:'Monofatorial S',    perfil:'Estável Puro'},
+    'C':   {fator:'Monofatorial C',    perfil:'Analista'},
+    'DI':  {fator:'Bifatorial DI',     perfil:'Motivador'},
+    'DS':  {fator:'Bifatorial DS',     perfil:'Investigador'},
+    'DC':  {fator:'Bifatorial DC',     perfil:'Perfeccionista'},
+    'IS':  {fator:'Bifatorial IS',     perfil:'Suporte Influente'},
+    'IC':  {fator:'Bifatorial IC',     perfil:'Questionador'},
+    'SC':  {fator:'Bifatorial SC',     perfil:'Especialista'},
+    'DIS': {fator:'Trifatorial DIS',   perfil:'Realizador'},
+    'DIC': {fator:'Trifatorial DIC',   perfil:'Criativo Crítico'},
+    'DSC': {fator:'Trifatorial DSC',   perfil:'Executor Metódico'},
+    'ISC': {fator:'Trifatorial ISC',   perfil:'Analista Harmonizador'},
+    'DISC':{fator:'Perfil Equilibrado',perfil:'Perfil Equilibrado'},
+  };
+  const key = active.join('');
+  return PROFILES[key] || null;
+}
+
+function genteApplyAutoDisc() {
+  const D = document.getElementById('gp-d').value;
+  const I = document.getElementById('gp-i').value;
+  const S = document.getElementById('gp-s').value;
+  const C = document.getElementById('gp-c').value;
+  const result = genteAutoDiscProfile(D, I, S, C);
+  if (!result) return;
+  document.getElementById('gp-perfil').value = result.perfil;
+  document.getElementById('gp-fator').value  = result.fator;
+}
+
 function genteInit() {
   genteShowTab('pessoas');
 }
@@ -6603,10 +6646,10 @@ function genteSaveOrgMembro() {
           </div>
         </div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
-          <div><label class="form-label" style="color:#ef4444">D %</label><input id="gp-d" type="number" min="0" max="100" placeholder="0"></div>
-          <div><label class="form-label" style="color:#eab308">I %</label><input id="gp-i" type="number" min="0" max="100" placeholder="0"></div>
-          <div><label class="form-label" style="color:#22c55e">S %</label><input id="gp-s" type="number" min="0" max="100" placeholder="0"></div>
-          <div><label class="form-label" style="color:#38bdf8">C %</label><input id="gp-c" type="number" min="0" max="100" placeholder="0"></div>
+          <div><label class="form-label" style="color:#ef4444">D %</label><input id="gp-d" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()"></div>
+          <div><label class="form-label" style="color:#eab308">I %</label><input id="gp-i" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()"></div>
+          <div><label class="form-label" style="color:#22c55e">S %</label><input id="gp-s" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()"></div>
+          <div><label class="form-label" style="color:#38bdf8">C %</label><input id="gp-c" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()"></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div>
