@@ -4580,6 +4580,8 @@ function handleSmartSalesXlsxFile(input) {
           const d = XLSX.SSF.parse_date_code(dataVal);
           dataVal = `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;
         }
+        const vlrProd  = parseFloat(r['VALOR PRODUTOS'] ?? r['Valor Produtos'] ?? 0) || 0;
+        const vlrFrete = parseFloat(r['VALOR FRETE']    ?? r['Valor Frete']    ?? 0) || 0;
         const row = {
           Data: dataVal,
           Nota: nota,
@@ -4587,9 +4589,9 @@ function handleSmartSalesXlsxFile(input) {
           codprod: String(cod),
           'Produto ERP': r['PRODUTO'] ?? r['Produto'] ?? '',
           Quantidade: r['QTD'] ?? r['Quantidade'] ?? 0,
-          'Valor Produtos': r['VALOR PRODUTOS'] ?? r['Valor Produtos'] ?? 0,
-          'Valor Frete': r['VALOR FRETE'] ?? r['Valor Frete'] ?? 0,
-          'Valor Total': r['VALOR TOTAL'] ?? r['Valor Total'] ?? 0,
+          'Valor Produtos': vlrProd,
+          'Valor Frete': vlrFrete,
+          'Valor Total': vlrProd + vlrFrete,
           Status: r['STATUS'] ?? r['Status'] ?? '',
           CFOP: r['CFOP'] ?? '',
         };
