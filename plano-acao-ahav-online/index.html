@@ -6075,6 +6075,8 @@ loadConfig();
 // ===== GENTE =====
 const GENTE_PESSOAS_KEY = 'ahav_gente_pessoas';
 const GENTE_ORG_KEY     = 'ahav_gente_org';
+const GENTE_EMPRESAS = ['Ahav','REDE EPI'];
+let genteActiveTab = 'pessoas';
 
 const GENTE_DISC_DEFAULT = [
   {nome:'Ana Kelly',                   cargo:'Analista',    area:'', lider:'',       perfil:'Estável Puro',         fator:'Monofatorial S',    D:20, I:52, S:68, C:20, medo:'Insegurança',                     motiv:'Previsibilidade',                    notas:''},
@@ -6098,13 +6100,37 @@ const GENTE_ORG_DEFAULT = [
 function genteLoadPessoas() {
   try {
     const stored = localStorage.getItem(GENTE_PESSOAS_KEY);
-    if (stored) return JSON.parse(stored).sort((a,b) => (a.nome||'').localeCompare(b.nome||'', 'pt-BR'));
+    if (stored) {
+      const parsed = JSON.parse(stored).map(p => ({...p, empresa: p.empresa || 'Ahav'}));
+      localStorage.setItem(GENTE_PESSOAS_KEY, JSON.stringify(parsed));
+      return parsed.sort((a,b) => (a.nome||'').localeCompare(b.nome||'', 'pt-BR'));
+    }
   } catch(e) {}
-  const d = GENTE_DISC_DEFAULT.map(p => ({...p}));
+  const d = GENTE_DISC_DEFAULT.map(p => ({...p, empresa:'Ahav'}));
   localStorage.setItem(GENTE_PESSOAS_KEY, JSON.stringify(d));
   return d.sort((a,b) => (a.nome||'').localeCompare(b.nome||'', 'pt-BR'));
 }
 function genteSavePessoas(list) { localStorage.setItem(GENTE_PESSOAS_KEY, JSON.stringify(list)); }
+
+function genteEmpresaAtual() {
+  return document.getElementById('gente-empresa-filter')?.value || '';
+}
+
+function genteFilterPessoas(pessoas) {
+  const empresa = genteEmpresaAtual();
+  return empresa ? pessoas.filter(p => (p.empresa || 'Ahav') === empresa) : pessoas;
+}
+
+function gentePeopleWithIndex() {
+  const empresa = genteEmpresaAtual();
+  return genteLoadPessoas()
+    .map((p, index) => ({p, index}))
+    .filter(({p}) => !empresa || (p.empresa || 'Ahav') === empresa);
+}
+
+function genteApplyEmpresaFilter() {
+  genteShowTab(genteActiveTab || 'pessoas');
+}
 
 function genteLoadOrg() {
   try {
@@ -6200,6 +6226,7 @@ function genteInit() {
 }
 
 function genteShowTab(tab) {
+  genteActiveTab = tab;
   ['pessoas','disc','organograma','feedback','material','indicadores'].forEach(t => {
     document.getElementById(`gente-pane-${t}`)?.classList.toggle('hidden', t !== tab);
     document.getElementById(`gente-tab-${t}`)?.classList.toggle('active', t === tab);
@@ -6211,7 +6238,7 @@ function genteShowTab(tab) {
 }
 
 function genteRenderPessoas() {
-  const pessoas = genteLoadPessoas();
+  const pessoas = gentePeopleWithIndex();
   const el = document.getElementById('gente-pessoas-list');
   if (!pessoas.length) { el.innerHTML = '<p style="color:#64748b">Nenhuma pessoa cadastrada ainda.</p>'; return; }
   el.innerHTML = `
@@ -6219,6 +6246,7 @@ function genteRenderPessoas() {
     <table style="width:100%;border-collapse:collapse;font-size:13px">
       <thead><tr style="border-bottom:2px solid #334155">
         <th style="text-align:left;padding:10px 12px;color:#64748b">Nome</th>
+        <th style="text-align:left;padding:10px 12px;color:#64748b">Empresa</th>
         <th style="text-align:left;padding:10px 12px;color:#64748b">Cargo</th>
         <th style="text-align:left;padding:10px 12px;color:#64748b">Área</th>
         <th style="text-align:left;padding:10px 12px;color:#64748b">Líder</th>
@@ -6230,9 +6258,10 @@ function genteRenderPessoas() {
         <th style="padding:10px 12px"></th>
       </tr></thead>
       <tbody>
-        ${pessoas.map((p,i) => `
-          <tr style="border-bottom:1px solid #1e293b;cursor:pointer" onclick="genteOpenPessoaModal(${i})">
+        ${pessoas.map(({p,index}) => `
+          <tr style="border-bottom:1px solid #1e293b;cursor:pointer" onclick="genteOpenPessoaModal(${index})">
             <td style="padding:10px 12px;color:#e2e8f0;font-weight:500">${p.nome}</td>
+            <td style="padding:10px 12px;color:#94a3b8">${p.empresa||'Ahav'}</td>
             <td style="padding:10px 12px;color:#94a3b8">${p.cargo||'—'}</td>
             <td style="padding:10px 12px;color:#94a3b8">${p.area||'—'}</td>
             <td style="padding:10px 12px;color:#94a3b8">${p.lider||'—'}</td>
@@ -6243,7 +6272,7 @@ function genteRenderPessoas() {
             <td style="text-align:center;padding:10px 8px;color:#eab308;font-weight:600">${p.I||'—'}</td>
             <td style="text-align:center;padding:10px 8px;color:#22c55e;font-weight:600">${p.S||'—'}</td>
             <td style="text-align:center;padding:10px 8px;color:#38bdf8;font-weight:600">${p.C||'—'}</td>
-            <td style="padding:10px 8px"><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();genteOpenPessoaModal(${i})">✏️</button></td>
+            <td style="padding:10px 8px"><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();genteOpenPessoaModal(${index})">✏️</button></td>
           </tr>
         `).join('')}
       </tbody>
@@ -6258,6 +6287,7 @@ function genteOpenPessoaModal(idx) {
   const todas = genteLoadPessoas();
   document.getElementById('gp-idx').value   = idx !== undefined ? idx : '';
   document.getElementById('gp-nome').value  = p.nome  || '';
+  document.getElementById('gp-empresa').value = p.empresa || genteEmpresaAtual() || 'Ahav';
   document.getElementById('gp-cargo').value  = p.cargo  || '';
   document.getElementById('gp-funcao').value = p.funcao || '';
   document.getElementById('gp-area').value   = p.area   || '';
@@ -6282,6 +6312,7 @@ function genteSavePessoa() {
   const pessoas = genteLoadPessoas();
   const obj = {
     nome,
+    empresa: document.getElementById('gp-empresa').value || 'Ahav',
     cargo:  document.getElementById('gp-cargo').value,
     funcao: document.getElementById('gp-funcao').value,
     area:   document.getElementById('gp-area').value.trim(),
@@ -6316,7 +6347,7 @@ function genteDeletePessoa() {
 }
 
 function genteRenderDisc() {
-  const pessoas = genteLoadPessoas().filter(p => p.D || p.I || p.S || p.C);
+  const pessoas = genteFilterPessoas(genteLoadPessoas()).filter(p => p.D || p.I || p.S || p.C);
   const el = document.getElementById('gente-disc-content');
   if (!pessoas.length) { el.innerHTML = '<p style="color:#64748b">Cadastre pessoas com dados DISC para visualizar.</p>'; return; }
 
@@ -6418,7 +6449,7 @@ function genteCargoBadge(cargo) {
 }
 
 function genteRenderOrg() {
-  const pessoas = genteLoadPessoas();
+  const pessoas = genteFilterPessoas(genteLoadPessoas());
   const el = document.getElementById('gente-org-content');
   if (!pessoas.length) { el.innerHTML = '<p style="color:#64748b">Nenhuma pessoa cadastrada.</p>'; return; }
 
@@ -6702,7 +6733,7 @@ function genteRenderIndicadores() {
   const fmt = v => v.toLocaleString('pt-BR', {style:'currency', currency:'BRL', maximumFractionDigits:0});
   const INP = 'background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;padding:4px 8px;font-size:12px';
 
-  const pessoas = genteLoadPessoas();
+  const pessoas = genteFilterPessoas(genteLoadPessoas());
   const funcaoOpts = ['', ...Object.keys(GENTE_IND_TEMPLATES)].map(f =>
     `<option value="${f}">${f || '— Selecionar função —'}</option>`
   ).join('');
@@ -6980,6 +7011,17 @@ function genteSaveOrgMembro() {
     <button class="smart-tab"        id="gente-tab-indicadores"  onclick="genteShowTab('indicadores')">Indicadores</button>
   </div>
 
+  <div class="filters" style="margin-bottom:18px">
+    <div class="filter-group">
+      <label>Empresa</label>
+      <select id="gente-empresa-filter" onchange="genteApplyEmpresaFilter()">
+        <option value="">Todas</option>
+        <option value="Ahav" selected>Ahav</option>
+        <option value="REDE EPI">REDE EPI</option>
+      </select>
+    </div>
+  </div>
+
   <!-- TAB: PESSOAS -->
   <div id="gente-pane-pessoas">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
@@ -7232,6 +7274,13 @@ function genteSaveOrgMembro() {
             <input id="gp-nome" placeholder="Nome completo" style="width:100%">
           </div>
           <div>
+            <label class="form-label">Empresa</label>
+            <select id="gp-empresa" style="width:100%">
+              <option value="Ahav">Ahav</option>
+              <option value="REDE EPI">REDE EPI</option>
+            </select>
+          </div>
+          <div>
             <label class="form-label">Cargo</label>
             <select id="gp-cargo" style="width:100%">
               <option value="">— Selecionar —</option>
@@ -7378,4 +7427,3 @@ function genteSaveOrgMembro() {
 
 </body>
 </html>
-
