@@ -4498,7 +4498,7 @@ function renderSmartSales() {
     'Produto ERP': smartProductName(v.codprod, v['Produto ERP']),
     'Valor Produtos': smartNum(v['Valor Produtos']).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}),
     'Valor Frete': smartNum(v['Valor Frete']).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}),
-    'Valor Total': smartNum(v['Valor Total']).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}),
+    'Valor Total': (()=>{ const vp=smartNum(v['Valor Produtos']), vf=smartNum(v['Valor Frete']); return ((vp||vf) ? vp+vf : smartNum(v['Valor Total'])).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); })(),
     Cadastro: smartProductByCode(v.codprod).codprod ? 'OK' : '<span class="stock-status-alert">Sem Cadastro</span>',
     Ações:`<div class="smart-row-actions"><button class="btn btn-ghost btn-sm smart-icon-btn" title="Editar venda" aria-label="Editar venda" onclick="event.stopPropagation();openSmartSaleModal('${i}')">✎</button></div>`
   }));
