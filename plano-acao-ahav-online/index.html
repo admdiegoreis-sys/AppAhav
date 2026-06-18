@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Plano de Ação — Grupo AHAV</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
 <style>
@@ -664,6 +665,8 @@ td.wrap{white-space:normal}
       <div class="filter-group"><label>Data final</label><input type="date" id="smart-venda-data-fim" onchange="renderSmartSales()"></div>
       <button class="btn btn-primary btn-sm" onclick="renderSmartSales()">Aplicar filtros</button>
       <button class="btn btn-ghost btn-sm" onclick="clearSmartSalesFilters()">Limpar filtros</button>
+      <button class="btn btn-ghost btn-sm" onclick="importSmartSalesXlsx()" title="Importar planilha .xlsx">⬆ Importar XLSX</button>
+      <input type="file" id="smart-sales-xlsx-input" accept=".xlsx" style="display:none" onchange="handleSmartSalesXlsxFile(this)">
     </div>
     <div class="table-wrap"><div class="table-header"><h3 id="smart-vendas-title">Pedidos de Venda</h3></div><div style="overflow-x:auto"><table class="smart-table sales-table"><thead id="smart-vendas-head"></thead><tbody id="smart-vendas-body"></tbody></table></div></div>
   </div>
@@ -4485,6 +4488,8 @@ function renderSmartSales() {
     Cliente: smartClientLabel(v, clientDirectory),
     Data: smartFormatDate(v.Data),
     'Produto ERP': smartProductName(v.codprod, v['Produto ERP']),
+    'Valor Produtos': smartNum(v['Valor Produtos']).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}),
+    'Valor Frete': smartNum(v['Valor Frete']).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}),
     'Valor Total': smartNum(v['Valor Total']).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}),
     Cadastro: smartProductByCode(v.codprod).codprod ? 'OK' : '<span class="stock-status-alert">Sem Cadastro</span>',
     Ações:`<div class="smart-row-actions"><button class="btn btn-ghost btn-sm smart-icon-btn" title="Editar venda" aria-label="Editar venda" onclick="event.stopPropagation();openSmartSaleModal('${i}')">✎</button></div>`
@@ -4515,7 +4520,7 @@ function renderSmartSales() {
   if (title) title.textContent = `Pedidos de Venda (${rows.length}/${baseRows.length})`;
   smartTable('smart-vendas-head', 'smart-vendas-body', rows, {
     limit:300,
-    headers:['Data','Nota','Cliente','codprod','Produto','Quantidade','Valor Total','Status','CFOP','Cadastro','Ações'],
+    headers:['Data','Nota','Cliente','codprod','Produto','Quantidade','Valor Produtos','Valor Frete','Valor Total','Status','CFOP','Cadastro','Ações'],
     fieldMap:{'Produto':'Produto ERP'},
     htmlFields:['Cadastro','Ações']
   });
@@ -4531,6 +4536,66 @@ function clearSmartSalesFilters() {
     if (el) el.value = '';
   });
   renderSmartSales();
+}
+
+function importSmartSalesXlsx() {
+  const inp = document.getElementById('smart-sales-xlsx-input');
+  if (inp) { inp.value = ''; inp.click(); }
+}
+
+function handleSmartSalesXlsxFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array', cellDates:true});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const raw = XLSX.utils.sheet_to_json(ws, {defval:''});
+      if (!raw.length) { alert('Planilha vazia ou formato inválido.'); return; }
+      const state = getSmartState();
+      const existing = {};
+      state.vendas.forEach(v => {
+        const k = `${v.Nota}-${v.codprod}`;
+        existing[k] = true;
+      });
+      let added = 0, updated = 0;
+      raw.forEach(r => {
+        const nota = r['NOTA'] ?? r['Nota'] ?? '';
+        const cod  = r['COD PRODUTO'] ?? r['codprod'] ?? '';
+        const key  = `${nota}-${cod}`;
+        let dataVal = r['DATA'] ?? r['Data'] ?? '';
+        if (dataVal instanceof Date) {
+          dataVal = dataVal.toISOString().slice(0,10);
+        } else if (typeof dataVal === 'number') {
+          const d = XLSX.SSF.parse_date_code(dataVal);
+          dataVal = `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;
+        }
+        const row = {
+          Data: dataVal,
+          Nota: nota,
+          Cliente: r['CLIENTE'] ?? r['Cliente'] ?? '',
+          codprod: String(cod),
+          'Produto ERP': r['PRODUTO'] ?? r['Produto'] ?? '',
+          Quantidade: r['QTD'] ?? r['Quantidade'] ?? 0,
+          'Valor Produtos': r['VALOR PRODUTOS'] ?? r['Valor Produtos'] ?? 0,
+          'Valor Frete': r['VALOR FRETE'] ?? r['Valor Frete'] ?? 0,
+          'Valor Total': r['VALOR TOTAL'] ?? r['Valor Total'] ?? 0,
+          Status: r['STATUS'] ?? r['Status'] ?? '',
+          CFOP: r['CFOP'] ?? '',
+        };
+        const idx = state.vendas.findIndex(v => `${v.Nota}-${v.codprod}` === key);
+        if (idx >= 0) { state.vendas[idx] = {...state.vendas[idx], ...row}; updated++; }
+        else { state.vendas.push(row); added++; }
+      });
+      saveSmartState();
+      renderSmartSales();
+      alert(`Importação concluída: ${added} linha(s) adicionada(s), ${updated} atualizada(s).`);
+    } catch(err) {
+      alert('Erro ao ler o arquivo: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
 }
 
 function renderSmartAdjustments() {
