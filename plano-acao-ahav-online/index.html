@@ -201,6 +201,8 @@ td.wrap{white-space:normal}
 .smart-section{display:none}.smart-section.active{display:block}
 .smart-table{min-width:980px}
 .smart-table td{max-width:340px}
+.smart-table-sales{font-size:11px;table-layout:fixed;min-width:0;width:100%}
+.smart-table-sales th,.smart-table-sales td{padding:6px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:none}
 .smart-table thead th{position:sticky;top:0;z-index:5}
 .smart-table thead{position:sticky;top:0;z-index:6}
 .stock-table{min-width:0;width:100%;table-layout:fixed}
@@ -668,7 +670,7 @@ td.wrap{white-space:normal}
       <button class="btn btn-ghost btn-sm" onclick="importSmartSalesXlsx()" title="Importar planilha .xlsx">⬆ Importar XLSX</button>
       <input type="file" id="smart-sales-xlsx-input" accept=".xlsx" style="display:none" onchange="handleSmartSalesXlsxFile(this)">
     </div>
-    <div class="table-wrap"><div class="table-header"><h3 id="smart-vendas-title">Pedidos de Venda</h3></div><div style="overflow-x:auto"><table class="smart-table sales-table"><thead id="smart-vendas-head"></thead><tbody id="smart-vendas-body"></tbody></table></div></div>
+    <div class="table-wrap"><div class="table-header"><h3 id="smart-vendas-title">Pedidos de Venda</h3></div><div style="overflow-x:auto"><table class="smart-table smart-table-sales" id="smart-vendas-table"><thead id="smart-vendas-head"></thead><tbody id="smart-vendas-body"></tbody></table></div></div>
   </div>
 
   <div class="smart-section" id="smart-section-compras">
@@ -4046,6 +4048,12 @@ function smartTable(headId, bodyId, rows, opts = {}) {
   if (!head || !body) return;
   const limited = rows.slice(0, opts.limit || 250);
   const headers = opts.headers || Object.keys(limited[0] || rows[0] || {});
+  const table = head.closest('table');
+  if (table && opts.colWidths) {
+    let colgroup = table.querySelector('colgroup');
+    if (!colgroup) { colgroup = document.createElement('colgroup'); table.prepend(colgroup); }
+    colgroup.innerHTML = headers.map(h => `<col style="width:${opts.colWidths[h] || 'auto'}">`).join('');
+  }
   head.innerHTML = `<tr>${headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr>`;
   body.innerHTML = limited.length ? limited.map((row, idx) => {
     const cells = headers.map(h => {
@@ -4522,7 +4530,8 @@ function renderSmartSales() {
     limit:300,
     headers:['Data','Nota','Cliente','codprod','Produto','Quantidade','Valor Produtos','Valor Frete','Valor Total','Status','CFOP','Cadastro','Ações'],
     fieldMap:{'Produto':'Produto ERP'},
-    htmlFields:['Cadastro','Ações']
+    htmlFields:['Cadastro','Ações'],
+    colWidths:{'Data':'80px','Nota':'60px','Cliente':'160px','codprod':'70px','Produto':'200px','Quantidade':'80px','Valor Produtos':'100px','Valor Frete':'90px','Valor Total':'90px','Status':'90px','CFOP':'55px','Cadastro':'60px','Ações':'55px'}
   });
 }
 
