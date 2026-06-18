@@ -3851,6 +3851,14 @@ function normalizeSmartState(state = {}) {
   normalized.produtos = dedupeSmartProducts(normalized.produtos || []);
   normalized.producao = normalizeSmartProductionRows(normalized.producao || []);
   syncSmartFaturamentoData(normalized);
+  // migração: preenche Valor Produtos com Valor Total quando ambos eram 0
+  normalized.vendas = (normalized.vendas || []).map(v => {
+    const vp = smartNum(v['Valor Produtos']);
+    const vf = smartNum(v['Valor Frete']);
+    const vt = smartNum(v['Valor Total']);
+    if (!vp && !vf && vt) return {...v, 'Valor Produtos': vt, 'Valor Frete': 0};
+    return v;
+  });
   return normalized;
 }
 
