@@ -931,18 +931,6 @@ body.sidebar-collapsed #page-gente{
       <button class="btn btn-ghost btn-sm" onclick="exportExecutivePDF()">📄 PDF Executivo</button>
     </div>
   </div>
-  <div class="exec-hero">
-    <div class="exec-panel">
-      <div class="exec-title">Dashboard executivo</div>
-      <div class="exec-headline">Visão integrada de valor, riscos e execução</div>
-      <div class="exec-copy">Consolida Plano de Ação, FVC - Valor Gerado e Gestão de Riscos para uma leitura rápida da performance financeira e dos pontos de atenção.</div>
-    </div>
-    <div class="exec-panel">
-      <div class="exec-title">Status dos projetos</div>
-      <div class="status-bars" id="exec-status-projetos"></div>
-    </div>
-  </div>
-
   <div class="exec-grid">
     <div class="exec-card green"><div class="exec-card-label">Valor gerado total</div><div class="exec-card-value" id="exec-valor-total">—</div><div class="exec-card-sub">R$ mil mapeados no FVC</div></div>
     <div class="exec-card red"><div class="exec-card-label">Riscos críticos</div><div class="exec-card-value" id="exec-riscos-criticos">—</div><div class="exec-card-sub">criticidade grave</div></div>
@@ -951,6 +939,11 @@ body.sidebar-collapsed #page-gente{
     <div class="exec-card blue"><div class="exec-card-label">KPI financeiro</div><div class="exec-card-value" id="exec-kpi-financeiro">—</div><div class="exec-card-sub">saving concluído sobre valor mapeado</div></div>
     <div class="exec-card red"><div class="exec-card-label">Exposição de riscos</div><div class="exec-card-value" id="exec-exposicao">—</div><div class="exec-card-sub">R$ mil em riscos mapeados</div></div>
     <div class="exec-card orange admin-pending-card hidden" id="exec-prazo-pendencias-card" onclick="showPage('prazos')"><div class="exec-card-label">Pendências de prazo</div><div class="exec-card-value" id="exec-prazo-pendencias">—</div><div class="exec-card-sub">alterações aguardando aprovação</div></div>
+  </div>
+
+  <div class="exec-panel" style="margin-bottom:22px">
+    <div class="exec-title">Status dos projetos</div>
+    <div class="status-bars" id="exec-status-projetos"></div>
   </div>
 
   <div class="exec-section-grid">
