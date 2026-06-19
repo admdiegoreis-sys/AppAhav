@@ -446,37 +446,37 @@ td.wrap{white-space:normal}
   --shell-red:#ef4444;
   --shell-orange:#f97316;
   --shell-purple:#8b5cf6;
-  --sidebar-width:276px;
+  --sidebar-width:236px;
 }
 body{background:var(--shell-bg);color:var(--shell-text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 #app{min-height:100vh;background:var(--shell-bg);color:var(--shell-text)}
 #app .header{
   position:fixed;left:0;top:0;bottom:0;width:var(--sidebar-width);height:100dvh;
   background:linear-gradient(180deg,var(--shell-sidebar),var(--shell-sidebar-2));
-  border:0;border-right:1px solid rgba(255,255,255,.08);padding:22px 16px;
-  display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:16px;
+  border:0;border-right:1px solid rgba(255,255,255,.08);padding:18px 12px;
+  display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:12px;
   z-index:320;overflow-y:auto;box-shadow:14px 0 34px rgba(15,23,42,.16);
 }
-#app .brand{display:flex;flex-direction:column;align-items:flex-start;gap:10px;flex:0 0 auto;min-width:0}
-#app .brand-logo{height:48px;max-width:165px;filter:drop-shadow(0 6px 16px rgba(0,0,0,.16))}
-#app .header h1{font-size:12px;line-height:1.35;color:#b7d8e8;white-space:normal;text-transform:uppercase;letter-spacing:.08em}
+#app .brand{display:flex;flex-direction:column;align-items:flex-start;gap:8px;flex:0 0 auto;min-width:0}
+#app .brand-logo{height:40px;max-width:130px;filter:drop-shadow(0 6px 16px rgba(0,0,0,.16))}
+#app .header h1{font-size:11px;line-height:1.32;color:#b7d8e8;white-space:normal;text-transform:uppercase;letter-spacing:.08em}
 .sidebar-user{
-  display:grid;grid-template-columns:42px 1fr;gap:11px;align-items:center;
-  padding:13px 12px;border:1px solid rgba(255,255,255,.12);border-radius:14px;
+  display:grid;grid-template-columns:36px 1fr;gap:9px;align-items:center;
+  padding:11px 10px;border:1px solid rgba(255,255,255,.12);border-radius:14px;
   background:rgba(255,255,255,.08);color:#fff;
 }
-.sidebar-avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#00bfa6,#00a1c9);font-weight:850;box-shadow:0 8px 20px rgba(0,191,166,.22)}
-.sidebar-user-name{font-size:13px;font-weight:800;line-height:1.2;color:#f8fafc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sidebar-user-email{font-size:11px;color:#b7d8e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.sidebar-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#00bfa6,#00a1c9);font-size:13px;font-weight:850;box-shadow:0 8px 20px rgba(0,191,166,.22)}
+.sidebar-user-name{font-size:12px;font-weight:800;line-height:1.2;color:#f8fafc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sidebar-user-email{font-size:10px;color:#b7d8e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
 #app .page-nav{display:flex;flex-direction:column;align-items:stretch;gap:8px;margin:4px 0 0;flex:1}
 #app .nav-btn,#app .nav-menu summary{
-  width:100%;min-height:42px;border:1px solid rgba(255,255,255,.08);border-radius:12px;
-  background:rgba(255,255,255,.06);color:#dbeafe;padding:10px 12px;text-align:left;
-  justify-content:flex-start;font-size:13px;font-weight:760;box-shadow:none;transition:background .2s,border-color .2s,transform .2s,color .2s;
+  width:100%;min-height:38px;border:1px solid rgba(255,255,255,.08);border-radius:11px;
+  background:rgba(255,255,255,.06);color:#dbeafe;padding:8px 10px;text-align:left;
+  justify-content:flex-start;font-size:12px;font-weight:760;box-shadow:none;transition:background .2s,border-color .2s,transform .2s,color .2s;
 }
 #app .nav-btn:hover,#app .nav-menu summary:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.18);transform:translateX(2px);color:#fff}
 #app .nav-btn.active,#app .nav-menu summary.active{background:linear-gradient(135deg,#00bfa6,#00a1c9);border-color:transparent;color:#fff;box-shadow:0 10px 24px rgba(0,161,201,.24)}
-#app .nav-btn::before,#app .nav-menu summary::before{display:inline-flex;align-items:center;justify-content:center;width:22px;margin-right:8px;color:currentColor;opacity:.95}
+#app .nav-btn::before,#app .nav-menu summary::before{display:inline-flex;align-items:center;justify-content:center;width:18px;margin-right:7px;color:currentColor;opacity:.95}
 #nav-home::before{content:'▦'} #nav-smartmold::before{content:'▣'} #nav-gestao::before{content:'▤'} #nav-rede-epi::before{content:'◈'} #nav-vjm::before{content:'◆'} #nav-gente::before{content:'◉'}
 #app .nav-menu-panel{position:static;min-width:0;background:rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.08);box-shadow:none;margin-top:7px;border-radius:12px}
 #app .header-right{margin-top:auto;width:100%;display:block}
@@ -549,7 +549,7 @@ body{background:var(--shell-bg);color:var(--shell-text);font-family:Inter,system
 #app .matrix-count{color:#0f172a}
 #app .matrix-label,#app .kanban-title,#app .status-row{color:#334155}
 #app .kanban-pill{background:#fff;color:#64748b;border:1px solid #e5e7eb}
-body.sidebar-collapsed{--sidebar-width:86px}
+body.sidebar-collapsed{--sidebar-width:72px}
 body.sidebar-collapsed #app .header{padding:18px 12px}
 body.sidebar-collapsed #app .brand-logo{height:34px;max-width:56px;object-fit:contain}
 body.sidebar-collapsed #app .brand h1,body.sidebar-collapsed .sidebar-user div:not(.sidebar-avatar),body.sidebar-collapsed #app .nav-btn,body.sidebar-collapsed #app .nav-menu summary,body.sidebar-collapsed #app .user-chip{font-size:0;color:transparent}
@@ -1677,6 +1677,24 @@ let smartChartFaturamentoMes = null, smartChartTopClientes = null, smartChartPro
 let currentUser = null;
 let authUsesSupabase = false;
 let cachedUserNames = [];
+
+function setupChartVisualDefaults() {
+  if (!window.Chart || Chart._ahavCleanGrid) return;
+  Chart._ahavCleanGrid = true;
+  Chart.defaults.scale.grid.display = false;
+  Chart.defaults.scale.border.display = false;
+  Chart.defaults.scale.ticks.color = '#64748b';
+  Chart.register({
+    id: 'ahavCleanGrid',
+    beforeInit(chart) {
+      const scales = chart.options?.scales || {};
+      Object.values(scales).forEach(scale => {
+        scale.grid = {...(scale.grid || {}), display:false, drawBorder:false, drawTicks:false};
+        scale.border = {...(scale.border || {}), display:false};
+      });
+    }
+  });
+}
 
 // ---- CONFIG ----
 const DEFAULT_URL = 'https://oerpavlivsplrpxbhqne.supabase.co';
@@ -6396,6 +6414,7 @@ function vjmExportCSV() {
 
 // Init
 setupDesktopMenus();
+setupChartVisualDefaults();
 loadConfig();
 
 // ===== GENTE =====
