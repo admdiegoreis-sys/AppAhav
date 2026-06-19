@@ -32,11 +32,9 @@ body{font-family:'Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;min-heig
 .nav-menu summary.active{background:#3b82f6;color:#fff;border-color:#3b82f6}
 .nav-menu-panel{position:absolute;top:calc(100% + 8px);left:0;min-width:210px;background:#1e293b;border:1px solid #334155;border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px;box-shadow:0 18px 45px rgba(2,6,23,.45);z-index:240}
 .nav-menu-panel .nav-btn{width:100%;text-align:left;justify-content:flex-start}
-.settings-menu{position:relative}
-.settings-menu summary{list-style:none;width:36px;height:34px;border-radius:50%;background:#334155;color:#e2e8f0;border:1px solid #475569;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px}
-.settings-menu summary::-webkit-details-marker{display:none}
-.settings-menu-panel{position:absolute;top:calc(100% + 8px);right:0;min-width:190px;background:#1e293b;border:1px solid #334155;border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px;box-shadow:0 18px 45px rgba(2,6,23,.45);z-index:260}
-.settings-menu-panel .btn{width:100%;justify-content:flex-start;text-align:left}
+.settings-menu-button{width:38px;height:38px;border-radius:50%;background:#334155;color:#e2e8f0;border:1px solid #475569;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;box-shadow:0 8px 22px rgba(2,6,23,.2)}
+.settings-modal-actions{display:grid;grid-template-columns:1fr;gap:10px}
+.settings-modal-actions .btn{width:100%;justify-content:flex-start;text-align:left;padding:12px 14px;font-size:14px}
 .page{display:block}.page.hidden{display:none!important}
 .btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;transition:all .2s}
 .btn-primary{background:#3b82f6;color:#fff}.btn-primary:hover{background:#2563eb}
@@ -484,9 +482,7 @@ body{background:var(--shell-bg);color:var(--shell-text);font-family:Inter,system
 #app .header-actions{align-items:stretch;width:100%}
 #app .header-actions-row{display:grid;grid-template-columns:1fr 42px;gap:8px;width:100%;align-items:center}
 #app .header-actions-row>.btn{width:100%;justify-content:center;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.12);color:#e5f4ff}
-#app .settings-menu summary{width:42px;height:38px;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.12);color:#e5f4ff}
-#app .settings-menu-panel{left:0;right:auto;bottom:calc(100% + 8px);top:auto;background:#fff;border:1px solid var(--shell-border);box-shadow:var(--shell-shadow)}
-#app .settings-menu-panel .btn{background:#f8fafc;color:#334155;border-color:#e5e7eb}
+#app .settings-menu-button{width:42px;height:38px;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.12);color:#e5f4ff}
 #app .user-chip{color:#b7d8e8;text-align:left;font-size:11px;white-space:normal;max-width:none}
 .app-topbar{
   position:sticky;top:0;z-index:240;margin-left:var(--sidebar-width);min-height:82px;
@@ -883,14 +879,7 @@ body.sidebar-collapsed #page-gente{
       <div class="header-actions-row">
         <div class="status-bar hidden"><span class="dot" id="status-dot"></span><span id="status-text">Conectando...</span></div>
         <button class="btn btn-ghost btn-sm" onclick="logout()" title="Sair">Sair</button>
-        <details class="settings-menu" id="global-settings-menu">
-          <summary title="Configurações">⚙</summary>
-          <div class="settings-menu-panel">
-            <button class="btn btn-ghost btn-sm hidden" id="settings-cadastros" onclick="openCadastros(); closeSettingsMenus()">Cadastros</button>
-            <button class="btn btn-ghost btn-sm hidden" id="settings-users" onclick="openUsersAdmin(); closeSettingsMenus()">Usuários</button>
-            <button class="btn btn-ghost btn-sm hidden" id="settings-reconnect" onclick="resetConfig()">Reconectar</button>
-          </div>
-        </details>
+        <button class="settings-menu-button hidden" id="global-settings-menu" onclick="openGlobalSettings()" title="Configurações">⚙</button>
       </div>
       <div class="user-chip" id="logged-user-chip">Usuário: —</div>
     </div>
@@ -1544,6 +1533,23 @@ body.sidebar-collapsed #page-gente{
     <div class="modal-body" style="display:block;padding:20px">
       <p class="cad-note" id="adm-users-mode" style="margin-bottom:14px"></p>
       <div id="adm-users-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Global Settings Modal -->
+<div class="modal-overlay hidden" id="global-settings-modal" onclick="if(event.target===this)closeGlobalSettings()">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <h2>Configurações</h2>
+      <button class="btn btn-ghost btn-sm" onclick="closeGlobalSettings()">✕ Fechar</button>
+    </div>
+    <div class="modal-body" style="display:block;padding:20px">
+      <div class="settings-modal-actions">
+        <button class="btn btn-ghost hidden" id="settings-cadastros" onclick="openCadastros(); closeGlobalSettings()">Cadastros</button>
+        <button class="btn btn-ghost hidden" id="settings-users" onclick="openUsersAdmin(); closeGlobalSettings()">Usuários</button>
+        <button class="btn btn-ghost hidden" id="settings-reconnect" onclick="resetConfig(); closeGlobalSettings()">Reconectar Supabase</button>
+      </div>
     </div>
   </div>
 </div>
@@ -4216,7 +4222,15 @@ function closeDesktopMenus() {
 }
 
 function closeSettingsMenus() {
-  document.querySelectorAll('.settings-menu[open]').forEach(menu => menu.removeAttribute('open'));
+  closeGlobalSettings();
+}
+
+function openGlobalSettings() {
+  document.getElementById('global-settings-modal')?.classList.remove('hidden');
+}
+
+function closeGlobalSettings() {
+  document.getElementById('global-settings-modal')?.classList.add('hidden');
 }
 
 function setupDesktopMenus() {
@@ -4230,7 +4244,6 @@ function setupDesktopMenus() {
   });
   document.addEventListener('click', event => {
     if (!event.target.closest('.page-nav .nav-menu')) closeDesktopMenus();
-    if (!event.target.closest('.settings-menu')) closeSettingsMenus();
   });
 }
 
