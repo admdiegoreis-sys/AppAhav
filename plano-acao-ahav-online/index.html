@@ -1179,7 +1179,10 @@ body.sidebar-collapsed #page-gente{
   </div>
 
   <div class="smart-section" id="smart-section-dre">
-    <div class="table-wrap"><div class="table-header"><h3>DRE Industrial</h3></div><div style="overflow-x:auto"><table class="smart-table"><thead id="smart-dre-head"></thead><tbody id="smart-dre-body"></tbody></table></div></div>
+    <div class="exec-section-grid">
+      <div class="table-wrap"><div class="table-header"><h3>DRE Industrial</h3></div><div style="overflow-x:auto"><table class="smart-table smart-dre-table"><thead id="smart-dre-head"></thead><tbody id="smart-dre-body"></tbody></table></div></div>
+      <div class="table-wrap"><div class="table-header"><h3>Fluxo de Caixa</h3></div><div style="overflow-x:auto"><table class="smart-table smart-flow-table"><thead id="smart-fluxo-head"></thead><tbody id="smart-fluxo-body"></tbody></table></div></div>
+    </div>
   </div>
 
   <div class="smart-section" id="smart-section-pcp">
@@ -5599,8 +5602,61 @@ function renderSmartStaticTables() {
   smartTable('smart-custos-head', 'smart-custos-body', s.custos);
   smartTable('smart-tracos-head', 'smart-tracos-body', s.tracos);
   smartTable('smart-precificacao-head', 'smart-precificacao-body', [], {headers:['Produto','Custo Unitário','Margem Alvo','Preço Sugerido','Preço Atual','Observação']});
-  smartTable('smart-dre-head', 'smart-dre-body', s.dre);
+  renderSmartDreAndFlow(s);
   smartTable('smart-pcp-head', 'smart-pcp-body', [], {headers:['Semana','Produto','Estoque Atual','Estoque Mínimo','Pedidos','Produção Sugerida','Prioridade']});
+}
+
+function smartMoneyDisplay(value) {
+  const num = smartNum(value);
+  return `R$ ${num.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+}
+
+function smartPercentDisplay(value) {
+  const num = smartNum(value);
+  return `${(num * 100).toLocaleString('pt-BR', {minimumFractionDigits:1, maximumFractionDigits:1})}%`;
+}
+
+function renderSmartDreAndFlow(state) {
+  const dreRows = (state.dre || []).map(row => {
+    const line = row['Linha DRE'] || row['Descrição DRE'] || row['Descrição'] || '';
+    const isPct = String(line).includes('%');
+    return {
+      'Descrição': line,
+      'Conservador': isPct ? smartPercentDisplay(row['Cenário Conservador']) : smartMoneyDisplay(row['Cenário Conservador']),
+      'Meta': isPct ? smartPercentDisplay(row['Cenário Meta']) : smartMoneyDisplay(row['Cenário Meta']),
+      'Comentário': row['Fórmula/Comentário'] || row['Formula/Comentario'] || ''
+    };
+  });
+  smartTable('smart-dre-head', 'smart-dre-body', dreRows, {
+    headers:['Descrição','Conservador','Meta','Comentário'],
+    colWidths:{'Descrição':'220px','Conservador':'130px','Meta':'130px','Comentário':'320px'}
+  });
+
+  const monthMap = {};
+  (state.vendas || []).forEach(row => {
+    if (String(row.Status || '') === 'Cancelado') return;
+    const input = smartInputDate(row.Data);
+    const month = input ? Number(input.slice(5,7)) : null;
+    const year = input ? input.slice(0,4) : '';
+    const label = input ? `${['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][month - 1]}/${year.slice(-2)}` : 'Sem data';
+    const sortKey = input ? `${year}${String(month).padStart(2,'0')}` : '999999';
+    if (!monthMap[label]) monthMap[label] = {Mes: label, sortKey, Faturamento: 0, Compensações: 0};
+    const amount = Math.abs(smartNum(row['Valor Total']));
+    if (String(row.Status || '') === 'Compensação') monthMap[label].Compensações += amount;
+    else monthMap[label].Faturamento += amount;
+  });
+  const flowRows = Object.values(monthMap)
+    .sort((a,b) => a.sortKey.localeCompare(b.sortKey))
+    .map(row => ({
+      'Mês': row.Mes,
+      'Faturamento': smartMoneyDisplay(row.Faturamento + row.Compensações),
+      'Compensações': smartMoneyDisplay(row.Compensações),
+      'Faturamento Ajustado': smartMoneyDisplay(row.Faturamento)
+    }));
+  smartTable('smart-fluxo-head', 'smart-fluxo-body', flowRows, {
+    headers:['Mês','Faturamento','Compensações','Faturamento Ajustado'],
+    colWidths:{'Mês':'90px','Faturamento':'150px','Compensações':'150px','Faturamento Ajustado':'170px'}
+  });
 }
 
 function openSmartProductModal(code) {
