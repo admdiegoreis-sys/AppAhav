@@ -331,7 +331,7 @@ td.wrap{white-space:normal}
   .smart-dashboard-grid .chart-card.wide{grid-column:auto}
   .smart-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
   .smart-sales-filters{grid-template-columns:1fr 1fr}
-  .exec-hero,.exec-section-grid{grid-template-columns:1fr}
+  .exec-hero,.exec-section-grid,.exec-level-two{grid-template-columns:1fr}
   .exec-grid{grid-template-columns:repeat(2,1fr)}
   .credit-grid,.credit-form-layout{grid-template-columns:1fr}
   .credit-tabs{position:static}
@@ -555,12 +555,14 @@ body{background:var(--shell-bg);color:var(--shell-text);font-family:Inter,system
 #app .page-actions-title,#app .kpi-label,#app .chart-card h3,#app .table-header h3,#app .exec-title,#app .exec-card-label,#app .filter-group label,#app .field label{color:var(--shell-muted)}
 #app .kpi-value,#app .exec-card-value,#app .exec-headline,#app .modal-header h2,#app .credit-panel h3,#app .credit-score{color:var(--shell-text)}
 #app .kpi-sub,#app .exec-copy,#app .exec-card-sub,#app .chart-note,#app .cad-note,#app .field-note{color:var(--shell-muted)}
-#app .exec-grid{grid-template-columns:repeat(6,minmax(150px,1fr));gap:16px}
+#app .exec-grid{grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;align-items:stretch}
 #app .exec-card{border-left:0;border-top:4px solid var(--shell-blue);border-radius:16px;min-height:128px}
 #app .exec-card.green{border-top-color:var(--shell-green)} #app .exec-card.red{border-top-color:var(--shell-red)} #app .exec-card.orange{border-top-color:var(--shell-orange)} #app .exec-card.purple{border-top-color:var(--shell-purple)} #app .exec-card.blue{border-top-color:var(--shell-blue)}
 #app .exec-card:hover,#app .kpi:hover,#app .chart-card:hover{transform:translateY(-2px);transition:transform .2s,box-shadow .2s;box-shadow:0 10px 24px rgba(15,23,42,.09)}
 #app .exec-hero{grid-template-columns:1.05fr .95fr}
-#app .exec-section-grid{grid-template-columns:1fr 1fr}
+#app .exec-section-grid,#app .exec-level-two{grid-template-columns:1fr 1fr}
+.exec-level-two{display:grid;gap:16px;margin-bottom:22px}
+.exec-pipeline-panel{margin-bottom:22px}
 .exec-insight-grid{display:grid;grid-template-columns:1.1fr .8fr 1.1fr;gap:16px;margin-bottom:22px}
 .exec-list{display:flex;flex-direction:column;gap:10px}
 .exec-list-item{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start;padding:12px;border:1px solid #e5e7eb;border-radius:12px;background:#f8fafc}
@@ -604,7 +606,7 @@ body.sidebar-collapsed #app .header-actions-row>.btn{font-size:0;padding:10px}
 body.sidebar-collapsed #app .header-actions-row>.btn::before{content:'↩';font-size:16px}
 @media(max-width:1180px){
   #app .exec-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
-  #app .exec-hero,#app .exec-section-grid,.exec-insight-grid,.smart-dashboard-grid{grid-template-columns:1fr}
+  #app .exec-hero,#app .exec-section-grid,#app .exec-level-two,.exec-insight-grid,.smart-dashboard-grid{grid-template-columns:1fr}
   #page-smartmold #smart-tabs{
     display:flex;
     flex-wrap:nowrap;
@@ -930,21 +932,22 @@ body.sidebar-collapsed #page-gente{
     <div class="exec-card orange admin-pending-card hidden" id="exec-prazo-pendencias-card" onclick="showPage('prazos')"><div class="exec-card-label">Pendências de prazo</div><div class="exec-card-value" id="exec-prazo-pendencias">—</div><div class="exec-card-sub">alterações aguardando aprovação</div></div>
   </div>
 
-  <div class="exec-panel" style="margin-bottom:22px">
-    <div class="exec-title">Status dos projetos</div>
-    <div class="status-bars" id="exec-status-projetos"></div>
-  </div>
-
-  <div class="exec-section-grid">
+  <div class="exec-level-two">
+    <div class="exec-panel">
+      <div class="exec-title">Status dos projetos</div>
+      <div class="status-bars" id="exec-status-projetos"></div>
+    </div>
     <div class="exec-panel">
       <div class="exec-title">Classificação visual de risco</div>
       <div class="risk-matrix" id="risk-matrix"></div>
     </div>
-    <div class="exec-panel">
-      <div class="exec-title">Pipeline dos planos de ação</div>
-      <div class="kanban" id="exec-kanban"></div>
-    </div>
   </div>
+
+  <div class="exec-panel exec-pipeline-panel">
+    <div class="exec-title">Pipeline dos planos de ação</div>
+    <div class="kanban" id="exec-kanban"></div>
+  </div>
+
   <div class="exec-insight-grid">
     <div class="exec-panel">
       <div class="exec-title">Alertas e pendências</div>
