@@ -2116,11 +2116,13 @@ function createSupabaseRestClient(url, key) {
 }
 
 // ---- AUTH ----
-function initAuthGate() {
+async function initAuthGate() {
   ensureLocalAdmin();
   const saved = readAuthSession();
   if (saved) {
-    currentUser = saved;
+    const fresh = saved.username ? await findAuthUser(saved.username) : null;
+    currentUser = fresh && fresh.active !== false ? fresh : saved;
+    if (fresh && fresh.active !== false) writeAuthSession(fresh);
     enterApp();
     return;
   }
@@ -2277,11 +2279,29 @@ async function findAuthUser(username) {
     const {data, error} = await supabase.from('app_users').select('*').eq('username', username);
     if (!error && Array.isArray(data)) {
       authUsesSupabase = true;
-      return data[0] || null;
+      return normalizeAuthUserRecord(data[0] || null);
     }
   } catch(e) {}
   authUsesSupabase = false;
-  return readLocalUsers().find(u => u.username === username) || null;
+  return normalizeAuthUserRecord(readLocalUsers().find(u => u.username === username) || null);
+}
+
+function parseMaybeJson(value, fallback) {
+  if (value === undefined || value === null || value === '') return fallback;
+  if (typeof value === 'string') {
+    try { return JSON.parse(value); } catch(e) { return fallback; }
+  }
+  return value;
+}
+
+function normalizeAuthUserRecord(user) {
+  if (!user) return null;
+  return {
+    ...user,
+    permissions: parseMaybeJson(user.permissions, Array.isArray(user.permissions) ? user.permissions : []),
+    access: parseMaybeJson(user.access, user.access && typeof user.access === 'object' ? user.access : {}),
+    gente_empresas: parseMaybeJson(user.gente_empresas, Array.isArray(user.gente_empresas) ? user.gente_empresas : [])
+  };
 }
 
 function enterApp() {
