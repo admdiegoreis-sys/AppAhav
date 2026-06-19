@@ -1944,6 +1944,7 @@ body.sidebar-collapsed #page-gente{
 <script src="risk-data.js"></script>
 <script src="smartmold-data.js"></script>
 <script src="smartmold-product-inputs.js"></script>
+<script src="smartmold-production-inputs.js"></script>
 <script>
 const HOJE = new Date(); HOJE.setHours(0,0,0,0);
 const PAGE_SIZE = 50;
@@ -4654,6 +4655,7 @@ function getSmartState() {
   smartState.produtos = dedupeSmartProducts(smartState.produtos || []);
   smartState.producao = normalizeSmartProductionRows(smartState.producao || []);
   applySmartProductInputs(smartState);
+  applySmartProductionInputs(smartState);
   syncSmartFaturamentoData(smartState);
   return smartState;
 }
@@ -4668,8 +4670,29 @@ function normalizeSmartProductionRows(rows) {
     delete clean['Status CÃ³digo'];
     delete clean['Periodo Original'];
     delete clean['Produto Original'];
+    clean.Data = smartFormatDate(clean.Data || clean.DATA || '');
+    clean.codprod = String(clean.codprod || clean.CODPROD || '').trim();
+    clean['Produto ERP'] = smartProductText(clean['Produto ERP'] || clean.Produto || clean.PRODUTO || '');
+    clean.Quantidade = smartNum(clean.Quantidade ?? clean.QUANTIDADE ?? 0);
+    clean.Categoria = clean.Categoria || clean.CATEGORIA || '';
+    delete clean.DATA;
+    delete clean.CODPROD;
+    delete clean.Produto;
+    delete clean.PRODUTO;
+    delete clean.QUANTIDADE;
+    delete clean.CATEGORIA;
+    delete clean['AÇÕES'];
+    delete clean['Ações'];
     return clean;
   });
+}
+
+function applySmartProductionInputs(state) {
+  const inputs = window.SMARTMOLD_PRODUCTION_INPUTS || [];
+  const version = window.SMARTMOLD_PRODUCTION_INPUTS_VERSION || '';
+  if (!inputs.length || !version || state._smartProductionInputsVersion === version) return;
+  state.producao = normalizeSmartProductionRows(inputs);
+  state._smartProductionInputsVersion = version;
 }
 
 function applySmartProductInputs(state) {
@@ -4765,6 +4788,7 @@ function normalizeSmartState(state = {}) {
   normalized.produtos = dedupeSmartProducts(normalized.produtos || []);
   normalized.producao = normalizeSmartProductionRows(normalized.producao || []);
   applySmartProductInputs(normalized);
+  applySmartProductionInputs(normalized);
   syncSmartFaturamentoData(normalized);
   // migração: preenche Valor Produtos com Valor Total quando ambos eram 0
   normalized.vendas = (normalized.vendas || []).map(v => {
