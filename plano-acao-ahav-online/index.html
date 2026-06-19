@@ -3971,7 +3971,7 @@ function renderRedeSubNav() {
     `<button class="smart-tab active" onclick="showPage('${t.key}')">${t.label}</button>`
   ).join('');
   const el = document.getElementById('rede-tabs-credit');
-  if (el) { el.innerHTML = html; el.style.display = visible.length > 1 ? '' : 'none'; }
+  if (el) { el.innerHTML = html; el.style.display = visible.length ? '' : 'none'; }
 }
 
 // ---- PAGE NAV ----
