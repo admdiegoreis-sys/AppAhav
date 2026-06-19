@@ -5449,9 +5449,7 @@ function renderSmartStock() {
     .map(p => ({
       ...p,
       'Produto ERP': String(p['Produto ERP'] || '').toUpperCase(),
-      Inicial: smartSignedCell(p['Estoque Inicial'], 'positive'),
-      'Aj. Inicial': smartSignedCell(p['Estoque Inicial Ajuste'], 'signed'),
-      'Inicial Ajust.': smartSignedCell(p['Estoque Inicial Ajustado'], 'signed'),
+      'Inicial Ajus': smartSignedCell(p['Estoque Inicial Ajustado'], 'signed'),
       Entradas: smartSignedCell(p.Produção, 'positive'),
       Saídas: smartSignedCell(p.Vendas, 'negative'),
       Ajustes: smartSignedCell(p.Ajustes, 'signed'),
@@ -5461,9 +5459,9 @@ function renderSmartStock() {
       Ações:`<div class="stock-actions"><button class="btn btn-ghost btn-sm" title="Ajustar estoque" aria-label="Ajustar estoque" onclick="event.stopPropagation();openSmartAdjustmentModal(null,'${escapeHtml(String(p.codprod || ''))}')">±</button><button class="btn btn-ghost btn-sm" title="Editar limites" aria-label="Editar limites" onclick="event.stopPropagation();openSmartStockLimitsModal('${escapeHtml(String(p.codprod || ''))}')">↕</button></div>`
     }));
   smartTable('smart-estoque-head', 'smart-estoque-body', rows, {
-    headers:['CODPROD','PRODUTO','DT. INICIAL','INICIAL','AJ. INICIAL','INICIAL AJUST.','ENTRADAS','SAÍDAS','AJUSTES','FINAL','LIMITES','STATUS','VALIDAÇÃO','AÇÕES'],
-    fieldMap:{'CODPROD':'codprod','PRODUTO':'Produto ERP','DT. INICIAL':'Data Estoque Inicial','INICIAL':'Inicial','AJ. INICIAL':'Aj. Inicial','INICIAL AJUST.':'Inicial Ajust.','ENTRADAS':'Entradas','SAÍDAS':'Saídas','AJUSTES':'Ajustes','FINAL':'Final','LIMITES':'Limites','STATUS':'Status','VALIDAÇÃO':'Validação','AÇÕES':'Ações'},
-    htmlFields:['Inicial','Aj. Inicial','Inicial Ajust.','Entradas','Saídas','Ajustes','Final','Limites','Status','Ações']
+    headers:['CODPROD','PRODUTO','DT. INICIAL','INICIAL AJUS','ENTRADAS','SAÍDAS','AJUSTES','FINAL','LIMITES','STATUS','VALIDAÇÃO','AÇÕES'],
+    fieldMap:{'CODPROD':'codprod','PRODUTO':'Produto ERP','DT. INICIAL':'Data Estoque Inicial','INICIAL AJUS':'Inicial Ajus','ENTRADAS':'Entradas','SAÍDAS':'Saídas','AJUSTES':'Ajustes','FINAL':'Final','LIMITES':'Limites','STATUS':'Status','VALIDAÇÃO':'Validação','AÇÕES':'Ações'},
+    htmlFields:['Inicial Ajus','Entradas','Saídas','Ajustes','Final','Limites','Status','Ações']
   });
 }
 
