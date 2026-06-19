@@ -536,6 +536,26 @@ body{background:var(--shell-bg);color:var(--shell-text);font-family:Inter,system
   color:#fff;
   box-shadow:0 10px 22px rgba(37,99,235,.18);
 }
+#page-smartmold #smart-tabs{
+  display:grid;
+  grid-template-columns:repeat(9,minmax(0,1fr));
+  gap:8px;
+  align-items:stretch;
+  margin-bottom:16px;
+}
+#page-smartmold #smart-tabs .smart-tab{
+  width:100%;
+  min-width:0;
+  min-height:36px!important;
+  padding:7px 8px!important;
+  justify-content:center;
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  font-size:11px!important;
+  line-height:1.15;
+}
 #app .page-actions-title,#app .kpi-label,#app .chart-card h3,#app .table-header h3,#app .exec-title,#app .exec-card-label,#app .filter-group label,#app .field label{color:var(--shell-muted)}
 #app .kpi-value,#app .exec-card-value,#app .exec-headline,#app .modal-header h2,#app .credit-panel h3,#app .credit-score{color:var(--shell-text)}
 #app .kpi-sub,#app .exec-copy,#app .exec-card-sub,#app .chart-note,#app .cad-note,#app .field-note{color:var(--shell-muted)}
@@ -589,6 +609,16 @@ body.sidebar-collapsed #app .header-actions-row>.btn::before{content:'↩';font-
 @media(max-width:1180px){
   #app .exec-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
   #app .exec-hero,#app .exec-section-grid,.exec-insight-grid,.smart-dashboard-grid{grid-template-columns:1fr}
+  #page-smartmold #smart-tabs{
+    display:flex;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    padding-bottom:4px;
+  }
+  #page-smartmold #smart-tabs .smart-tab{
+    flex:0 0 auto;
+    min-width:112px;
+  }
 }
 @media(max-width:860px){
   :root{--sidebar-width:0px}
