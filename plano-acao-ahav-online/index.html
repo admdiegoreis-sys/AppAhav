@@ -936,11 +936,9 @@ body.sidebar-collapsed #page-gente{
     </div>
   </div>
   <div class="page-nav">
-    <button class="nav-btn hidden" id="nav-smartmold" onclick="showSmartModule(getFirstCompanyPage('smartmold') || 'dashboard')">Smartmold</button>
-
     <button class="nav-btn hidden" id="nav-gestao" onclick="showPage(['home','plano','fvc','risk','prazos'].find(p=>hasPageAccess(p))||'plano')">AHAV</button>
     <button class="nav-btn hidden" id="nav-rede-epi" onclick="showPage('credit')">Rede EPI</button>
-
+    <button class="nav-btn hidden" id="nav-smartmold" onclick="showSmartModule(getFirstCompanyPage('smartmold') || 'dashboard')">Smartmold</button>
     <button class="nav-btn hidden" id="nav-vjm" onclick="showPage('vjm')">VJM</button>
     <button class="nav-btn hidden" id="nav-gente" onclick="showPage('gente')">Gente</button>
   </div>
