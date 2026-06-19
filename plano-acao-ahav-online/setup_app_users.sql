@@ -6,12 +6,28 @@ create table if not exists public.app_users (
   active boolean not null default true,
   must_change_password boolean not null default true,
   password_hash text not null,
+  password_plain text,
+  permissions jsonb not null default '[]'::jsonb,
+  access jsonb not null default '{}'::jsonb,
+  gente_empresas jsonb not null default '["Ahav"]'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
 alter table public.app_users
 add column if not exists must_change_password boolean not null default true;
+
+alter table public.app_users
+add column if not exists password_plain text;
+
+alter table public.app_users
+add column if not exists permissions jsonb not null default '[]'::jsonb;
+
+alter table public.app_users
+add column if not exists access jsonb not null default '{}'::jsonb;
+
+alter table public.app_users
+add column if not exists gente_empresas jsonb not null default '["Ahav"]'::jsonb;
 
 insert into public.app_users (username, full_name, role, active, must_change_password, password_hash)
 values (

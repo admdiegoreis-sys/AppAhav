@@ -908,7 +908,7 @@ body.sidebar-collapsed #page-gente{
     </div>
   </div>
   <div class="page-nav">
-    <button class="nav-btn hidden" id="nav-smartmold" onclick="showSmartModule('dashboard')">Smartmold</button>
+    <button class="nav-btn hidden" id="nav-smartmold" onclick="showSmartModule(getFirstCompanyPage('smartmold') || 'dashboard')">Smartmold</button>
 
     <button class="nav-btn hidden" id="nav-gestao" onclick="showPage(['home','plano','fvc','risk','prazos'].find(p=>hasPageAccess(p))||'plano')">AHAV</button>
     <button class="nav-btn hidden" id="nav-rede-epi" onclick="showPage('credit')">Rede EPI</button>
@@ -921,7 +921,7 @@ body.sidebar-collapsed #page-gente{
       <summary aria-label="Menu">☰</summary>
       <div class="mobile-menu-panel">
         <div class="mobile-menu-section">Páginas</div>
-        <button class="nav-btn" onclick="showSmartModule('dashboard'); closeMobileMenus()">Smartmold</button>
+        <button class="nav-btn" onclick="showSmartModule(getFirstCompanyPage('smartmold') || 'dashboard'); closeMobileMenus()">Smartmold</button>
         <div class="mobile-menu-section">AHAV</div>
         <button class="nav-btn active" onclick="showPage('home'); closeMobileMenus()">Dashboard Executivo</button>
         <button class="nav-btn" onclick="showPage('plano'); closeMobileMenus()">Plano de Ação</button>
@@ -2094,7 +2094,10 @@ function writeAuthSession(user) {
   sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({
     username:user.username,
     full_name:user.full_name || user.username,
-    role:user.role || 'user'
+    role:user.role || 'user',
+    permissions:Array.isArray(user.permissions) ? user.permissions : undefined,
+    access:user.access && typeof user.access === 'object' ? user.access : undefined,
+    gente_empresas:Array.isArray(user.gente_empresas) ? user.gente_empresas : undefined
   }));
 }
 
@@ -2271,11 +2274,11 @@ function applyNavPermissions() {
 
   // desktop nav — direct buttons
   const adminUser = isAdminUser();
-  document.getElementById('nav-smartmold')?.classList.toggle('hidden', !hasPageAccess('smartmold'));
-  document.getElementById('nav-vjm')?.classList.toggle('hidden', !hasPageAccess('vjm'));
-  document.getElementById('nav-gente')?.classList.toggle('hidden', !hasPageAccess('gente'));
-  document.getElementById('mobile-nav-gente')?.classList.toggle('hidden', !hasPageAccess('gente'));
-  document.getElementById('mobile-section-gente')?.classList.toggle('hidden', !hasPageAccess('gente'));
+  document.getElementById('nav-smartmold')?.classList.toggle('hidden', !hasCompanyAccess('smartmold'));
+  document.getElementById('nav-vjm')?.classList.toggle('hidden', !hasCompanyAccess('vjm'));
+  document.getElementById('nav-gente')?.classList.toggle('hidden', !hasCompanyAccess('gente'));
+  document.getElementById('mobile-nav-gente')?.classList.toggle('hidden', !hasCompanyAccess('gente'));
+  document.getElementById('mobile-section-gente')?.classList.toggle('hidden', !hasCompanyAccess('gente'));
 
   // home: wallpaper para não-admin, dashboard para admin
   document.getElementById('home-welcome-logo')?.classList.toggle('hidden', adminUser);
@@ -2286,28 +2289,28 @@ function applyNavPermissions() {
   document.getElementById('nav-gestao')?.classList.toggle('hidden', !showGestaoGroup);
 
   // grupo Rede EPI — botão único no nav
-  document.getElementById('nav-rede-epi')?.classList.toggle('hidden', !hasPageAccess('credit'));
+  document.getElementById('nav-rede-epi')?.classList.toggle('hidden', !hasCompanyAccess('rede_epi'));
 
   // mobile nav
   document.querySelectorAll('.mobile-menu-panel .nav-btn').forEach(btn => {
     const t = btn.textContent?.trim() || '';
     if (t === 'Dashboard Executivo') btn.classList.toggle('hidden', !hasPageAccess('home'));
-    else if (t === 'Smartmold')      btn.classList.toggle('hidden', !hasPageAccess('smartmold'));
+    else if (t === 'Smartmold')      btn.classList.toggle('hidden', !hasCompanyAccess('smartmold'));
     else if (t === 'Plano de Ação')  btn.classList.toggle('hidden', !hasPageAccess('plano'));
     else if (t === 'FVC - Valor Gerado') btn.classList.toggle('hidden', !hasPageAccess('fvc'));
     else if (t === 'Gestão de Riscos')   btn.classList.toggle('hidden', !hasPageAccess('risk'));
     else if (t === 'Aprovação de Prazos') btn.classList.toggle('hidden', !hasPageAccess('prazos'));
     else if (t === 'Análise de Crédito') btn.classList.toggle('hidden', !hasPageAccess('credit'));
-    else if (t === 'VJM')            btn.classList.toggle('hidden', !hasPageAccess('vjm'));
-    else if (t === 'Gente')          btn.classList.toggle('hidden', !hasPageAccess('gente'));
+    else if (t === 'VJM')            btn.classList.toggle('hidden', !hasCompanyAccess('vjm'));
+    else if (t === 'Gente')          btn.classList.toggle('hidden', !hasCompanyAccess('gente'));
   });
   const showGestao = ['home','plano','fvc','risk','prazos'].some(p => hasPageAccess(p));
   document.querySelectorAll('.mobile-menu-panel .mobile-menu-section').forEach(section => {
     const t = section.textContent?.trim() || '';
     if (t === 'AHAV') section.classList.toggle('hidden', !showGestao);
-    if (t === 'Rede EPI')    section.classList.toggle('hidden', !hasPageAccess('credit'));
-    if (t === 'Geologia')    section.classList.toggle('hidden', !hasPageAccess('vjm'));
-    if (t === 'Gestão de Pessoas') section.classList.toggle('hidden', !hasPageAccess('gente'));
+    if (t === 'Rede EPI')    section.classList.toggle('hidden', !hasCompanyAccess('rede_epi'));
+    if (t === 'Geologia')    section.classList.toggle('hidden', !hasCompanyAccess('vjm'));
+    if (t === 'Gestão de Pessoas') section.classList.toggle('hidden', !hasCompanyAccess('gente'));
   });
   document.getElementById('mobile-nav-prazos')?.classList.toggle('hidden', !hasPageAccess('prazos'));
 
@@ -2382,15 +2385,35 @@ function clearUserAdminForm() {
   document.querySelectorAll('.adm-gente-empresa').forEach(el => { el.checked = false; });
 }
 
-function renderPermissionsGrid(selectedPerms) {
+function renderPermissionsGrid(selectedAccess) {
   const grid = document.getElementById('adm-permissions-grid');
   if (!grid) return;
-  grid.innerHTML = PAGE_PERMISSIONS.map(p => `
-    <label style="display:flex;align-items:center;gap:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;cursor:pointer;font-size:13px;color:#e2e8f0">
-      <input type="checkbox" id="perm-${p.key}" value="${p.key}" ${selectedPerms.includes(p.key)?'checked':''}
-        style="width:15px;height:15px;accent-color:#3b82f6;flex-shrink:0">
-      ${p.label}
-    </label>`).join('');
+  const access = normalizeUserAccess({access:selectedAccess, permissions:Array.isArray(selectedAccess) ? selectedAccess : []});
+  grid.innerHTML = ACCESS_GROUPS.map(group => {
+    const pages = group.pages || [];
+    const groupChecked = (access[group.key] || []).length > 0;
+    const pageHtml = pages.map(page => {
+      const checked = (access[group.key] || []).includes(page.key);
+      return `<label style="display:flex;align-items:center;gap:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;cursor:pointer;font-size:12px;color:#e2e8f0">
+        <input class="adm-access-page" type="checkbox" data-company="${group.key}" value="${page.key}" ${checked?'checked':''}
+          style="width:15px;height:15px;accent-color:#3b82f6;flex-shrink:0">
+        ${page.label}
+      </label>`;
+    }).join('');
+    return `<div style="border:1px solid #334155;border-radius:12px;background:#111827;padding:10px;display:grid;gap:8px">
+      <label style="display:flex;align-items:center;gap:9px;color:#f8fafc;font-weight:800;font-size:13px">
+        <input class="adm-access-company" type="checkbox" data-company="${group.key}" ${groupChecked?'checked':''}
+          onchange="toggleAccessCompany('${group.key}', this.checked)"
+          style="width:16px;height:16px;accent-color:#3b82f6;flex-shrink:0">
+        ${group.label}
+      </label>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:7px">${pageHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleAccessCompany(company, checked) {
+  document.querySelectorAll(`.adm-access-page[data-company="${company}"]`).forEach(el => { el.checked = checked; });
 }
 
 function openEditUserModal(username) {
@@ -2401,7 +2424,7 @@ function openEditUserModal(username) {
   } else {
     title.textContent = 'Novo usuário';
     clearUserAdminForm();
-    renderPermissionsGrid(DEFAULT_PERMISSIONS);
+    renderPermissionsGrid(DEFAULT_ACCESS);
   }
   document.getElementById('edit-user-modal').style.display = 'flex';
   setTimeout(() => document.getElementById('adm-username').focus(), 50);
@@ -2455,7 +2478,7 @@ async function editUserAdmin(username) {
   document.getElementById('adm-must-change').value = String(user.must_change_password === true);
   document.getElementById('adm-password').value = user.password_plain || '';
   document.getElementById('adm-password').type = 'text';
-  renderPermissionsGrid(getUserPermissions(user));
+  renderPermissionsGrid(getUserAccess(user));
   const genteEmpresas = getUserGenteEmpresas(user);
   document.querySelectorAll('.adm-gente-empresa').forEach(el => {
     el.checked = genteEmpresas.includes(el.value);
@@ -2490,10 +2513,8 @@ async function saveUserAdmin() {
   const users = await listAuthUsers();
   const current = users.find(u => u.username === username);
   if (!current && !password) { alert('Informe uma senha para criar o usuário.'); return; }
-  const permissions = PAGE_PERMISSIONS.map(p => p.key).filter(k => {
-    const el = document.getElementById('perm-' + k);
-    return el ? el.checked : false;
-  });
+  const access = collectAdminAccessForm();
+  const permissions = flattenAccessPermissions(access);
   const gente_empresas = [...document.querySelectorAll('.adm-gente-empresa:checked')].map(el => el.value);
   const payload = {
     username,
@@ -2504,6 +2525,7 @@ async function saveUserAdmin() {
     password_hash: password ? await sha256(password) : current.password_hash,
     password_plain: password || current?.password_plain || '',
     permissions,
+    access,
     gente_empresas
   };
   if (authUsesSupabase) {
@@ -2763,33 +2785,158 @@ function isAdminUser() {
   return currentUser?.role === 'admin';
 }
 
-const PAGE_PERMISSIONS = [
-  {key:'home',     label:'Executivo'},
-  {key:'smartmold',label:'Smartmold'},
-  {key:'plano',    label:'Plano de Ação'},
-  {key:'fvc',      label:'FVC - Valor Gerado'},
-  {key:'risk',     label:'Gestão de Riscos'},
-  {key:'prazos',   label:'Aprovação de Prazos'},
-  {key:'credit',   label:'Análise de Crédito'},
-  {key:'vjm',      label:'VJM'},
-  {key:'gente',    label:'Gente'},
+const ACCESS_GROUPS = [
+  {
+    key:'smartmold',
+    label:'Smartmold',
+    pages:[
+      {key:'dashboard', label:'Dashboard'},
+      {key:'cadastros', label:'Cadastros'},
+      {key:'producao', label:'Produção'},
+      {key:'estoque', label:'Estoque'},
+      {key:'vendas', label:'Vendas/Pedidos'},
+      {key:'compras', label:'Compras/Insumos'},
+      {key:'custeio', label:'Custeio/Traços'},
+      {key:'precificacao', label:'Precificação'},
+      {key:'dre', label:'DRE Industrial'},
+      {key:'pcp', label:'PCP'},
+    ]
+  },
+  {
+    key:'ahav',
+    label:'AHAV',
+    pages:[
+      {key:'home', label:'Dashboard Executivo'},
+      {key:'plano', label:'Plano de Ação'},
+      {key:'fvc', label:'FVC - Valor Gerado'},
+      {key:'risk', label:'Gestão de Riscos'},
+      {key:'prazos', label:'Aprovação de Prazos'},
+    ]
+  },
+  {key:'rede_epi', label:'Rede EPI', pages:[{key:'credit', label:'Análise de Crédito'}]},
+  {key:'vjm', label:'VJM', pages:[{key:'vjm', label:'Controle de Amostras'}]},
+  {
+    key:'gente',
+    label:'Gente',
+    pages:[
+      {key:'pessoas', label:'Pessoas'},
+      {key:'disc', label:'DISC do Time'},
+      {key:'organograma', label:'Organograma'},
+      {key:'feedback', label:'Feedback'},
+      {key:'material', label:'Material DISC'},
+      {key:'indicadores', label:'Indicadores'},
+    ]
+  },
 ];
 
-const DEFAULT_PERMISSIONS = ['home','plano','fvc','risk'];
+const PAGE_PERMISSIONS = ACCESS_GROUPS.flatMap(group => group.pages.map(page => ({
+  key: group.key === 'smartmold' ? 'smartmold' : page.key,
+  label: `${group.label} / ${page.label}`
+})));
+
+const LEGACY_DEFAULT_PERMISSIONS = ['home','plano','fvc','risk'];
+const DEFAULT_ACCESS = {};
 
 function getUserPermissions(user) {
   if (!user) return [];
-  if (user.role === 'admin') return PAGE_PERMISSIONS.map(p => p.key);
-  // Se permissions já foi salvo no banco (array), usa ele; caso contrário usa o default
-  // NUNCA dá acesso extra a crédito/vjm/smartmold por default
-  if (Array.isArray(user.permissions) && user.permissions.length > 0) return user.permissions;
+  if (user.role === 'admin') return [...new Set(PAGE_PERMISSIONS.map(p => p.key))];
+  if (hasAccessEntries(user.access)) return flattenAccessPermissions(normalizeUserAccess(user));
+  // Se permissions já foi salvo no banco (mesmo vazio), usa ele; caso contrário usa o default legado.
+  // Isso preserva usuários antigos e mantém novos usuários sem acesso até o admin liberar.
+  if (Array.isArray(user.permissions)) return user.permissions;
   if (normalizeAccessName(user.username) === 'leandro') return ['gente'];
-  return DEFAULT_PERMISSIONS;
+  return LEGACY_DEFAULT_PERMISSIONS;
 }
 
 function hasPageAccess(page) {
   if (!currentUser) return false;
+  if (page === 'smartmold') return hasCompanyAccess('smartmold');
+  if (page === 'gente') return hasCompanyAccess('gente');
   return getUserPermissions(currentUser).includes(page);
+}
+
+function groupByKey(key) {
+  return ACCESS_GROUPS.find(group => group.key === key);
+}
+
+function hasAccessEntries(access) {
+  return !!access && typeof access === 'object' && !Array.isArray(access) &&
+    Object.values(access).some(value => Array.isArray(value) && value.length > 0);
+}
+
+function normalizeUserAccess(user) {
+  const normalized = {};
+  ACCESS_GROUPS.forEach(group => { normalized[group.key] = []; });
+  if (user?.role === 'admin') {
+    ACCESS_GROUPS.forEach(group => { normalized[group.key] = group.pages.map(page => page.key); });
+    return normalized;
+  }
+  if (hasAccessEntries(user?.access)) {
+    ACCESS_GROUPS.forEach(group => {
+      const allowed = Array.isArray(user.access[group.key]) ? user.access[group.key] : [];
+      const valid = new Set(group.pages.map(page => page.key));
+      normalized[group.key] = [...new Set(allowed.filter(key => valid.has(key)))];
+    });
+    return normalized;
+  }
+  const perms = Array.isArray(user?.permissions) ? user.permissions : getUserPermissions(user);
+  if (perms.includes('smartmold')) normalized.smartmold = groupByKey('smartmold').pages.map(page => page.key);
+  ['home','plano','fvc','risk','prazos'].forEach(key => { if (perms.includes(key)) normalized.ahav.push(key); });
+  if (perms.includes('credit')) normalized.rede_epi.push('credit');
+  if (perms.includes('vjm')) normalized.vjm.push('vjm');
+  if (perms.includes('gente')) normalized.gente = groupByKey('gente').pages.map(page => page.key);
+  if (normalizeAccessName(user?.username) === 'leandro') normalized.gente = groupByKey('gente').pages.map(page => page.key);
+  Object.keys(normalized).forEach(group => { normalized[group] = [...new Set(normalized[group])]; });
+  return normalized;
+}
+
+function getUserAccess(user = currentUser) {
+  return normalizeUserAccess(user);
+}
+
+function flattenAccessPermissions(access) {
+  const normalized = normalizeUserAccess({access});
+  const out = [];
+  if ((normalized.smartmold || []).length) out.push('smartmold');
+  out.push(...(normalized.ahav || []));
+  if ((normalized.rede_epi || []).includes('credit')) out.push('credit');
+  if ((normalized.vjm || []).includes('vjm')) out.push('vjm');
+  if ((normalized.gente || []).length) out.push('gente');
+  return [...new Set(out)];
+}
+
+function hasCompanyAccess(company) {
+  if (!currentUser) return false;
+  if (isAdminUser()) return true;
+  const access = getUserAccess(currentUser);
+  return (access[company] || []).length > 0;
+}
+
+function hasCompanyPageAccess(company, page) {
+  if (!currentUser) return false;
+  if (isAdminUser()) return true;
+  const access = getUserAccess(currentUser);
+  return (access[company] || []).includes(page);
+}
+
+function collectAdminAccessForm() {
+  const access = {};
+  ACCESS_GROUPS.forEach(group => { access[group.key] = []; });
+  document.querySelectorAll('.adm-access-page:checked').forEach(el => {
+    const company = el.dataset.company;
+    if (!access[company]) access[company] = [];
+    access[company].push(el.value);
+  });
+  Object.keys(access).forEach(company => { access[company] = [...new Set(access[company])]; });
+  return access;
+}
+
+function getFirstCompanyPage(company) {
+  const group = groupByKey(company);
+  if (!group) return null;
+  if (isAdminUser()) return group.pages[0]?.key || null;
+  const allowed = getUserAccess(currentUser)[company] || [];
+  return group.pages.find(page => allowed.includes(page.key))?.key || null;
 }
 
 function getUserGenteEmpresas(user = currentUser) {
@@ -4749,14 +4896,12 @@ function fillSmartSelect(id, values, allLabel = 'Todos') {
 }
 
 function renderSmartmoldPage() {
-  const tabs = [
-    ['dashboard','Dashboard'], ['cadastros','Cadastros'], ['producao','Produção'], ['estoque','Estoque'], ['vendas','Vendas/Pedidos'],
-    ['compras','Compras/Insumos'], ['custeio','Custeio/Traços'], ['precificacao','Precificação'],
-    ['dre','DRE Industrial'], ['pcp','PCP']
-  ];
-  if (!tabs.some(([id]) => id === smartActiveTab)) smartActiveTab = 'dashboard';
+  const tabs = groupByKey('smartmold').pages.map(page => [page.key, page.label])
+    .filter(([id]) => hasCompanyPageAccess('smartmold', id));
+  if (!tabs.length) { showStartPage(); return; }
+  if (!tabs.some(([id]) => id === smartActiveTab)) smartActiveTab = tabs[0][0];
   document.getElementById('smart-tabs').innerHTML = tabs.map(([id,label]) => `<button class="smart-tab ${smartActiveTab===id?'active':''}" onclick="activateSmartTab('${id}')">${label}</button>`).join('');
-  tabs.forEach(([id]) => document.getElementById(`smart-section-${id}`)?.classList.toggle('active', smartActiveTab === id));
+  groupByKey('smartmold').pages.forEach(page => document.getElementById(`smart-section-${page.key}`)?.classList.toggle('active', smartActiveTab === page.key));
   renderSmartSummary();
   renderSmartDashboard();
   renderSmartProducts();
@@ -4767,11 +4912,14 @@ function renderSmartmoldPage() {
 }
 
 function activateSmartTab(id) {
+  if (!hasCompanyPageAccess('smartmold', id)) return;
   smartActiveTab = id;
   renderSmartmoldPage();
 }
 
 function showSmartModule(id) {
+  if (!hasCompanyAccess('smartmold')) return;
+  if (!hasCompanyPageAccess('smartmold', id)) id = getFirstCompanyPage('smartmold') || 'dashboard';
   smartActiveTab = id;
   showPage('smartmold');
 }
@@ -6876,10 +7024,12 @@ function genteReprocessarDisc() {
 function genteInit() {
   genteReprocessarDisc();
   genteSetupEmpresaFilter();
-  genteShowTab('pessoas');
+  renderGenteAccessTabs();
+  genteShowTab(hasCompanyPageAccess('gente', genteActiveTab) ? genteActiveTab : (getFirstCompanyPage('gente') || 'pessoas'));
 }
 
 function genteShowTab(tab) {
+  if (!hasCompanyPageAccess('gente', tab)) tab = getFirstCompanyPage('gente') || 'pessoas';
   genteActiveTab = tab;
   ['pessoas','disc','organograma','feedback','material','indicadores'].forEach(t => {
     document.getElementById(`gente-pane-${t}`)?.classList.toggle('hidden', t !== tab);
@@ -6889,6 +7039,13 @@ function genteShowTab(tab) {
   if (tab === 'disc')        genteRenderDisc();
   if (tab === 'organograma') genteRenderOrg();
   if (tab === 'indicadores') genteRenderIndicadores();
+}
+
+function renderGenteAccessTabs() {
+  const allowed = getUserAccess(currentUser).gente || [];
+  groupByKey('gente').pages.forEach(page => {
+    document.getElementById(`gente-tab-${page.key}`)?.classList.toggle('hidden', !isAdminUser() && !allowed.includes(page.key));
+  });
 }
 
 function genteRenderPessoas() {
