@@ -568,6 +568,27 @@ body{background:var(--shell-bg);color:var(--shell-text);font-family:Inter,system
 .exec-list-item{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start;padding:12px;border:1px solid #e5e7eb;border-radius:12px;background:#f8fafc}
 .exec-list-title{font-size:13px;font-weight:850;color:#0f172a;line-height:1.25}
 .exec-list-sub{font-size:12px;color:#64748b;line-height:1.35;margin-top:3px}
+.start-wallpaper{
+  min-height:calc(100vh - 160px);
+  border-radius:22px;
+  border:1px solid rgba(15,23,42,.08);
+  background:
+    radial-gradient(circle at center,rgba(255,255,255,.08),rgba(255,255,255,0) 48%),
+    linear-gradient(135deg,#102b46,#183b58 45%,#0f172a);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 18px 45px rgba(15,23,42,.10);
+  overflow:hidden;
+}
+.start-wallpaper img{
+  width:min(46vw,520px);
+  max-width:72%;
+  height:auto;
+  object-fit:contain;
+  opacity:.9;
+  filter:drop-shadow(0 20px 50px rgba(0,0,0,.25));
+}
 .exec-status{display:inline-flex;align-items:center;border-radius:999px;padding:4px 8px;font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
 .exec-status.critical{background:#fee2e2;color:#991b1b}
 .exec-status.warning{background:#ffedd5;color:#9a3412}
@@ -906,7 +927,13 @@ body.sidebar-collapsed #page-gente{
   </div>
 </div>
 
-<div class="container page" id="page-home">
+<div class="container page" id="page-start">
+  <div class="start-wallpaper">
+    <img src="logo-ahav.png" alt="Grupo AHAV">
+  </div>
+</div>
+
+<div class="container page hidden" id="page-home">
   <!-- Wallpaper de boas-vindas para usuários não-admin -->
   <div id="home-welcome-logo" class="hidden" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;min-height:80vh;width:100%">
     <img src="logo-ahav.png" alt="Grupo AHAV" style="height:130px;width:auto;object-fit:contain;filter:drop-shadow(0 4px 32px rgba(59,130,246,.35))">
@@ -2174,17 +2201,10 @@ function enterApp() {
   document.getElementById('global-settings-menu')?.classList.toggle('hidden', !admin);
   document.getElementById('btn-credit-params')?.classList.toggle('hidden', !admin);
   applyNavPermissions();
+  showStartPage();
   loadData();
   subscribeRealtime();
   loadCachedUserNames();
-  // Para não-admin sem acesso à home, navegar para a primeira página acessível
-  if (!isAdminUser() && !hasPageAccess('home')) {
-    const firstPage = ['smartmold','plano','fvc','risk','prazos','credit','vjm','gente'].find(p => hasPageAccess(p));
-    if (firstPage) setTimeout(() => {
-      if (firstPage === 'smartmold') showSmartModule('dashboard');
-      else showPage(firstPage);
-    }, 50);
-  }
 }
 
 async function loadCachedUserNames() {
@@ -2249,8 +2269,6 @@ function applyNavPermissions() {
   });
   document.getElementById('mobile-nav-prazos')?.classList.toggle('hidden', !hasPageAccess('prazos'));
 
-  // se não tem acesso à home, redireciona para primeira página disponível
-  if (isCreditOnlyUser()) setTimeout(() => showPage('credit'), 0);
 }
 
 function applyCreditOnlyAccess() { applyNavPermissions(); }
@@ -3978,8 +3996,29 @@ function renderRedeSubNav() {
 }
 
 // ---- PAGE NAV ----
+function showStartPage() {
+  document.getElementById('page-start')?.classList.remove('hidden');
+  document.getElementById('page-home')?.classList.add('hidden');
+  document.getElementById('page-smartmold')?.classList.add('hidden');
+  document.getElementById('page-plano')?.classList.add('hidden');
+  document.getElementById('page-fvc')?.classList.add('hidden');
+  document.getElementById('page-risk')?.classList.add('hidden');
+  document.getElementById('page-prazos')?.classList.add('hidden');
+  document.getElementById('page-credit')?.classList.add('hidden');
+  document.getElementById('page-vjm')?.classList.add('hidden');
+  document.getElementById('page-gente')?.classList.add('hidden');
+  ['smartmold','vjm','gente'].forEach(key => document.getElementById(`nav-${key}`)?.classList.remove('active'));
+  document.getElementById('nav-gestao')?.classList.remove('active');
+  document.getElementById('nav-rede-epi')?.classList.remove('active');
+  document.querySelectorAll('.mobile-menu-panel .nav-btn').forEach(btn => btn.classList.remove('active'));
+  setText('page-title', 'FINANCE');
+  setText('topbar-title', 'FINANCE');
+  setText('topbar-subtitle', '');
+}
+
 function showPage(page) {
   if (!hasPageAccess(page)) page = hasPageAccess('home') ? 'home' : (hasPageAccess('credit') ? 'credit' : 'home');
+  document.getElementById('page-start')?.classList.add('hidden');
   document.getElementById('page-home').classList.toggle('hidden', page !== 'home');
   document.getElementById('page-smartmold')?.classList.toggle('hidden', page !== 'smartmold');
   document.getElementById('page-plano').classList.toggle('hidden', page !== 'plano');
