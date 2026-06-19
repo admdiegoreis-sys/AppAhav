@@ -951,7 +951,7 @@ body.sidebar-collapsed #page-gente{
         <div class="mobile-menu-section">Páginas</div>
         <button class="nav-btn" onclick="showSmartModule(getFirstCompanyPage('smartmold') || 'dashboard'); closeMobileMenus()">Smartmold</button>
         <div class="mobile-menu-section">AHAV</div>
-        <button class="nav-btn active" onclick="showPage('home'); closeMobileMenus()">Dashboard Executivo</button>
+        <button class="nav-btn active" onclick="showPage('home'); closeMobileMenus()">Dashboard</button>
         <button class="nav-btn" onclick="showPage('plano'); closeMobileMenus()">Plano de Ação</button>
         <button class="nav-btn" onclick="showPage('fvc'); closeMobileMenus()">FVC - Valor Gerado</button>
         <button class="nav-btn" onclick="showPage('risk'); closeMobileMenus()">Gestão de Riscos</button>
@@ -2322,7 +2322,7 @@ function applyNavPermissions() {
   // mobile nav
   document.querySelectorAll('.mobile-menu-panel .nav-btn').forEach(btn => {
     const t = btn.textContent?.trim() || '';
-    if (t === 'Dashboard Executivo') btn.classList.toggle('hidden', !hasPageAccess('home'));
+    if (t === 'Dashboard') btn.classList.toggle('hidden', !hasPageAccess('home'));
     else if (t === 'Smartmold')      btn.classList.toggle('hidden', !hasCompanyAccess('smartmold'));
     else if (t === 'Plano de Ação')  btn.classList.toggle('hidden', !hasPageAccess('plano'));
     else if (t === 'FVC - Valor Gerado') btn.classList.toggle('hidden', !hasPageAccess('fvc'));
@@ -2834,7 +2834,7 @@ const ACCESS_GROUPS = [
     key:'ahav',
     label:'AHAV',
     pages:[
-      {key:'home', label:'Dashboard Executivo'},
+      {key:'home', label:'Dashboard'},
       {key:'plano', label:'Plano de Ação'},
       {key:'fvc', label:'FVC - Valor Gerado'},
       {key:'risk', label:'Gestão de Riscos'},
@@ -4184,7 +4184,7 @@ function exportCreditPDF() {
 // ---- SUB-NAV RENDERERS ----
 function renderGestaoSubNav(activePage) {
   const tabs = [
-    {key:'home', label:'Dashboard Executivo'},
+    {key:'home', label:'Dashboard'},
     {key:'plano', label:'Plano de Ação'},
     {key:'fvc',   label:'FVC - Valor Gerado'},
     {key:'risk',  label:'Gestão de Riscos'},
@@ -4262,7 +4262,7 @@ function showPage(page) {
   if (page === 'credit') renderRedeSubNav();
   document.querySelectorAll('.mobile-menu-panel .nav-btn').forEach(btn => {
     const text = btn.textContent || '';
-    const active = (page === 'home' && text.includes('Dashboard Executivo')) ||
+    const active = (page === 'home' && text.includes('Dashboard')) ||
       (page === 'smartmold' && text.includes('Smartmold')) ||
       (page === 'plano' && text.includes('Plano de Ação')) ||
       (page === 'fvc' && text.includes('FVC')) ||
