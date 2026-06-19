@@ -1771,6 +1771,7 @@ body.sidebar-collapsed #page-gente{
       <div class="field"><label>Unidade</label><input type="text" id="smart-product-unit"></div>
       <div class="field"><label>Data Estoque Inicial</label><input type="date" id="smart-product-initial-date"></div>
       <div class="field"><label>Estoque Inicial</label><input type="text" inputmode="decimal" id="smart-product-initial"></div>
+      <div class="field"><label>Ajuste Estoque Inicial</label><input type="text" inputmode="decimal" id="smart-product-initial-adjustment"></div>
       <div class="field"><label>Status</label><select id="smart-product-status"><option>Ativo</option><option>Inativo</option></select></div>
     </div>
     <div class="modal-footer">
@@ -1942,6 +1943,7 @@ body.sidebar-collapsed #page-gente{
 <script src="fvc-data.js"></script>
 <script src="risk-data.js"></script>
 <script src="smartmold-data.js"></script>
+<script src="smartmold-product-inputs.js"></script>
 <script>
 const HOJE = new Date(); HOJE.setHours(0,0,0,0);
 const PAGE_SIZE = 50;
@@ -4651,6 +4653,7 @@ function getSmartState() {
   smartState = {...smartDefaultState(), ...(smartState || {})};
   smartState.produtos = dedupeSmartProducts(smartState.produtos || []);
   smartState.producao = normalizeSmartProductionRows(smartState.producao || []);
+  applySmartProductInputs(smartState);
   syncSmartFaturamentoData(smartState);
   return smartState;
 }
@@ -4666,6 +4669,70 @@ function normalizeSmartProductionRows(rows) {
     delete clean['Periodo Original'];
     delete clean['Produto Original'];
     return clean;
+  });
+}
+
+function applySmartProductInputs(state) {
+  const inputs = window.SMARTMOLD_PRODUCT_INPUTS || [];
+  const version = window.SMARTMOLD_PRODUCT_INPUTS_VERSION || '';
+  if (!inputs.length || !version || state._smartProductInputsVersion === version) return;
+  const byCode = new Map((state.produtos || []).map(p => [String(p.codprod || ''), p]));
+  inputs.forEach(input => {
+    const seed = normalizeSmartProduct(input);
+    const existing = byCode.get(String(seed.codprod || ''));
+    if (existing) {
+      Object.assign(existing, {
+        'descrprod ERP': seed['descrprod ERP'] || existing['descrprod ERP'],
+        Categoria: seed.Categoria || existing.Categoria,
+        Unidade: seed.Unidade || existing.Unidade || 'UNIDADE',
+        'Data Estoque Inicial': seed['Data Estoque Inicial'] || existing['Data Estoque Inicial'],
+        'Estoque Inicial': seed['Estoque Inicial'],
+        'Estoque Inicial Ajuste': seed['Estoque Inicial Ajuste'],
+        Status: seed.Status || existing.Status || 'Ativo'
+      });
+    } else {
+      (state.produtos ||= []).push(seed);
+      byCode.set(String(seed.codprod || ''), seed);
+    }
+  });
+  state.produtos = dedupeSmartProducts(state.produtos || []);
+  syncSmartStockBaseFromProducts(state);
+  state._smartProductInputsVersion = version;
+}
+
+function syncSmartStockBaseFromProducts(state) {
+  const stockByCode = new Map((state.estoqueBase || []).map(row => [String(row.codprod || ''), row]));
+  state.produtos.forEach(product => {
+    const code = String(product.codprod || '');
+    if (!code) return;
+    const existing = stockByCode.get(code) || {};
+    const stockRow = {
+      ...existing,
+      codprod: product.codprod,
+      'Produto ERP': product['descrprod ERP'],
+      Categoria: product.Categoria,
+      'Data Estoque Inicial': smartFormatDate(product['Data Estoque Inicial']),
+      'Estoque Inicial': smartNum(product['Estoque Inicial']),
+      'Estoque Inicial Ajuste': smartInitialAdjustment(product),
+      'Estoque Atual': smartInitialAdjusted(product) + smartNum(existing.Produzido) - smartNum(existing.Vendido) + smartNum(existing.Ajustes),
+      'Código Sugerido Original': product['Código Sugerido Original'] || product.codprod,
+      'Status Código': product['Status Código'] || existing['Status Código'] || ''
+    };
+    if (stockByCode.has(code)) {
+      const idx = state.estoqueBase.findIndex(row => String(row.codprod) === code);
+      state.estoqueBase[idx] = stockRow;
+    } else {
+      state.estoqueBase ||= [];
+      state.estoqueBase.push({
+        ...stockRow,
+        Produzido: 0,
+        Vendido: 0,
+        Ajustes: 0,
+        'Estoque Mínimo': 0,
+        'Estoque Máximo': 0,
+        'Status Estoque': 'OK'
+      });
+    }
   });
 }
 
@@ -4697,6 +4764,7 @@ function normalizeSmartState(state = {}) {
   const normalized = {...smartDefaultState(), ...(state || {})};
   normalized.produtos = dedupeSmartProducts(normalized.produtos || []);
   normalized.producao = normalizeSmartProductionRows(normalized.producao || []);
+  applySmartProductInputs(normalized);
   syncSmartFaturamentoData(normalized);
   // migração: preenche Valor Produtos com Valor Total quando ambos eram 0
   normalized.vendas = (normalized.vendas || []).map(v => {
@@ -4810,6 +4878,7 @@ function dedupeSmartProducts(rows) {
 function normalizeSmartProduct(row) {
   const initialDate = smartFormatDate(row['Data Estoque Inicial'] || '2026-02-13');
   const initialQty = row['Estoque Inicial'] ?? row['Estoque Inicial 13/02/2026'] ?? 0;
+  const initialAdjustment = row['Estoque Inicial Ajuste'] ?? row['Ajuste Estoque Inicial'] ?? row['ESTOQUE INICIAL AJUSTE'] ?? 0;
   return {
     codprod: row.codprod,
     'descrprod ERP': smartProductText(row['descrprod ERP'] || row['Produto ERP'] || ''),
@@ -4817,10 +4886,23 @@ function normalizeSmartProduct(row) {
     Unidade: row.Unidade || 'UNIDADE',
     'Data Estoque Inicial': initialDate,
     'Estoque Inicial': initialQty,
+    'Estoque Inicial Ajuste': initialAdjustment,
     Status: row.Status || 'Ativo',
     'Código Sugerido Original': row['Código Sugerido Original'] || row.codprod,
     'Status Código': row['Status Código'] || ''
   };
+}
+
+function smartInitialAdjustment(row = {}) {
+  return smartNum(row['Estoque Inicial Ajuste'] ?? row['Ajuste Estoque Inicial'] ?? row['ESTOQUE INICIAL AJUSTE'] ?? 0);
+}
+
+function smartBaseInitial(row = {}, fallback = {}) {
+  return smartNum(row['Estoque Inicial'] ?? row['Estoque Inicial 13/02/2026'] ?? fallback['Estoque Inicial'] ?? 0);
+}
+
+function smartInitialAdjusted(row = {}, fallback = {}) {
+  return smartBaseInitial(row, fallback) + smartInitialAdjustment(row) + (row['Estoque Inicial Ajuste'] === undefined ? smartInitialAdjustment(fallback) : 0);
 }
 
 function smartComputedStock() {
@@ -4831,7 +4913,8 @@ function smartComputedStock() {
     'descrprod ERP': smartProductText(row['Produto ERP'] || row['descrprod ERP'] || ''),
     Categoria: row.Categoria || '',
     'Data Estoque Inicial': row['Data Estoque Inicial'] || row['Data'] || '2026-02-13',
-    'Estoque Inicial': row['Estoque Inicial'] || 0
+    'Estoque Inicial': row['Estoque Inicial'] || 0,
+    'Estoque Inicial Ajuste': row['Estoque Inicial Ajuste'] || 0
   }));
   const initialDateByCode = {};
   products.forEach(p => initialDateByCode[p.codprod] = smartDateSerial(p['Data Estoque Inicial']));
@@ -4871,8 +4954,10 @@ function smartComputedStock() {
     const produzido = producedByCode[code] || 0;
     const vendido = soldByCode[code] || 0;
     const ajustes = adjByCode[code] || 0;
-    const initialQty = smartNum(product['Estoque Inicial'] ?? product['Estoque Inicial 13/02/2026'] ?? stockRow['Estoque Inicial']);
-    const atual = initialQty + produzido - vendido + ajustes;
+    const initialQty = smartBaseInitial(product, stockRow);
+    const initialAdjustment = smartInitialAdjustment(product) || smartInitialAdjustment(stockRow);
+    const initialAdjusted = initialQty + initialAdjustment;
+    const atual = initialAdjusted + produzido - vendido + ajustes;
     const min = smartNum(stockRow['Estoque Mínimo']);
     const max = smartNum(stockRow['Estoque Máximo']);
     const status = atual < 0 ? 'Estoque negativo' : min && atual < min ? 'Abaixo mínimo' : max && atual > max ? 'Acima máximo' : 'OK';
@@ -4883,6 +4968,8 @@ function smartComputedStock() {
       Categoria: product.Categoria || stockRow.Categoria || '',
       'Data Estoque Inicial': smartFormatDate(product['Data Estoque Inicial'] || stockRow['Data Estoque Inicial']),
       'Estoque Inicial': initialQty,
+      'Estoque Inicial Ajuste': initialAdjustment,
+      'Estoque Inicial Ajustado': initialAdjusted,
       Produção: produzido,
       Vendas: vendido,
       Ajustes: ajustes,
@@ -5264,9 +5351,14 @@ function renderSmartProducts() {
   const busca = (document.getElementById('smart-prod-busca')?.value || '').toLowerCase();
   const cat = document.getElementById('smart-prod-categoria')?.value || '';
   const rows = state.produtos.filter(p => (!cat || p.Categoria === cat) && JSON.stringify(p).toLowerCase().includes(busca))
-    .map(p => ({...p, 'descrprod ERP': smartProductText(p['descrprod ERP'] || p['Produto ERP'] || ''), Ações:`<div class="smart-row-actions"><button class="btn btn-ghost btn-sm smart-icon-btn" title="Editar produto" aria-label="Editar produto" onclick="event.stopPropagation();openSmartProductModal('${escapeHtml(String(p.codprod || ''))}')">✎</button></div>`}));
+    .map(p => ({
+      ...p,
+      'descrprod ERP': smartProductText(p['descrprod ERP'] || p['Produto ERP'] || ''),
+      'Estoque Inicial Ajustado': smartInitialAdjusted(p),
+      Ações:`<div class="smart-row-actions"><button class="btn btn-ghost btn-sm smart-icon-btn" title="Editar produto" aria-label="Editar produto" onclick="event.stopPropagation();openSmartProductModal('${escapeHtml(String(p.codprod || ''))}')">✎</button></div>`
+    }));
   smartTable('smart-prod-head', 'smart-prod-body', rows, {
-    headers:['codprod','descrprod ERP','Categoria','Unidade','Data Estoque Inicial','Estoque Inicial','Status','Ações'],
+    headers:['codprod','descrprod ERP','Categoria','Unidade','Data Estoque Inicial','Estoque Inicial','Estoque Inicial Ajuste','Estoque Inicial Ajustado','Status','Ações'],
     htmlFields:['Ações']
   });
 }
@@ -5332,6 +5424,8 @@ function renderSmartStock() {
       ...p,
       'Produto ERP': String(p['Produto ERP'] || '').toUpperCase(),
       Inicial: smartSignedCell(p['Estoque Inicial'], 'positive'),
+      'Aj. Inicial': smartSignedCell(p['Estoque Inicial Ajuste'], 'signed'),
+      'Inicial Ajust.': smartSignedCell(p['Estoque Inicial Ajustado'], 'signed'),
       Entradas: smartSignedCell(p.Produção, 'positive'),
       Saídas: smartSignedCell(p.Vendas, 'negative'),
       Ajustes: smartSignedCell(p.Ajustes, 'signed'),
@@ -5341,9 +5435,9 @@ function renderSmartStock() {
       Ações:`<div class="stock-actions"><button class="btn btn-ghost btn-sm" title="Ajustar estoque" aria-label="Ajustar estoque" onclick="event.stopPropagation();openSmartAdjustmentModal(null,'${escapeHtml(String(p.codprod || ''))}')">±</button><button class="btn btn-ghost btn-sm" title="Editar limites" aria-label="Editar limites" onclick="event.stopPropagation();openSmartStockLimitsModal('${escapeHtml(String(p.codprod || ''))}')">↕</button></div>`
     }));
   smartTable('smart-estoque-head', 'smart-estoque-body', rows, {
-    headers:['CODPROD','PRODUTO','DT. INICIAL','INICIAL','ENTRADAS','SAÍDAS','AJUSTES','FINAL','LIMITES','STATUS','VALIDAÇÃO','AÇÕES'],
-    fieldMap:{'CODPROD':'codprod','PRODUTO':'Produto ERP','DT. INICIAL':'Data Estoque Inicial','INICIAL':'Inicial','ENTRADAS':'Entradas','SAÍDAS':'Saídas','AJUSTES':'Ajustes','FINAL':'Final','LIMITES':'Limites','STATUS':'Status','VALIDAÇÃO':'Validação','AÇÕES':'Ações'},
-    htmlFields:['Inicial','Entradas','Saídas','Ajustes','Final','Limites','Status','Ações']
+    headers:['CODPROD','PRODUTO','DT. INICIAL','INICIAL','AJ. INICIAL','INICIAL AJUST.','ENTRADAS','SAÍDAS','AJUSTES','FINAL','LIMITES','STATUS','VALIDAÇÃO','AÇÕES'],
+    fieldMap:{'CODPROD':'codprod','PRODUTO':'Produto ERP','DT. INICIAL':'Data Estoque Inicial','INICIAL':'Inicial','AJ. INICIAL':'Aj. Inicial','INICIAL AJUST.':'Inicial Ajust.','ENTRADAS':'Entradas','SAÍDAS':'Saídas','AJUSTES':'Ajustes','FINAL':'Final','LIMITES':'Limites','STATUS':'Status','VALIDAÇÃO':'Validação','AÇÕES':'Ações'},
+    htmlFields:['Inicial','Aj. Inicial','Inicial Ajust.','Entradas','Saídas','Ajustes','Final','Limites','Status','Ações']
   });
 }
 
@@ -5496,6 +5590,7 @@ function openSmartProductModal(code) {
   document.getElementById('smart-product-unit').value = product?.Unidade || 'UNIDADE';
   document.getElementById('smart-product-initial-date').value = smartInputDate(product?.['Data Estoque Inicial'] || '2026-02-13');
   document.getElementById('smart-product-initial').value = product?.['Estoque Inicial'] ?? product?.['Estoque Inicial 13/02/2026'] ?? 0;
+  document.getElementById('smart-product-initial-adjustment').value = product?.['Estoque Inicial Ajuste'] ?? 0;
   document.getElementById('smart-product-status').value = product?.Status || 'Ativo';
   document.getElementById('smart-product-delete').classList.toggle('hidden', !isEdit);
   document.getElementById('smart-product-modal').classList.remove('hidden');
@@ -5517,6 +5612,7 @@ function smartProductFormRow() {
     Unidade: document.getElementById('smart-product-unit').value.trim() || 'UNIDADE',
     'Data Estoque Inicial': smartFormatDate(document.getElementById('smart-product-initial-date').value),
     'Estoque Inicial': smartNum(document.getElementById('smart-product-initial').value),
+    'Estoque Inicial Ajuste': smartNum(document.getElementById('smart-product-initial-adjustment').value),
     Status: document.getElementById('smart-product-status').value,
     'Código Sugerido Original': code,
     'Status Código': 'Cadastro manual'
@@ -5546,16 +5642,19 @@ function upsertSmartStockBase(product, originalCode = '') {
   const state = getSmartState();
   const idx = state.estoqueBase.findIndex(row => String(row.codprod) === String(originalCode || product.codprod));
   const initialQty = smartNum(product['Estoque Inicial']);
+  const initialAdjustment = smartInitialAdjustment(product);
+  const adjustedInitialQty = initialQty + initialAdjustment;
   const stockRow = {
     codprod: product.codprod,
     'Produto ERP': product['descrprod ERP'],
     Categoria: product.Categoria,
     'Data Estoque Inicial': smartFormatDate(product['Data Estoque Inicial']),
     'Estoque Inicial': initialQty,
+    'Estoque Inicial Ajuste': initialAdjustment,
     Produzido: idx >= 0 ? smartNum(state.estoqueBase[idx].Produzido) : 0,
     Vendido: idx >= 0 ? smartNum(state.estoqueBase[idx].Vendido) : 0,
     Ajustes: idx >= 0 ? smartNum(state.estoqueBase[idx].Ajustes) : 0,
-    'Estoque Atual': idx >= 0 ? initialQty + smartNum(state.estoqueBase[idx].Produzido) - smartNum(state.estoqueBase[idx].Vendido) + smartNum(state.estoqueBase[idx].Ajustes) : initialQty,
+    'Estoque Atual': idx >= 0 ? adjustedInitialQty + smartNum(state.estoqueBase[idx].Produzido) - smartNum(state.estoqueBase[idx].Vendido) + smartNum(state.estoqueBase[idx].Ajustes) : adjustedInitialQty,
     'Estoque Mínimo': idx >= 0 ? smartNum(state.estoqueBase[idx]['Estoque Mínimo']) : 0,
     'Estoque Máximo': idx >= 0 ? smartNum(state.estoqueBase[idx]['Estoque Máximo']) : 0,
     'Status Estoque': 'OK',
@@ -5736,6 +5835,7 @@ function saveSmartStockLimits() {
     Categoria: current.Categoria || product.Categoria || '',
     'Data Estoque Inicial': current['Data Estoque Inicial'] || product['Data Estoque Inicial'] || '13/02/2026',
     'Estoque Inicial': current['Estoque Inicial'] ?? product['Estoque Inicial'] ?? 0,
+    'Estoque Inicial Ajuste': current['Estoque Inicial Ajuste'] ?? product['Estoque Inicial Ajuste'] ?? 0,
     'Estoque Mínimo': min,
     'Estoque Máximo': max,
     'Observação Limites': document.getElementById('smart-stock-limits-obs').value
