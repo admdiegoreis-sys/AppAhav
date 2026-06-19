@@ -847,10 +847,9 @@ body.sidebar-collapsed #page-gente{
     </div>
   </div>
   <div class="page-nav">
-    <button class="nav-btn active" id="nav-home" onclick="showPage('home')">Executivo</button>
     <button class="nav-btn hidden" id="nav-smartmold" onclick="showSmartModule('dashboard')">Smartmold</button>
 
-    <button class="nav-btn hidden" id="nav-gestao" onclick="showPage(['plano','fvc','risk','prazos'].find(p=>hasPageAccess(p))||'plano')">Gestão Ahav</button>
+    <button class="nav-btn hidden" id="nav-gestao" onclick="showPage(['home','plano','fvc','risk','prazos'].find(p=>hasPageAccess(p))||'plano')">AHAV</button>
     <button class="nav-btn hidden" id="nav-rede-epi" onclick="showPage('credit')">Rede EPI</button>
 
     <button class="nav-btn hidden" id="nav-vjm" onclick="showPage('vjm')">VJM</button>
@@ -861,9 +860,9 @@ body.sidebar-collapsed #page-gente{
       <summary aria-label="Menu">☰</summary>
       <div class="mobile-menu-panel">
         <div class="mobile-menu-section">Páginas</div>
-        <button class="nav-btn active" onclick="showPage('home'); closeMobileMenus()">Executivo</button>
         <button class="nav-btn" onclick="showSmartModule('dashboard'); closeMobileMenus()">Smartmold</button>
-        <div class="mobile-menu-section">Gestão Ahav</div>
+        <div class="mobile-menu-section">AHAV</div>
+        <button class="nav-btn active" onclick="showPage('home'); closeMobileMenus()">Dashboard Executivo</button>
         <button class="nav-btn" onclick="showPage('plano'); closeMobileMenus()">Plano de Ação</button>
         <button class="nav-btn" onclick="showPage('fvc'); closeMobileMenus()">FVC - Valor Gerado</button>
         <button class="nav-btn" onclick="showPage('risk'); closeMobileMenus()">Gestão de Riscos</button>
@@ -925,8 +924,9 @@ body.sidebar-collapsed #page-gente{
   </div>
   <!-- Dashboard completo — somente admin -->
   <div id="home-dashboard-content">
+  <div class="smart-tabs" id="gestao-tabs-home"></div>
   <div class="page-actions">
-    <div class="page-actions-title">Executivo</div>
+    <div class="page-actions-title">Dashboard Executivo</div>
     <div class="page-actions-buttons">
       <button class="btn btn-ghost btn-sm" onclick="exportExecutivePDF()">📄 PDF Executivo</button>
     </div>
@@ -2205,7 +2205,6 @@ function applyNavPermissions() {
 
   // desktop nav — direct buttons
   const adminUser = isAdminUser();
-  document.getElementById('nav-home')?.classList.toggle('hidden', !adminUser);
   document.getElementById('nav-smartmold')?.classList.toggle('hidden', !hasPageAccess('smartmold'));
   document.getElementById('nav-vjm')?.classList.toggle('hidden', !hasPageAccess('vjm'));
   document.getElementById('nav-gente')?.classList.toggle('hidden', !hasPageAccess('gente'));
@@ -2216,8 +2215,8 @@ function applyNavPermissions() {
   document.getElementById('home-welcome-logo')?.classList.toggle('hidden', adminUser);
   document.getElementById('home-dashboard-content')?.classList.toggle('hidden', !adminUser);
 
-  // grupo Gestão Ahav — botão único no nav
-  const showGestaoGroup = ['plano','fvc','risk','prazos'].some(p => hasPageAccess(p));
+  // grupo AHAV — botão único no nav
+  const showGestaoGroup = ['home','plano','fvc','risk','prazos'].some(p => hasPageAccess(p));
   document.getElementById('nav-gestao')?.classList.toggle('hidden', !showGestaoGroup);
 
   // grupo Rede EPI — botão único no nav
@@ -2226,7 +2225,7 @@ function applyNavPermissions() {
   // mobile nav
   document.querySelectorAll('.mobile-menu-panel .nav-btn').forEach(btn => {
     const t = btn.textContent?.trim() || '';
-    if (t === 'Executivo')           btn.classList.toggle('hidden', !hasPageAccess('home'));
+    if (t === 'Dashboard Executivo') btn.classList.toggle('hidden', !hasPageAccess('home'));
     else if (t === 'Smartmold')      btn.classList.toggle('hidden', !hasPageAccess('smartmold'));
     else if (t === 'Plano de Ação')  btn.classList.toggle('hidden', !hasPageAccess('plano'));
     else if (t === 'FVC - Valor Gerado') btn.classList.toggle('hidden', !hasPageAccess('fvc'));
@@ -2236,10 +2235,10 @@ function applyNavPermissions() {
     else if (t === 'VJM')            btn.classList.toggle('hidden', !hasPageAccess('vjm'));
     else if (t === 'Gente')          btn.classList.toggle('hidden', !hasPageAccess('gente'));
   });
-  const showGestao = ['plano','fvc','risk','prazos'].some(p => hasPageAccess(p));
+  const showGestao = ['home','plano','fvc','risk','prazos'].some(p => hasPageAccess(p));
   document.querySelectorAll('.mobile-menu-panel .mobile-menu-section').forEach(section => {
     const t = section.textContent?.trim() || '';
-    if (t === 'Gestão Ahav') section.classList.toggle('hidden', !showGestao);
+    if (t === 'AHAV') section.classList.toggle('hidden', !showGestao);
     if (t === 'Rede EPI')    section.classList.toggle('hidden', !hasPageAccess('credit'));
     if (t === 'Geologia')    section.classList.toggle('hidden', !hasPageAccess('vjm'));
     if (t === 'Gestão de Pessoas') section.classList.toggle('hidden', !hasPageAccess('gente'));
@@ -3946,6 +3945,7 @@ function exportCreditPDF() {
 // ---- SUB-NAV RENDERERS ----
 function renderGestaoSubNav(activePage) {
   const tabs = [
+    {key:'home', label:'Dashboard Executivo'},
     {key:'plano', label:'Plano de Ação'},
     {key:'fvc',   label:'FVC - Valor Gerado'},
     {key:'risk',  label:'Gestão de Riscos'},
@@ -3955,7 +3955,7 @@ function renderGestaoSubNav(activePage) {
   const html = visible.map(t =>
     `<button class="smart-tab${t.key===activePage?' active':''}" onclick="showPage('${t.key}')">${t.label}</button>`
   ).join('');
-  ['plano','fvc','risk','prazos'].forEach(p => {
+  ['home','plano','fvc','risk','prazos'].forEach(p => {
     const el = document.getElementById(`gestao-tabs-${p}`);
     if (el) { el.innerHTML = html; el.style.display = visible.length > 1 ? '' : 'none'; }
   });
@@ -3985,15 +3985,15 @@ function showPage(page) {
   document.getElementById('page-credit').classList.toggle('hidden', page !== 'credit');
   document.getElementById('page-vjm')?.classList.toggle('hidden', page !== 'vjm');
   document.getElementById('page-gente')?.classList.toggle('hidden', page !== 'gente');
-  ['home','smartmold','vjm','gente'].forEach(key => document.getElementById(`nav-${key}`)?.classList.toggle('active', page === key));
-  const gestaoPages = ['plano','fvc','risk','prazos'];
+  ['smartmold','vjm','gente'].forEach(key => document.getElementById(`nav-${key}`)?.classList.toggle('active', page === key));
+  const gestaoPages = ['home','plano','fvc','risk','prazos'];
   document.getElementById('nav-gestao')?.classList.toggle('active', gestaoPages.includes(page));
   document.getElementById('nav-rede-epi')?.classList.toggle('active', page === 'credit');
   if (gestaoPages.includes(page)) renderGestaoSubNav(page);
   if (page === 'credit') renderRedeSubNav();
   document.querySelectorAll('.mobile-menu-panel .nav-btn').forEach(btn => {
     const text = btn.textContent || '';
-    const active = (page === 'home' && text.includes('Executivo')) ||
+    const active = (page === 'home' && text.includes('Dashboard Executivo')) ||
       (page === 'smartmold' && text.includes('Smartmold')) ||
       (page === 'plano' && text.includes('Plano de Ação')) ||
       (page === 'fvc' && text.includes('FVC')) ||
