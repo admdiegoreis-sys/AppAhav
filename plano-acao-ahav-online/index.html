@@ -4978,7 +4978,12 @@ function renderSmartmoldPage() {
   if (!tabs.some(([id]) => id === smartActiveTab)) smartActiveTab = tabs[0][0];
   document.getElementById('smart-tabs').innerHTML = tabs.map(([id,label]) => `<button class="smart-tab ${smartActiveTab===id?'active':''}" onclick="activateSmartTab('${id}')">${label}</button>`).join('');
   groupByKey('smartmold').pages.forEach(page => document.getElementById(`smart-section-${page.key}`)?.classList.toggle('active', smartActiveTab === page.key));
-  renderSmartSummary();
+  const summaryEl = document.getElementById('smart-summary');
+  if (summaryEl) {
+    summaryEl.style.display = smartActiveTab === 'dashboard' ? '' : 'none';
+    if (smartActiveTab !== 'dashboard') summaryEl.innerHTML = '';
+  }
+  if (smartActiveTab === 'dashboard') renderSmartSummary();
   renderSmartDashboard();
   renderSmartProducts();
   renderSmartProduction();
