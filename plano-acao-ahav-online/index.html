@@ -1142,6 +1142,17 @@ td.wrap{white-space:normal}
         <label style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:10px">Permissões de acesso <span style="color:#475569;font-weight:400;font-size:10px">(Admin sempre tem acesso total)</span></label>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:8px" id="adm-permissions-grid"></div>
       </div>
+      <div style="grid-column:1/-1">
+        <label style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:10px">Empresas liberadas na aba Gente</label>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:8px">
+          <label style="display:flex;align-items:center;gap:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;cursor:pointer;font-size:13px;color:#e2e8f0">
+            <input class="adm-gente-empresa" type="checkbox" value="Ahav" style="width:15px;height:15px;accent-color:#3b82f6;flex-shrink:0"> Ahav
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;cursor:pointer;font-size:13px;color:#e2e8f0">
+            <input class="adm-gente-empresa" type="checkbox" value="REDE EPI" style="width:15px;height:15px;accent-color:#3b82f6;flex-shrink:0"> REDE EPI
+          </label>
+        </div>
+      </div>
       <div style="grid-column:1/-1;display:flex;gap:10px;justify-content:flex-end;padding-top:4px">
         <button class="btn btn-ghost" onclick="closeEditUserModal()">Cancelar</button>
         <button class="btn btn-primary" onclick="saveUserAdmin()">Salvar usuário</button>
@@ -1768,7 +1779,7 @@ function enterApp() {
   loadCachedUserNames();
   // Para não-admin sem acesso à home, navegar para a primeira página acessível
   if (!isAdminUser() && !hasPageAccess('home')) {
-    const firstPage = ['smartmold','plano','fvc','risk','prazos','credit','vjm'].find(p => hasPageAccess(p));
+    const firstPage = ['smartmold','plano','fvc','risk','prazos','credit','vjm','gente'].find(p => hasPageAccess(p));
     if (firstPage) setTimeout(() => {
       if (firstPage === 'smartmold') showSmartModule('dashboard');
       else showPage(firstPage);
@@ -1801,9 +1812,9 @@ function applyNavPermissions() {
   document.getElementById('nav-home')?.classList.toggle('hidden', !adminUser);
   document.getElementById('nav-smartmold')?.classList.toggle('hidden', !hasPageAccess('smartmold'));
   document.getElementById('nav-vjm')?.classList.toggle('hidden', !hasPageAccess('vjm'));
-  document.getElementById('nav-gente')?.classList.toggle('hidden', !adminUser);
-  document.getElementById('mobile-nav-gente')?.classList.toggle('hidden', !adminUser);
-  document.getElementById('mobile-section-gente')?.classList.toggle('hidden', !adminUser);
+  document.getElementById('nav-gente')?.classList.toggle('hidden', !hasPageAccess('gente'));
+  document.getElementById('mobile-nav-gente')?.classList.toggle('hidden', !hasPageAccess('gente'));
+  document.getElementById('mobile-section-gente')?.classList.toggle('hidden', !hasPageAccess('gente'));
 
   // home: wallpaper para não-admin, dashboard para admin
   document.getElementById('home-welcome-logo')?.classList.toggle('hidden', adminUser);
@@ -1827,6 +1838,7 @@ function applyNavPermissions() {
     else if (t === 'Aprovação de Prazos') btn.classList.toggle('hidden', !hasPageAccess('prazos'));
     else if (t === 'Análise de Crédito') btn.classList.toggle('hidden', !hasPageAccess('credit'));
     else if (t === 'VJM')            btn.classList.toggle('hidden', !hasPageAccess('vjm'));
+    else if (t === 'Gente')          btn.classList.toggle('hidden', !hasPageAccess('gente'));
   });
   const showGestao = ['plano','fvc','risk','prazos'].some(p => hasPageAccess(p));
   document.querySelectorAll('.mobile-menu-panel .mobile-menu-section').forEach(section => {
@@ -1834,6 +1846,7 @@ function applyNavPermissions() {
     if (t === 'Gestão Ahav') section.classList.toggle('hidden', !showGestao);
     if (t === 'Rede EPI')    section.classList.toggle('hidden', !hasPageAccess('credit'));
     if (t === 'Geologia')    section.classList.toggle('hidden', !hasPageAccess('vjm'));
+    if (t === 'Gestão de Pessoas') section.classList.toggle('hidden', !hasPageAccess('gente'));
   });
   document.getElementById('mobile-nav-prazos')?.classList.toggle('hidden', !hasPageAccess('prazos'));
 
@@ -1907,6 +1920,7 @@ function clearUserAdminForm() {
   const active = document.getElementById('adm-active'); if (active) active.value = 'true';
   const must = document.getElementById('adm-must-change'); if (must) must.value = 'true';
   const pass = document.getElementById('adm-password'); if (pass) pass.type = 'text';
+  document.querySelectorAll('.adm-gente-empresa').forEach(el => { el.checked = false; });
 }
 
 function renderPermissionsGrid(selectedPerms) {
@@ -1983,6 +1997,10 @@ async function editUserAdmin(username) {
   document.getElementById('adm-password').value = user.password_plain || '';
   document.getElementById('adm-password').type = 'text';
   renderPermissionsGrid(getUserPermissions(user));
+  const genteEmpresas = getUserGenteEmpresas(user);
+  document.querySelectorAll('.adm-gente-empresa').forEach(el => {
+    el.checked = genteEmpresas.includes(el.value);
+  });
 }
 
 async function updateUserPassInline(username, plainPass) {
@@ -2017,6 +2035,7 @@ async function saveUserAdmin() {
     const el = document.getElementById('perm-' + k);
     return el ? el.checked : false;
   });
+  const gente_empresas = [...document.querySelectorAll('.adm-gente-empresa:checked')].map(el => el.value);
   const payload = {
     username,
     full_name: fullName || username,
@@ -2025,7 +2044,8 @@ async function saveUserAdmin() {
     must_change_password: password ? true : mustChange,
     password_hash: password ? await sha256(password) : current.password_hash,
     password_plain: password || current?.password_plain || '',
-    permissions
+    permissions,
+    gente_empresas
   };
   if (authUsesSupabase) {
     let p = {...payload};
@@ -2304,12 +2324,21 @@ function getUserPermissions(user) {
   // Se permissions já foi salvo no banco (array), usa ele; caso contrário usa o default
   // NUNCA dá acesso extra a crédito/vjm/smartmold por default
   if (Array.isArray(user.permissions) && user.permissions.length > 0) return user.permissions;
+  if (normalizeAccessName(user.username) === 'leandro') return ['gente'];
   return DEFAULT_PERMISSIONS;
 }
 
 function hasPageAccess(page) {
   if (!currentUser) return false;
   return getUserPermissions(currentUser).includes(page);
+}
+
+function getUserGenteEmpresas(user = currentUser) {
+  if (!user) return [];
+  if (user.role === 'admin') return GENTE_EMPRESAS;
+  if (Array.isArray(user.gente_empresas) && user.gente_empresas.length) return user.gente_empresas;
+  if (normalizeAccessName(user.username) === 'leandro') return ['REDE EPI'];
+  return GENTE_EMPRESAS;
 }
 
 function isVjmSmartmoldUser() {
@@ -6113,7 +6142,11 @@ function genteLoadPessoas() {
 function genteSavePessoas(list) { localStorage.setItem(GENTE_PESSOAS_KEY, JSON.stringify(list)); }
 
 function genteEmpresaAtual() {
-  return document.getElementById('gente-empresa-filter')?.value || '';
+  const allowed = getUserGenteEmpresas();
+  const selected = document.getElementById('gente-empresa-filter')?.value || '';
+  if (!isAdminUser() && allowed.length === 1) return allowed[0];
+  if (!isAdminUser() && allowed.length && selected && !allowed.includes(selected)) return allowed[0];
+  return selected;
 }
 
 function genteFilterPessoas(pessoas) {
@@ -6130,6 +6163,30 @@ function gentePeopleWithIndex() {
 
 function genteApplyEmpresaFilter() {
   genteShowTab(genteActiveTab || 'pessoas');
+}
+
+function genteSetupEmpresaFilter() {
+  const sel = document.getElementById('gente-empresa-filter');
+  if (!sel) return;
+  const allowed = getUserGenteEmpresas();
+  const showAll = isAdminUser() || allowed.length !== 1;
+  const current = sel.value;
+  const empresas = isAdminUser() ? GENTE_EMPRESAS : allowed;
+  sel.innerHTML = (showAll ? '<option value="">Todas</option>' : '') +
+    empresas.map(e => `<option value="${e}">${e}</option>`).join('');
+  const next = current && (showAll ? true : empresas.includes(current)) ? current : (showAll ? '' : empresas[0]);
+  sel.value = next;
+  sel.disabled = !isAdminUser() && empresas.length === 1;
+}
+
+function genteSetupPessoaEmpresaOptions(selectedValue = '') {
+  const sel = document.getElementById('gp-empresa');
+  if (!sel) return;
+  const allowed = getUserGenteEmpresas();
+  const empresas = isAdminUser() ? GENTE_EMPRESAS : allowed;
+  sel.innerHTML = empresas.map(e => `<option value="${e}">${e}</option>`).join('');
+  sel.value = empresas.includes(selectedValue) ? selectedValue : (empresas[0] || 'Ahav');
+  sel.disabled = !isAdminUser() && empresas.length === 1;
 }
 
 function genteLoadOrg() {
@@ -6222,6 +6279,7 @@ function genteReprocessarDisc() {
 
 function genteInit() {
   genteReprocessarDisc();
+  genteSetupEmpresaFilter();
   genteShowTab('pessoas');
 }
 
@@ -6287,7 +6345,7 @@ function genteOpenPessoaModal(idx) {
   const todas = genteLoadPessoas();
   document.getElementById('gp-idx').value   = idx !== undefined ? idx : '';
   document.getElementById('gp-nome').value  = p.nome  || '';
-  document.getElementById('gp-empresa').value = p.empresa || genteEmpresaAtual() || 'Ahav';
+  genteSetupPessoaEmpresaOptions(p.empresa || genteEmpresaAtual() || 'Ahav');
   document.getElementById('gp-cargo').value  = p.cargo  || '';
   document.getElementById('gp-funcao').value = p.funcao || '';
   document.getElementById('gp-area').value   = p.area   || '';
@@ -6312,7 +6370,7 @@ function genteSavePessoa() {
   const pessoas = genteLoadPessoas();
   const obj = {
     nome,
-    empresa: document.getElementById('gp-empresa').value || 'Ahav',
+    empresa: document.getElementById('gp-empresa').value || genteEmpresaAtual() || 'Ahav',
     cargo:  document.getElementById('gp-cargo').value,
     funcao: document.getElementById('gp-funcao').value,
     area:   document.getElementById('gp-area').value.trim(),
