@@ -662,18 +662,51 @@ body.sidebar-collapsed #app .header-actions-row>.btn::before{content:'↩';font-
   .period-chip{font-size:11px;padding:8px 10px}
   #app .exec-grid{grid-template-columns:1fr}
 }
-/* Gente page compatibility with the executive shell */
+/* Standalone page compatibility with the executive shell */
+#page-vjm,
 #page-gente{
-  margin:0 0 0 var(--sidebar-width)!important;
+  position:fixed!important;
+  top:82px;
+  left:var(--sidebar-width);
+  right:0;
+  bottom:0;
+  margin:0!important;
   max-width:none!important;
   width:auto!important;
-  min-height:100vh;
+  min-height:0;
   padding:24px 28px!important;
   background:var(--shell-bg)!important;
   color:var(--shell-text)!important;
-  overflow-x:hidden;
+  overflow:auto;
+  z-index:210;
 }
+#page-vjm.hidden,
 #page-gente.hidden{display:none!important}
+#page-vjm .kpi,
+#page-vjm .chart-card,
+#page-vjm .table-wrap{
+  background:#fff!important;
+  border:1px solid var(--shell-border)!important;
+  box-shadow:var(--shell-shadow)!important;
+  color:var(--shell-text)!important;
+}
+#page-vjm h2,
+#page-vjm h3,
+#page-vjm .kpi-value{
+  color:var(--shell-text)!important;
+}
+#page-vjm p,
+#page-vjm .kpi-label{
+  color:var(--shell-muted)!important;
+}
+#page-vjm input,
+#page-vjm select,
+#page-vjm textarea{
+  background:#fff!important;
+  border-color:#d9e1ec!important;
+  color:#0f172a!important;
+  color-scheme:light;
+}
 #page-gente .smart-tabs{
   display:flex;
   gap:10px;
@@ -778,13 +811,22 @@ body.sidebar-collapsed #app .header-actions-row>.btn::before{content:'↩';font-
 #page-gente #gente-org-content{
   height:calc(100vh - 270px)!important;
 }
+body.sidebar-collapsed #page-vjm,
 body.sidebar-collapsed #page-gente{
-  margin-left:var(--sidebar-width)!important;
+  left:var(--sidebar-width)!important;
 }
 @media(max-width:860px){
+  #page-vjm,
   #page-gente{
+    position:relative!important;
+    top:auto;
+    left:auto;
+    right:auto;
+    bottom:auto;
     margin:0!important;
+    min-height:100vh;
     padding:18px 14px!important;
+    overflow:visible;
   }
   #page-gente .smart-tab{
     flex:1 1 calc(50% - 8px);
@@ -3996,6 +4038,12 @@ function renderRedeSubNav() {
 }
 
 // ---- PAGE NAV ----
+function resetPageScroll(page) {
+  try { window.scrollTo({top:0, left:0, behavior:'auto'}); } catch(e) { window.scrollTo(0,0); }
+  const currentPage = page ? document.getElementById(`page-${page}`) : null;
+  if (currentPage) currentPage.scrollTop = 0;
+}
+
 function showStartPage() {
   document.getElementById('page-start')?.classList.remove('hidden');
   document.getElementById('page-home')?.classList.add('hidden');
@@ -4014,6 +4062,7 @@ function showStartPage() {
   setText('page-title', 'FINANCE');
   setText('topbar-title', 'FINANCE');
   setText('topbar-subtitle', '');
+  resetPageScroll('start');
 }
 
 function showPage(page) {
@@ -4072,6 +4121,7 @@ function showPage(page) {
   if (page === 'prazos') renderPrazoApprovals();
   if (page === 'credit') renderCreditPage();
   if (page === 'gente') genteInit();
+  requestAnimationFrame(() => resetPageScroll(page));
 }
 
 // ---- EXECUTIVE DASHBOARD ----
