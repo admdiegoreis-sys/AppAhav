@@ -2736,18 +2736,20 @@ function updateKPIs() {
   const atr = base.filter(a => statusCalculado(a) === 'Atrasado').length;
   const alta = base.filter(a => a.prioridade === 'Alta' && statusCalculado(a) !== 'Concluído').length;
 
-  document.getElementById('kpi-total').textContent = total;
-  document.getElementById('kpi-concluidas').textContent = conc;
-  document.getElementById('kpi-pct').textContent = total ? Math.round(conc/total*100) + '% do total' : '';
-  document.getElementById('kpi-andamento').textContent = and;
-  document.getElementById('kpi-atrasadas').textContent = atr;
-  document.getElementById('kpi-alta').textContent = alta;
+  setText('kpi-total', total);
+  setText('kpi-concluidas', conc);
+  setText('kpi-pct', total ? Math.round(conc/total*100) + '% do total' : '');
+  setText('kpi-andamento', and);
+  setText('kpi-atrasadas', atr);
+  setText('kpi-alta', alta);
 
   const atrasAlta = base.filter(a => statusCalculado(a) === 'Atrasado' && a.prioridade === 'Alta');
   const box = document.getElementById('alert-box');
+  const list = document.getElementById('alert-list');
+  if (!box || !list) return;
   if (atrasAlta.length) {
     box.classList.remove('hidden');
-    document.getElementById('alert-list').textContent = atrasAlta.map(a => a.oque).join(' • ');
+    list.textContent = atrasAlta.map(a => a.oque).join(' • ');
   } else box.classList.add('hidden');
 }
 
