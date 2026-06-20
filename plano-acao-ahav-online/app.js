@@ -635,11 +635,14 @@ const modalSchemas = {
           if (item.id !== editingAppointmentId) return item;
           return { ...item, ...values, notes: appendNote(values.notes || item.notes, "Remarcação") };
         });
-        if (values.date) {
-          state.leads = state.leads.map((lead) =>
-            lead.linkedAppointmentId === editingAppointmentId ? { ...lead, visitDate: values.date } : lead
-          );
-        }
+        state.leads = state.leads.map((lead) => {
+          if (lead.linkedAppointmentId !== editingAppointmentId) return lead;
+          const updated = values.date ? { ...lead, visitDate: values.date } : lead;
+          if (values.status === "Visita realizada" && !["Matriculado", "Perdido"].includes(lead.status)) {
+            return { ...updated, status: "Visita realizada" };
+          }
+          return updated;
+        });
       } else {
         state.appointments.push({ id: uid("a"), ...values });
       }
