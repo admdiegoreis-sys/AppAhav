@@ -3128,22 +3128,7 @@ function saveScheduleVisit() {
     return;
   }
 
-  let student = state.students.find((item) => normalizedText(item.name) === normalizedText(lead.name) || item.id === lead.linkedStudentId);
-  const studentId = student?.id || uid("s");
-  if (!student) {
-    state.students.push(normalizeStudent({
-      id: studentId,
-      name: lead.name,
-      email: lead.email,
-      phone: lead.phone,
-      plan: "Experimental",
-      status: "Ativo",
-      membership: "Avulsa",
-      origin: lead.origin,
-      registrationDate: demoToday,
-      commercialNotes: lead.notes,
-    }, state.students.length));
-  }
+  const studentId = lead.linkedStudentId || "";
 
   const appointment = {
     id: uid("a"),
@@ -3151,6 +3136,7 @@ function saveScheduleVisit() {
     time,
     endTime,
     studentId,
+    leadId: lead.id,
     teacherId: profId,
     room,
     type: lead.interest === "Outro" ? "Pilates" : (lead.interest || "Pilates"),
@@ -3161,7 +3147,7 @@ function saveScheduleVisit() {
 
   lead.status = "Visita agendada";
   lead.visitDate = date;
-  lead.linkedStudentId = studentId;
+  if (studentId) lead.linkedStudentId = studentId;
   lead.linkedAppointmentId = appointment.id;
   lead.history = `${lead.history || ""}\nExperimental agendada para ${dateLabel(date)} às ${time}.`.trim();
 
@@ -3295,13 +3281,20 @@ function renderCalendarGrid(days) {
   `;
 }
 
+function appointmentPersonName(item) {
+  if (item.studentId) return studentName(item.studentId);
+  if (item.leadId) return state.leads.find(l => l.id === item.leadId)?.name || "Lead";
+  return "Sem aluno";
+}
+
 function renderCalendarEvent(item) {
   const relatedStudent = student(item.studentId);
   const relatedProfessional = professional(item.teacherId);
+  const personName = appointmentPersonName(item);
   return `
-    <article class="calendar-event ${statusClass(item.status)}" style="${relatedProfessional?.color ?`background:${relatedProfessional.color}` : ""}" data-action="reschedule" data-id="${item.id}" title="Editar/remarcar ${item.type} - ${studentName(item.studentId)}">
+    <article class="calendar-event ${statusClass(item.status)}" style="${relatedProfessional?.color ?`background:${relatedProfessional.color}` : ""}" data-action="reschedule" data-id="${item.id}" title="Editar/remarcar ${item.type} - ${personName}">
       <span>${item.time} - ${item.endTime}</span>
-      <strong>${studentName(item.studentId).toUpperCase()}</strong>
+      <strong>${personName.toUpperCase()}</strong>
       <small>${professionalName(item.teacherId)} · ${relatedStudent?.plan ?? item.sessionKind}</small>
       <button class="cal-event-delete" data-action="delete-appointment" data-id="${item.id}" type="button" title="Excluir agendamento" aria-label="Excluir agendamento">×</button>
     </article>
