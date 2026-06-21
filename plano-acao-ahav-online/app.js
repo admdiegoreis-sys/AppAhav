@@ -6082,10 +6082,12 @@ function updateEnrollmentPlanOptions(form) {
   const selected = planSelect.value;
   let plans = plansForModality(modalityId);
   if (planType) plans = plans.filter((item) => planTypeLabel(item.type) === planTypeLabel(planType));
+  const isOptionalPlan = planSelect.closest("form")?.dataset.type === "student";
+  const emptyOpt = isOptionalPlan ? `<option value="">Sem plano</option>` : "";
   planSelect.innerHTML = plans.length
-    ? plans.map((item) => `<option value="${item.id}">${escapeHtml(displayName(item.name))}</option>`).join("")
+    ? emptyOpt + plans.map((item) => `<option value="${item.id}">${escapeHtml(displayName(item.name))}</option>`).join("")
     : `<option value="">Nenhum plano para este tipo</option>`;
-  planSelect.value = plans.some((item) => item.id === selected) ? selected : plans[0]?.id || "";
+  planSelect.value = plans.some((item) => item.id === selected) ? selected : (isOptionalPlan ? "" : plans[0]?.id || "");
 }
 
 function applyEnrollmentPlanDefaults(form, overwrite = true) {
