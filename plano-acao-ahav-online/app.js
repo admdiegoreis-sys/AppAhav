@@ -3287,14 +3287,18 @@ function renderCalendarGrid(days) {
 
 function updateLeadAfterVisit(appointment) {
   if (!appointment?.id) return;
+  let updated = 0;
   state.leads = state.leads.map((lead) => {
     const byAppointmentId = lead.linkedAppointmentId && lead.linkedAppointmentId === appointment.id;
     const byLeadId = appointment.leadId && appointment.leadId === lead.id;
     const byStudent = appointment.studentId && appointment.studentId === lead.linkedStudentId;
+    console.log("[updateLeadAfterVisit]", { leadId: lead.id, leadName: lead.name, leadStatus: lead.status, linkedAppointmentId: lead.linkedAppointmentId, appointmentId: appointment.id, appointmentLeadId: appointment.leadId, appointmentStudentId: appointment.studentId, linkedStudentId: lead.linkedStudentId, byAppointmentId, byLeadId, byStudent });
     if (!byAppointmentId && !byLeadId && !byStudent) return lead;
     if (["Matriculado", "Perdido"].includes(lead.status)) return lead;
+    updated++;
     return { ...lead, status: "Visita realizada" };
   });
+  console.log("[updateLeadAfterVisit] leads atualizados:", updated);
 }
 
 function appointmentPersonName(item) {
