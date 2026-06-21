@@ -631,18 +631,22 @@ const modalSchemas = {
     ],
     handler: (values) => {
       if (editingAppointmentId) {
+        let savedAppointment = null;
         state.appointments = state.appointments.map((item) => {
           if (item.id !== editingAppointmentId) return item;
-          return { ...item, ...values, notes: appendNote(values.notes || item.notes, "Remarcação") };
+          savedAppointment = { ...item, ...values, notes: appendNote(values.notes || item.notes, "Remarcação") };
+          return savedAppointment;
         });
-        state.leads = state.leads.map((lead) => {
-          if (lead.linkedAppointmentId !== editingAppointmentId) return lead;
-          const updated = values.date ? { ...lead, visitDate: values.date } : lead;
-          if (values.status === "Visita realizada" && !["Matriculado", "Perdido"].includes(lead.status)) {
-            return { ...updated, status: "Visita realizada" };
-          }
-          return updated;
-        });
+        if (values.date) {
+          state.leads = state.leads.map((lead) =>
+            (lead.linkedAppointmentId === editingAppointmentId || savedAppointment?.leadId === lead.id)
+              ? { ...lead, visitDate: values.date }
+              : lead
+          );
+        }
+        if (values.status === "Visita realizada" && savedAppointment) {
+          updateLeadAfterVisit(savedAppointment);
+        }
       } else {
         state.appointments.push({ id: uid("a"), ...values });
       }
@@ -3279,6 +3283,14 @@ function renderCalendarGrid(days) {
       })
       .join("")}
   `;
+}
+
+function updateLeadAfterVisit(appointment) {
+  state.leads = state.leads.map((lead) => {
+    const linked = lead.linkedAppointmentId === appointment.id || appointment.leadId === lead.id;
+    if (!linked || ["Matriculado", "Perdido"].includes(lead.status)) return lead;
+    return { ...lead, status: "Visita realizada" };
+  });
 }
 
 function appointmentPersonName(item) {
@@ -6534,11 +6546,7 @@ document.addEventListener("click", (event) => {
       appointment.status = "Visita realizada";
       const relatedStudent = state.students.find((item) => item.id === appointment.studentId);
       if (relatedStudent) relatedStudent.lastPresence = appointment.date;
-      state.leads = state.leads.map((lead) =>
-        lead.linkedAppointmentId === appointment.id && !["Matriculado", "Perdido"].includes(lead.status)
-          ? { ...lead, status: "Visita realizada" }
-          : lead
-      );
+      updateLeadAfterVisit(appointment);
     }
     if (scheduleAction.dataset.action === "missed" && appointment) {
       appointment.status = "Faltou";
