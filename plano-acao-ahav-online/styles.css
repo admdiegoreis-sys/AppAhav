@@ -3389,6 +3389,34 @@ td.row-actions .row-action-button:last-child {
   border-radius: 6px;
   padding: 6px 10px 4px;
 }
+.modal-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--line);
+  margin-bottom: 4px;
+}
+.modal-tab {
+  padding: 8px 18px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+  transition: color .15s, border-color .15s;
+}
+.modal-tab.active {
+  color: var(--accent, #3b7fd4);
+  border-bottom-color: var(--accent, #3b7fd4);
+}
+.modal-tab-panel {
+  display: none;
+}
+.modal-tab-panel.active {
+  display: contents;
+}
 
 .form-grid label,
 .modal-body label {
