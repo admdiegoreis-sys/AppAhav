@@ -3286,9 +3286,13 @@ function renderCalendarGrid(days) {
 }
 
 function updateLeadAfterVisit(appointment) {
+  if (!appointment?.id) return;
   state.leads = state.leads.map((lead) => {
-    const linked = lead.linkedAppointmentId === appointment.id || appointment.leadId === lead.id;
-    if (!linked || ["Matriculado", "Perdido"].includes(lead.status)) return lead;
+    const byAppointmentId = lead.linkedAppointmentId && lead.linkedAppointmentId === appointment.id;
+    const byLeadId = appointment.leadId && appointment.leadId === lead.id;
+    const byStudent = appointment.studentId && appointment.studentId === lead.linkedStudentId;
+    if (!byAppointmentId && !byLeadId && !byStudent) return lead;
+    if (["Matriculado", "Perdido"].includes(lead.status)) return lead;
     return { ...lead, status: "Visita realizada" };
   });
 }
