@@ -6058,7 +6058,29 @@ function openModal(type, values = {}) {
   document.querySelector("#modalTitle").textContent = schema.title;
   form.dataset.type = type;
   const fields = schema.fields.map((field) => ({ ...field, value: values[field.name] ?? field.value }));
-  form.innerHTML = [...fields.map(renderField), `<button class="primary-button" type="submit">${schema.submit}</button>`].join("");
+  if (type === "student") {
+    const dataFields = fields.filter((f) => !f.enroll && f.name !== "_henroll");
+    const enrollFields = fields.filter((f) => f.enroll && f.name !== "_henroll");
+    form.innerHTML = `
+      <div class="modal-tabs">
+        <button type="button" class="modal-tab active" data-modal-tab="data">Dados do aluno</button>
+        <button type="button" class="modal-tab" data-modal-tab="enroll">Matrícula</button>
+      </div>
+      <div class="modal-tab-panel active" data-modal-tab-panel="data">${dataFields.map(renderField).join("")}</div>
+      <div class="modal-tab-panel" data-modal-tab-panel="enroll">${enrollFields.map(renderField).join("")}</div>
+      <button class="primary-button" type="submit">${schema.submit}</button>
+    `;
+    form.querySelectorAll(".modal-tab").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        form.querySelectorAll(".modal-tab").forEach((b) => b.classList.remove("active"));
+        form.querySelectorAll(".modal-tab-panel").forEach((p) => p.classList.remove("active"));
+        btn.classList.add("active");
+        form.querySelector(`[data-modal-tab-panel="${btn.dataset.modalTab}"]`)?.classList.add("active");
+      });
+    });
+  } else {
+    form.innerHTML = [...fields.map(renderField), `<button class="primary-button" type="submit">${schema.submit}</button>`].join("");
+  }
   if (type === "enrollment" || type === "student") {
     updateEnrollmentPlanOptions(form);
     applyEnrollmentPlanDefaults(form, false);
