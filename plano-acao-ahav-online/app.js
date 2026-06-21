@@ -6677,6 +6677,10 @@ document.querySelector("#modalForm").addEventListener("input", (event) => {
 
 document.querySelector("#modalForm").addEventListener("change", (event) => {
   const form = event.currentTarget;
+  if (["appointment", "block"].includes(form.dataset.type) && event.target.name === "time" && form.elements.endTime) {
+    form.elements.endTime.value = addOneHour(event.target.value);
+    return;
+  }
   if (["enrollment", "student"].includes(form.dataset.type) && ["modalityId", "planType"].includes(event.target.name)) {
     updateEnrollmentPlanOptions(form);
     applyEnrollmentPlanDefaults(form, true);
