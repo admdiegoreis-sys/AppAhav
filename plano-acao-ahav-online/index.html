@@ -840,29 +840,17 @@ body.sidebar-collapsed #app .header-actions-row>.btn::before{content:'↩';font-
   height:calc(100vh - 270px)!important;
 }
 #page-gente .gente-profile-card{
-  background:transparent!important;
-  border:0!important;
-  box-shadow:none!important;
-  padding:10px 6px!important;
+  background:#fff!important;
+  border-top:0!important;
+  border-right:1px solid #e5e7eb!important;
+  border-bottom:1px solid #e5e7eb!important;
+  box-shadow:0 2px 8px rgba(15,23,42,.06)!important;
+  padding:0!important;
+  overflow:hidden!important;
 }
 #page-gente .gente-profile-card:hover{
-  transform:none!important;
-  box-shadow:none!important;
-}
-#page-gente .gente-profile-badge{
-  display:inline-flex!important;
-  align-items:center;
-  justify-content:center;
-  max-width:100%;
-  background:#e5e7eb!important;
-  border:1px solid #cbd5e1!important;
-  color:#475569!important;
-  border-radius:999px!important;
-  padding:4px 12px!important;
-  font-size:11px!important;
-  font-weight:800!important;
-  line-height:1.2;
-  white-space:nowrap;
+  box-shadow:0 6px 18px rgba(15,23,42,.10)!important;
+  transform:translateY(-1px)!important;
 }
 #page-gente .gente-profile-name{
   color:#0f172a!important;
@@ -7316,37 +7304,43 @@ function genteRenderPessoas() {
   el.innerHTML = `
     <div style="overflow-x:auto">
     <table style="width:100%;border-collapse:collapse;font-size:13px">
-      <thead><tr style="border-bottom:2px solid #334155">
-        <th style="text-align:left;padding:10px 12px;color:#64748b">Nome</th>
-        <th style="text-align:left;padding:10px 12px;color:#64748b">Empresa</th>
-        <th style="text-align:left;padding:10px 12px;color:#64748b">Cargo</th>
-        <th style="text-align:left;padding:10px 12px;color:#64748b">Área</th>
-        <th style="text-align:left;padding:10px 12px;color:#64748b">Líder</th>
-        <th style="text-align:left;padding:10px 12px;color:#64748b">Perfil DISC</th>
-        <th style="text-align:center;padding:10px 12px;color:#ef4444">D</th>
-        <th style="text-align:center;padding:10px 12px;color:#eab308">I</th>
-        <th style="text-align:center;padding:10px 12px;color:#22c55e">S</th>
-        <th style="text-align:center;padding:10px 12px;color:#38bdf8">C</th>
+      <thead><tr style="border-bottom:2px solid #e5e7eb">
+        <th style="text-align:left;padding:10px 12px;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.5px">Nome</th>
+        <th style="text-align:left;padding:10px 12px;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.5px">Empresa</th>
+        <th style="text-align:left;padding:10px 12px;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.5px">Cargo</th>
+        <th style="text-align:left;padding:10px 12px;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.5px">Área</th>
+        <th style="text-align:left;padding:10px 12px;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.5px">Líder</th>
+        <th style="text-align:left;padding:10px 12px;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.5px">Perfil DISC</th>
+        <th style="text-align:center;padding:10px 12px;color:#ef4444;font-size:12px;font-weight:800">D</th>
+        <th style="text-align:center;padding:10px 12px;color:#ca8a04;font-size:12px;font-weight:800">I</th>
+        <th style="text-align:center;padding:10px 12px;color:#16a34a;font-size:12px;font-weight:800">S</th>
+        <th style="text-align:center;padding:10px 12px;color:#0284c7;font-size:12px;font-weight:800">C</th>
         <th style="padding:10px 12px"></th>
       </tr></thead>
       <tbody>
-        ${pessoas.map(({p,index}) => `
-          <tr style="border-bottom:1px solid #1e293b;cursor:pointer" onclick="genteOpenPessoaModal(${index})">
-            <td style="padding:10px 12px;color:#e2e8f0;font-weight:500">${p.nome}</td>
-            <td style="padding:10px 12px;color:#94a3b8">${p.empresa||'Ahav'}</td>
-            <td style="padding:10px 12px;color:#94a3b8">${p.cargo||'—'}</td>
-            <td style="padding:10px 12px;color:#94a3b8">${p.area||'—'}</td>
-            <td style="padding:10px 12px;color:#94a3b8">${p.lider||'—'}</td>
+        ${pessoas.map(({p,index}) => {
+          const vals2 = {D:p.D||0,I:p.I||0,S:p.S||0,C:p.C||0};
+          const mx2 = Math.max(...Object.values(vals2));
+          const dk2 = Object.keys(vals2).filter(k=>vals2[k]>=mx2-5);
+          const dc2 = {D:'#ef4444',I:'#ca8a04',S:'#16a34a',C:'#0284c7'};
+          const bc2 = dk2.length===1 ? dc2[dk2[0]] : '#94a3b8';
+          return `
+          <tr style="border-bottom:1px solid #f1f5f9;cursor:pointer;transition:background .15s" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''" onclick="genteOpenPessoaModal(${index})">
+            <td style="padding:10px 12px;color:#0f172a;font-weight:600;border-left:3px solid ${bc2}">${p.nome}</td>
+            <td style="padding:10px 12px;color:#475569;font-size:13px">${p.empresa||'Ahav'}</td>
+            <td style="padding:10px 12px">${genteCargoBadge(p.cargo)}</td>
+            <td style="padding:10px 12px;color:#475569;font-size:13px">${p.area||'—'}</td>
+            <td style="padding:10px 12px;color:#475569;font-size:13px">${p.lider||'—'}</td>
             <td style="padding:10px 12px">
-              <span style="background:#1e293b;border-radius:20px;padding:3px 10px;font-size:12px;color:#e2e8f0">${p.perfil||'—'}</span>
+              <span style="background:${bc2}15;border:1px solid ${bc2}40;border-radius:20px;padding:3px 10px;font-size:11px;color:${bc2};font-weight:700">${p.perfil||'—'}</span>
             </td>
-            <td style="text-align:center;padding:10px 8px;color:#ef4444;font-weight:600">${p.D||'—'}</td>
-            <td style="text-align:center;padding:10px 8px;color:#eab308;font-weight:600">${p.I||'—'}</td>
-            <td style="text-align:center;padding:10px 8px;color:#22c55e;font-weight:600">${p.S||'—'}</td>
-            <td style="text-align:center;padding:10px 8px;color:#38bdf8;font-weight:600">${p.C||'—'}</td>
+            <td style="text-align:center;padding:10px 8px;color:#ef4444;font-weight:700">${p.D||'—'}</td>
+            <td style="text-align:center;padding:10px 8px;color:#ca8a04;font-weight:700">${p.I||'—'}</td>
+            <td style="text-align:center;padding:10px 8px;color:#16a34a;font-weight:700">${p.S||'—'}</td>
+            <td style="text-align:center;padding:10px 8px;color:#0284c7;font-weight:700">${p.C||'—'}</td>
             <td style="padding:10px 8px"><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();genteOpenPessoaModal(${index})">✏️</button></td>
-          </tr>
-        `).join('')}
+          </tr>`;
+        }).join('')}
       </tbody>
     </table>
     </div>`;
@@ -7457,15 +7451,15 @@ function genteRenderDisc() {
         return `
         <div class="chart-card gente-profile-card" style="padding:0;display:flex;flex-direction:column;gap:0;border-left:4px solid ${domColor};overflow:hidden">
           <!-- cabeçalho colorido -->
-          <div style="background:${domColor}18;padding:14px 16px 12px;border-bottom:1px solid ${domColor}30">
+          <div style="background:${domColor}12;padding:14px 16px 12px;border-bottom:2px solid ${domColor}30">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
               <div style="flex:1;min-width:0">
-                <div style="font-weight:700;color:#f1f5f9;font-size:15px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${p.nome}">${abbreviateName(p.nome)}</div>
-                <div style="color:#94a3b8;font-size:12px;margin-top:3px">${p.cargo||''}${p.cargo&&p.funcao?' · ':''}${p.funcao||''}</div>
+                <div style="font-weight:700;color:#0f172a;font-size:15px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${p.nome}">${abbreviateName(p.nome)}</div>
+                <div style="color:#475569;font-size:12px;margin-top:3px">${p.cargo||''}${p.cargo&&p.funcao?' · ':''}${p.funcao||''}</div>
               </div>
               <div style="text-align:right;flex-shrink:0;display:flex;flex-direction:column;gap:4px;align-items:flex-end">
-                <span style="background:${domColor}25;color:${domColor};border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;white-space:nowrap">${p.fator||''}</span>
-                ${p.feedback_tipo ? `<span style="background:${ftColor}20;border-radius:20px;padding:2px 8px;font-size:10px;color:${ftColor};font-weight:700">${p.feedback_tipo}</span>` : ''}
+                <span style="background:${domColor}20;color:${domColor};border:1px solid ${domColor}40;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;white-space:nowrap">${p.fator||''}</span>
+                ${p.feedback_tipo ? `<span style="background:${ftColor}15;border:1px solid ${ftColor}35;border-radius:20px;padding:2px 8px;font-size:10px;color:${ftColor};font-weight:700">${p.feedback_tipo}</span>` : ''}
               </div>
             </div>
           </div>
@@ -7479,7 +7473,7 @@ function genteRenderDisc() {
                 const isMax = val === maxVal;
                 return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
                   <div style="font-size:11px;color:${color};font-weight:${isMax?'800':'600'}">${val}%</div>
-                  <div style="width:100%;background:${color};border-radius:3px 3px 0 0;height:${Math.round(val*0.55)}px;min-height:4px;opacity:${isMax?1:0.55}"></div>
+                  <div style="width:100%;background:${color};border-radius:3px 3px 0 0;height:${Math.round(val*0.55)}px;min-height:4px;opacity:${isMax?1:0.5}"></div>
                   <div style="font-size:12px;font-weight:700;color:${color}">${k}</div>
                 </div>`;
               }).join('')}
@@ -7488,17 +7482,17 @@ function genteRenderDisc() {
             <div style="font-weight:700;color:${domColor};font-size:14px">${p.perfil||''}</div>
             <!-- grid de métricas -->
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px">
-              ${p.medo  ? `<div style="background:#0f172a;border:1px solid #ef444430;border-radius:6px;padding:7px 8px"><div style="color:#64748b;margin-bottom:3px">Medo básico</div><div style="color:#fca5a5;font-weight:600">${p.medo}</div></div>` : ''}
-              ${p.motiv ? `<div style="background:#0f172a;border:1px solid #22c55e30;border-radius:6px;padding:7px 8px"><div style="color:#64748b;margin-bottom:3px">Motivação</div><div style="color:#86efac;font-weight:600">${p.motiv}</div></div>` : ''}
-              ${p.valor ? `<div style="background:#0f172a;border:1px solid #33415530;border-radius:6px;padding:7px 8px"><div style="color:#64748b;margin-bottom:3px">Valor p/ org.</div><div style="color:#cbd5e1">${p.valor}</div></div>` : ''}
-              ${p.vendas? `<div style="background:#0f172a;border:1px solid #33415530;border-radius:6px;padding:7px 8px"><div style="color:#64748b;margin-bottom:3px">Vendas</div><div style="color:#cbd5e1">${p.vendas}</div></div>` : ''}
+              ${p.medo  ? `<div style="background:#fff5f5;border:1px solid #fca5a560;border-radius:6px;padding:7px 8px"><div style="color:#94a3b8;margin-bottom:3px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Medo básico</div><div style="color:#dc2626;font-weight:600">${p.medo}</div></div>` : ''}
+              ${p.motiv ? `<div style="background:#f0fdf4;border:1px solid #86efac60;border-radius:6px;padding:7px 8px"><div style="color:#94a3b8;margin-bottom:3px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Motivação</div><div style="color:#16a34a;font-weight:600">${p.motiv}</div></div>` : ''}
+              ${p.valor ? `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:7px 8px"><div style="color:#94a3b8;margin-bottom:3px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Valor p/ org.</div><div style="color:#334155">${p.valor}</div></div>` : ''}
+              ${p.vendas? `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:7px 8px"><div style="color:#94a3b8;margin-bottom:3px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Vendas</div><div style="color:#334155">${p.vendas}</div></div>` : ''}
             </div>
             <!-- comunicação -->
-            ${p.comunicacao ? `<div style="background:#0f172a;border:1px solid #33415540;border-radius:6px;padding:7px 8px;font-size:11px"><div style="color:#94a3b8;margin-bottom:3px;font-weight:600">💬 Como se comunicar</div><div style="color:#cbd5e1;line-height:1.5">${p.comunicacao}</div></div>` : ''}
+            ${p.comunicacao ? `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;font-size:11px"><div style="color:#475569;margin-bottom:3px;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.4px">💬 Como se comunicar</div><div style="color:#334155;line-height:1.6">${p.comunicacao}</div></div>` : ''}
             <!-- dica de feedback -->
-            ${p.feedback_dica ? `<div style="background:${ftColor}0e;border:1px solid ${ftColor}35;border-radius:6px;padding:7px 8px;font-size:11px"><div style="color:${ftColor};font-weight:700;margin-bottom:3px">Feedback ${p.feedback_tipo||''}</div><div style="color:#cbd5e1;line-height:1.5">${p.feedback_dica}</div></div>` : ''}
+            ${p.feedback_dica ? `<div style="background:${ftColor}08;border:1px solid ${ftColor}30;border-radius:6px;padding:8px 10px;font-size:11px"><div style="color:${ftColor};font-weight:700;margin-bottom:3px;font-size:10px;text-transform:uppercase;letter-spacing:.4px">Feedback ${p.feedback_tipo||''}</div><div style="color:#475569;line-height:1.6">${p.feedback_dica}</div></div>` : ''}
             <!-- anotações -->
-            ${p.notas ? `<div style="font-size:11px;color:#64748b;border-top:1px solid #1e293b;padding-top:8px">${p.notas}</div>` : ''}
+            ${p.notas ? `<div style="font-size:11px;color:#64748b;border-top:1px solid #e5e7eb;padding-top:8px">${p.notas}</div>` : ''}
           </div>
         </div>`;
       }).join('')}
@@ -7813,7 +7807,7 @@ function genteRenderIndicadores() {
   const d    = genteIndGetMes(mes);
   const teamOk = d.resultadoColetivo / d.metaColetiva >= 0.9;
   const fmt = v => v.toLocaleString('pt-BR', {style:'currency', currency:'BRL', maximumFractionDigits:0});
-  const INP = 'background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;padding:4px 8px;font-size:12px';
+  const INP = 'background:#fff;border:1px solid #d1d5db;border-radius:6px;color:#0f172a;padding:4px 8px;font-size:12px';
 
   const pessoas = genteFilterPessoas(genteLoadPessoas());
   const funcaoOpts = ['', ...Object.keys(GENTE_IND_TEMPLATES)].map(f =>
@@ -7838,23 +7832,23 @@ function genteRenderIndicadores() {
         ? `<input class="gind-realiz" data-id="${o.id}" type="number" min="0" max="1" value="${ating}" oninput="genteIndLiveUpdate(this)" style="${INP};width:52px;text-align:center" placeholder="0/1">`
         : `<input class="gind-realiz" data-id="${o.id}" type="number" min="0" max="150" value="${ating}" oninput="genteIndLiveUpdate(this)" style="${INP};width:64px;text-align:center" placeholder="%">`;
       const extraRow = o.vlrExtra ? `
-        <tr style="background:#0f172a22">
+        <tr style="background:#f5f3ff">
           <td colspan="3" style="padding:4px 8px 4px 20px;color:#64748b;font-size:11px;font-style:italic">↳ Extra: ${o.extra}</td>
           <td style="padding:4px 8px;text-align:center">
             <label style="display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer">
               <input class="gind-extra-chk" data-id="${o.id}" type="checkbox" ${pd.extras[o.id]?'checked':''} onchange="genteIndLiveUpdate(this)">
-              <span style="font-size:11px;color:#a78bfa">+${fmt(o.vlrExtra)}</span>
+              <span style="font-size:11px;color:#7c3aed;font-weight:700">+${fmt(o.vlrExtra)}</span>
             </label>
           </td>
-          <td class="gind-bonus-obj" data-id="${o.id}" style="padding:4px 8px;text-align:right;color:#a78bfa;font-size:11px;font-weight:600">${fmt(bonus+extraBonus)}</td>
+          <td class="gind-bonus-obj" data-id="${o.id}" style="padding:4px 8px;text-align:right;color:#7c3aed;font-size:11px;font-weight:700">${fmt(bonus+extraBonus)}</td>
         </tr>` : '';
-      return `<tr style="border-bottom:1px solid #1e293b">
-        <td style="padding:7px 8px;color:#e2e8f0;font-size:12px">${o.obj}</td>
+      return `<tr style="border-bottom:1px solid #f1f5f9">
+        <td style="padding:7px 8px;color:#0f172a;font-size:12px;font-weight:500">${o.obj}</td>
         <td style="padding:7px 8px;color:#64748b;font-size:11px">${o.meta}</td>
         <td style="padding:7px 8px;text-align:center;color:#94a3b8;font-size:11px">${o.peso>0?(o.peso*100).toFixed(0)+'%':'—'}</td>
         <td style="padding:4px 8px;text-align:center">${realizInput}</td>
         <td class="gind-ating-obj" data-id="${o.id}" style="padding:7px 8px;text-align:center;font-weight:700;font-size:12px;color:${pctColor}">${pctLabel}</td>
-        <td class="gind-bonus-obj" data-id="${o.id}" style="padding:7px 8px;text-align:right;color:#22c55e;font-weight:700;font-size:12px">${fmt(bonus+extraBonus)}</td>
+        <td class="gind-bonus-obj" data-id="${o.id}" style="padding:7px 8px;text-align:right;color:#16a34a;font-weight:700;font-size:12px">${fmt(bonus+extraBonus)}</td>
       </tr>${o.vlrExtra?extraRow:''}`;
     }).join('') : `<tr><td colspan="6" style="padding:16px;text-align:center;color:#475569;font-size:12px">Selecione a função para ver os objetivos</td></tr>`;
 
@@ -7864,36 +7858,43 @@ function genteRenderIndicadores() {
       ).join('')}
     </select>`;
 
-    return `<div class="chart-card gind-pessoa" data-nome="${p.nome}" style="margin-bottom:16px;padding:16px">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+    const vals3 = {D:p.D||0,I:p.I||0,S:p.S||0,C:p.C||0};
+    const mx3 = Math.max(...Object.values(vals3));
+    const dk3 = Object.keys(vals3).filter(k=>vals3[k]>=mx3-5);
+    const dc3 = {D:'#ef4444',I:'#ca8a04',S:'#16a34a',C:'#0284c7'};
+    const bc3 = dk3.length===1 ? dc3[dk3[0]] : '#94a3b8';
+    return `<div class="chart-card gind-pessoa" data-nome="${p.nome}" style="margin-bottom:16px;padding:0;overflow:hidden;border-left:4px solid ${bc3}">
+      <div style="background:${bc3}10;padding:14px 16px 12px;border-bottom:1px solid ${bc3}25;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         <div style="flex:1;min-width:0">
-          <div style="font-weight:700;color:#e2e8f0;font-size:14px">${abbreviateName(p.nome)}</div>
-          <div style="color:#64748b;font-size:11px;margin-top:2px">${p.cargo||''}</div>
+          <div style="font-weight:700;color:#0f172a;font-size:14px">${abbreviateName(p.nome)}</div>
+          <div style="color:#475569;font-size:11px;margin-top:2px">${p.cargo||''}${p.cargo&&funcao?' · ':''}${funcao||''}</div>
         </div>
         ${funcaoSel}
         <div style="text-align:right">
-          <div style="font-size:10px;color:#64748b;margin-bottom:2px">Bônus total</div>
-          <div class="gind-total-val" style="font-size:18px;font-weight:800;color:#22c55e">${fmt(total)}</div>
+          <div style="font-size:10px;color:#64748b;margin-bottom:2px;text-transform:uppercase;letter-spacing:.4px">Bônus total</div>
+          <div class="gind-total-val" style="font-size:20px;font-weight:800;color:#16a34a">${fmt(total)}</div>
         </div>
       </div>
+      <div style="padding:14px 16px">
       ${tpl ? `<table style="width:100%;border-collapse:collapse">
-        <thead><tr style="border-bottom:2px solid #334155">
-          <th style="text-align:left;padding:6px 8px;color:#64748b;font-size:11px;font-weight:600">Objetivo</th>
-          <th style="text-align:left;padding:6px 8px;color:#64748b;font-size:11px;font-weight:600">Meta</th>
-          <th style="text-align:center;padding:6px 8px;color:#64748b;font-size:11px;font-weight:600">Peso</th>
-          <th style="text-align:center;padding:6px 8px;color:#64748b;font-size:11px;font-weight:600">Realização</th>
-          <th style="text-align:center;padding:6px 8px;color:#64748b;font-size:11px;font-weight:600">Ating.</th>
-          <th style="text-align:right;padding:6px 8px;color:#22c55e;font-size:11px;font-weight:600">Bônus</th>
+        <thead><tr style="border-bottom:2px solid #e5e7eb;background:#f8fafc">
+          <th style="text-align:left;padding:7px 8px;color:#64748b;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Objetivo</th>
+          <th style="text-align:left;padding:7px 8px;color:#64748b;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Meta</th>
+          <th style="text-align:center;padding:7px 8px;color:#64748b;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Peso</th>
+          <th style="text-align:center;padding:7px 8px;color:#64748b;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Realização</th>
+          <th style="text-align:center;padding:7px 8px;color:#64748b;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Ating.</th>
+          <th style="text-align:right;padding:7px 8px;color:#16a34a;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Bônus</th>
         </tr></thead>
         <tbody>${objRows}</tbody>
-        <tfoot><tr style="border-top:2px solid #334155">
-          <td colspan="5" style="padding:8px;font-size:10px;color:#475569">
+        <tfoot><tr style="border-top:2px solid #e5e7eb;background:#f8fafc">
+          <td colspan="5" style="padding:8px;font-size:10px;color:#64748b">
             Faixas: ≥90% → 100% bônus · 80–89% → 70% · &lt;80% → R$0
-            ${teamOk ? ' · <span style="color:#22c55e">✓ Bônus equipe ativo</span>' : ''}
+            ${teamOk ? ' · <span style="color:#16a34a;font-weight:700">✓ Bônus equipe ativo</span>' : ''}
           </td>
-          <td style="padding:8px;text-align:right;font-weight:800;color:#22c55e;font-size:14px">${fmt(total)}</td>
+          <td style="padding:8px;text-align:right;font-weight:800;color:#16a34a;font-size:14px">${fmt(total)}</td>
         </tr></tfoot>
       </table>` : ''}
+      </div>
     </div>`;
   }).join('');
 
@@ -7903,16 +7904,16 @@ function genteRenderIndicadores() {
   el.innerHTML = `
   <div style="display:flex;align-items:flex-end;gap:14px;margin-bottom:20px;flex-wrap:wrap">
     <div>
-      <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px">Mês de referência</label>
-      <input type="month" id="gind-mes" value="${mes}" onchange="genteRenderIndicadores()" style="background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:6px 10px;font-size:13px">
+      <label style="font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">Mês de referência</label>
+      <input type="month" id="gind-mes" value="${mes}" onchange="genteRenderIndicadores()" style="background:#fff;border:1px solid #d1d5db;border-radius:8px;color:#0f172a;padding:6px 10px;font-size:13px">
     </div>
     <div>
-      <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px">Meta Coletiva (%)</label>
-      <input type="number" id="gind-meta-col" value="${d.metaColetiva}" min="1" style="width:80px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:6px 10px;font-size:13px">
+      <label style="font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">Meta Coletiva (%)</label>
+      <input type="number" id="gind-meta-col" value="${d.metaColetiva}" min="1" style="width:80px;background:#fff;border:1px solid #d1d5db;border-radius:8px;color:#0f172a;padding:6px 10px;font-size:13px">
     </div>
     <div>
-      <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px">Resultado Coletivo (%)</label>
-      <input type="number" id="gind-res-col" value="${d.resultadoColetivo}" min="0" style="width:80px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:6px 10px;font-size:13px">
+      <label style="font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">Resultado Coletivo (%)</label>
+      <input type="number" id="gind-res-col" value="${d.resultadoColetivo}" min="0" style="width:80px;background:#fff;border:1px solid #d1d5db;border-radius:8px;color:#0f172a;padding:6px 10px;font-size:13px">
     </div>
     <span style="background:${teamOk?'#22c55e22':'#ef444422'};color:${teamOk?'#22c55e':'#ef4444'};border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700">
       Bônus Equipe: ${teamOk?'✓ Ativado':'✗ Não atingido'} (≥ 90%)
