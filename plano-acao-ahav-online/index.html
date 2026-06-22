@@ -1130,6 +1130,7 @@ body.sidebar-collapsed #page-gente{
   <div class="smart-section" id="smart-section-estoque">
     <div class="filters">
       <div class="filter-group"><label>Busca</label><input type="text" id="smart-estoque-busca" placeholder="Produto, código..." oninput="renderSmartStock()"></div>
+      <div class="filter-group"><label>Tipo</label><select id="smart-estoque-categoria" onchange="renderSmartStock()"></select></div>
       <div class="filter-group"><label>Status</label><select id="smart-estoque-status" onchange="renderSmartStock()"></select></div>
     </div>
     <div class="table-wrap"><div class="table-header"><h3>Controle de Estoque</h3></div><div style="overflow-x:auto"><table class="smart-table stock-table"><thead id="smart-estoque-head"></thead><tbody id="smart-estoque-body"></tbody></table></div></div>
@@ -5533,11 +5534,13 @@ function smartSignedCell(value, mode = 'signed') {
 
 function renderSmartStock() {
   const rowsBase = smartComputedStock();
+  fillSmartSelect('smart-estoque-categoria', smartUnique(rowsBase, 'Categoria'), 'Todos');
   fillSmartSelect('smart-estoque-status', smartUnique(rowsBase, 'Status Estoque'), 'Todos');
   const busca = (document.getElementById('smart-estoque-busca')?.value || '').toLowerCase();
+  const categoria = document.getElementById('smart-estoque-categoria')?.value || '';
   const status = document.getElementById('smart-estoque-status')?.value || '';
   const rows = rowsBase
-    .filter(p => (!status || p['Status Estoque'] === status) && JSON.stringify(p).toLowerCase().includes(busca))
+    .filter(p => (!categoria || p.Categoria === categoria) && (!status || p['Status Estoque'] === status) && JSON.stringify(p).toLowerCase().includes(busca))
     .map(p => ({
       ...p,
       'Produto ERP': String(p['Produto ERP'] || '').toUpperCase(),
