@@ -5567,6 +5567,7 @@ function renderSmartSales() {
     Cliente: smartClientLabel(v, clientDirectory),
     Data: smartFormatDate(v.Data),
     'Produto ERP': smartProductName(v.codprod, v['Produto ERP']),
+    'Valor Unitário': (()=>{ const vp=smartNum(v['Valor Produtos']), q=smartNum(v.Quantidade); return (q ? vp/q : 0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); })(),
     'Valor Produtos': smartNum(v['Valor Produtos']).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}),
     Descontos: smartNum(v['Descontos']).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}),
     'Valor Frete': smartNum(v['Valor Frete']).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}),
@@ -5600,10 +5601,10 @@ function renderSmartSales() {
   if (title) title.textContent = `Pedidos de Venda (${rows.length}/${baseRows.length})`;
   smartTable('smart-vendas-head', 'smart-vendas-body', rows, {
     limit:300,
-    headers:['Data','Nota','Cliente','codprod','Produto','Quantidade','Valor Produtos','Descontos','Valor Frete','Valor Total','Status','CFOP','Cadastro','Ações'],
+    headers:['Data','Nota','Cliente','codprod','Produto','Quantidade','Valor Unitário','Valor Produtos','Descontos','Valor Frete','Valor Total','Status','CFOP','Cadastro','Ações'],
     fieldMap:{'Produto':'Produto ERP'},
     htmlFields:['Cadastro','Ações'],
-    colWidths:{'Data':'80px','Nota':'60px','Cliente':'150px','codprod':'70px','Produto':'180px','Quantidade':'75px','Valor Produtos':'95px','Descontos':'85px','Valor Frete':'85px','Valor Total':'90px','Status':'90px','CFOP':'55px','Cadastro':'60px','Ações':'55px'}
+    colWidths:{'Data':'80px','Nota':'60px','Cliente':'140px','codprod':'70px','Produto':'170px','Quantidade':'70px','Valor Unitário':'85px','Valor Produtos':'90px','Descontos':'80px','Valor Frete':'80px','Valor Total':'85px','Status':'85px','CFOP':'55px','Cadastro':'60px','Ações':'55px'}
   });
 }
 
