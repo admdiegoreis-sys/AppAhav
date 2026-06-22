@@ -1806,11 +1806,16 @@ body.sidebar-collapsed #page-gente{
     <div class="modal-body">
       <input type="hidden" id="smart-sale-id">
       <div class="field"><label>Data</label><input type="date" id="smart-sale-data"></div>
-      <div class="field"><label>Cliente</label><input type="text" id="smart-sale-cliente"></div>
+      <div class="field"><label>Nota</label><input type="text" id="smart-sale-nota"></div>
+      <div class="field full"><label>Cliente</label><input type="text" id="smart-sale-cliente"></div>
       <div class="field full"><label>Produto</label><select id="smart-sale-produto"></select></div>
       <div class="field"><label>Quantidade</label><input type="text" inputmode="decimal" id="smart-sale-qtd"></div>
-      <div class="field"><label>Preço Unitário</label><input type="text" inputmode="decimal" id="smart-sale-preco"></div>
+      <div class="field"><label>Valor Produtos</label><input type="text" inputmode="decimal" id="smart-sale-vlrprod" oninput="recalcSmartSaleTotal()"></div>
+      <div class="field"><label>Descontos</label><input type="text" inputmode="decimal" id="smart-sale-desconto" oninput="recalcSmartSaleTotal()"></div>
+      <div class="field"><label>Valor Frete</label><input type="text" inputmode="decimal" id="smart-sale-frete" oninput="recalcSmartSaleTotal()"></div>
+      <div class="field"><label>Valor Total</label><input type="text" inputmode="decimal" id="smart-sale-total" readonly style="background:var(--bg-secondary,#f1f5f9);cursor:default"></div>
       <div class="field"><label>Status</label><select id="smart-sale-status"><option>Orçamento</option><option>Pedido</option><option>Faturado</option><option>Compensação</option><option>Cancelado</option></select></div>
+      <div class="field"><label>CFOP</label><input type="text" id="smart-sale-cfop"></div>
       <div class="field full"><label>Observação</label><textarea id="smart-sale-obs"></textarea></div>
     </div>
     <div class="modal-footer">
@@ -5897,16 +5902,28 @@ function openSmartSaleModal(id) {
   const state = getSmartState();
   const row = id === null ? null : state.vendas[Number(id)];
   document.getElementById('smart-sale-id').value = id ?? '';
-  document.getElementById('smart-sale-title').textContent = row ? 'Editar Venda Smartmold' : 'Nova Venda Smartmold';
+  document.getElementById('smart-sale-title').textContent = row ? 'Editar Venda' : 'Nova Venda';
   document.getElementById('smart-sale-data').value = smartInputDate(row?.Data || new Date().toISOString().slice(0,10));
+  document.getElementById('smart-sale-nota').value = row?.Nota || '';
   document.getElementById('smart-sale-cliente').value = row?.Cliente || '';
   document.getElementById('smart-sale-produto').innerHTML = smartProductOptions(row?.codprod || '', row?.['Produto ERP'] || '');
   document.getElementById('smart-sale-qtd').value = row?.Quantidade || '';
-  document.getElementById('smart-sale-preco').value = row?.['Preço Unitário'] || '';
+  document.getElementById('smart-sale-vlrprod').value = row?.['Valor Produtos'] ?? '';
+  document.getElementById('smart-sale-desconto').value = row?.Descontos ?? '';
+  document.getElementById('smart-sale-frete').value = row?.['Valor Frete'] ?? '';
+  document.getElementById('smart-sale-cfop').value = row?.CFOP || '';
   document.getElementById('smart-sale-status').value = row?.Status || 'Orçamento';
   document.getElementById('smart-sale-obs').value = row?.Observação || '';
   document.getElementById('smart-sale-delete').classList.toggle('hidden', row === null);
+  recalcSmartSaleTotal();
   document.getElementById('smart-sale-modal').classList.remove('hidden');
+}
+
+function recalcSmartSaleTotal() {
+  const vp = smartNum(document.getElementById('smart-sale-vlrprod').value);
+  const vd = smartNum(document.getElementById('smart-sale-desconto').value);
+  const vf = smartNum(document.getElementById('smart-sale-frete').value);
+  document.getElementById('smart-sale-total').value = (vp + vd + vf).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
 
 function closeSmartSaleModal() { document.getElementById('smart-sale-modal').classList.add('hidden'); }
@@ -5915,13 +5932,29 @@ function saveSmartSale() {
   const state = getSmartState();
   const id = document.getElementById('smart-sale-id').value;
   const code = document.getElementById('smart-sale-produto').value;
-  const product = smartProductByCode(code);
   const qtd = smartNum(document.getElementById('smart-sale-qtd').value);
-  const preco = smartNum(document.getElementById('smart-sale-preco').value);
+  const vlrProd = smartNum(document.getElementById('smart-sale-vlrprod').value);
+  const desconto = smartNum(document.getElementById('smart-sale-desconto').value);
+  const frete = smartNum(document.getElementById('smart-sale-frete').value);
   const current = id === '' ? {} : state.vendas[Number(id)] || {};
-  const row = {...current, Data:smartFormatDate(document.getElementById('smart-sale-data').value), Cliente:document.getElementById('smart-sale-cliente').value, codprod:code, 'Produto ERP':smartProductName(code, current['Produto ERP']), Quantidade:qtd, 'Preço Unitário':preco, 'Valor Total':qtd*preco, Status:document.getElementById('smart-sale-status').value, Observação:document.getElementById('smart-sale-obs').value};
+  const row = {
+    ...current,
+    Data: smartFormatDate(document.getElementById('smart-sale-data').value),
+    Nota: document.getElementById('smart-sale-nota').value,
+    Cliente: document.getElementById('smart-sale-cliente').value,
+    codprod: code,
+    'Produto ERP': smartProductName(code, current['Produto ERP']),
+    Quantidade: qtd,
+    'Valor Produtos': vlrProd,
+    Descontos: desconto,
+    'Valor Frete': frete,
+    'Valor Total': vlrProd + desconto + frete,
+    Status: document.getElementById('smart-sale-status').value,
+    CFOP: document.getElementById('smart-sale-cfop').value,
+    Observação: document.getElementById('smart-sale-obs').value,
+  };
   if (id === '') state.vendas.unshift(row); else state.vendas[Number(id)] = row;
-  saveSmartState(); closeSmartSaleModal(); renderSmartmoldPage(); showToast('✓ Venda Smartmold salva');
+  saveSmartState(); closeSmartSaleModal(); renderSmartmoldPage(); showToast('✓ Venda salva');
 }
 
 function deleteSmartSale() {
