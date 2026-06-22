@@ -1809,7 +1809,8 @@ body.sidebar-collapsed #page-gente{
       <div class="field"><label>Nota</label><input type="text" id="smart-sale-nota"></div>
       <div class="field full"><label>Cliente</label><input type="text" id="smart-sale-cliente"></div>
       <div class="field full"><label>Produto</label><select id="smart-sale-produto"></select></div>
-      <div class="field"><label>Quantidade</label><input type="text" inputmode="decimal" id="smart-sale-qtd"></div>
+      <div class="field"><label>Quantidade</label><input type="text" inputmode="decimal" id="smart-sale-qtd" oninput="recalcSmartSaleUnitario()"></div>
+      <div class="field"><label>Valor Unitário</label><input type="text" inputmode="decimal" id="smart-sale-unitario" oninput="recalcSmartSaleFromUnit()"></div>
       <div class="field"><label>Valor Produtos</label><input type="text" inputmode="decimal" id="smart-sale-vlrprod" oninput="recalcSmartSaleTotal()"></div>
       <div class="field"><label>Descontos</label><input type="text" inputmode="decimal" id="smart-sale-desconto" oninput="recalcSmartSaleTotal()"></div>
       <div class="field"><label>Valor Frete</label><input type="text" inputmode="decimal" id="smart-sale-frete" oninput="recalcSmartSaleTotal()"></div>
@@ -5909,6 +5910,8 @@ function openSmartSaleModal(id) {
   document.getElementById('smart-sale-cliente').value = row?.Cliente || '';
   document.getElementById('smart-sale-produto').innerHTML = smartProductOptions(row?.codprod || '', row?.['Produto ERP'] || '');
   document.getElementById('smart-sale-qtd').value = row?.Quantidade || '';
+  const _vp = smartNum(row?.['Valor Produtos']), _q = smartNum(row?.Quantidade);
+  document.getElementById('smart-sale-unitario').value = (_q ? _vp/_q : 0) || '';
   document.getElementById('smart-sale-vlrprod').value = row?.['Valor Produtos'] ?? '';
   document.getElementById('smart-sale-desconto').value = row?.Descontos ?? '';
   document.getElementById('smart-sale-frete').value = row?.['Valor Frete'] ?? '';
@@ -5925,6 +5928,24 @@ function recalcSmartSaleTotal() {
   const vd = smartNum(document.getElementById('smart-sale-desconto').value);
   const vf = smartNum(document.getElementById('smart-sale-frete').value);
   document.getElementById('smart-sale-total').value = (vp + vd + vf).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+  // atualiza unitário a partir do valor produtos
+  const q = smartNum(document.getElementById('smart-sale-qtd').value);
+  if (q) document.getElementById('smart-sale-unitario').value = (vp / q).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function recalcSmartSaleFromUnit() {
+  const u = smartNum(document.getElementById('smart-sale-unitario').value);
+  const q = smartNum(document.getElementById('smart-sale-qtd').value);
+  if (q) {
+    document.getElementById('smart-sale-vlrprod').value = (u * q).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+    recalcSmartSaleTotal();
+  }
+}
+
+function recalcSmartSaleUnitario() {
+  const vp = smartNum(document.getElementById('smart-sale-vlrprod').value);
+  const q = smartNum(document.getElementById('smart-sale-qtd').value);
+  if (q) document.getElementById('smart-sale-unitario').value = (vp / q).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
 
 function closeSmartSaleModal() { document.getElementById('smart-sale-modal').classList.add('hidden'); }
