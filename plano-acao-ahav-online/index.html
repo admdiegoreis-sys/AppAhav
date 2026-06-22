@@ -7466,6 +7466,7 @@ function genteRenderDisc() {
   const pessoas = genteFilterPessoas(genteLoadPessoas()).filter(p => p.D || p.I || p.S || p.C);
   const el = document.getElementById('gente-disc-content');
   if (!pessoas.length) { el.innerHTML = '<p style="color:#64748b">Cadastre pessoas com dados DISC para visualizar.</p>'; return; }
+  const todasPessoas = genteLoadPessoas();
 
   // Summary counts by dominant letter
   const counts = {D:0, I:0, S:0, C:0, Eq:0};
@@ -7493,13 +7494,14 @@ function genteRenderDisc() {
     <h2 style="font-size:18px;color:#e2e8f0;margin-bottom:16px">Perfis Individuais</h2>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px">
       ${pessoas.map(p => {
+        const globalIdx = todasPessoas.findIndex(x => x.nome === p.nome && x.empresa === p.empresa);
         const vals = {D:p.D||0, I:p.I||0, S:p.S||0, C:p.C||0};
         const maxVal = Math.max(...Object.values(vals));
         const domKeys = Object.keys(vals).filter(k => vals[k] >= maxVal - 5);
         const domColor = domKeys.length === 1 ? discColors[domKeys[0]] : '#94a3b8';
         const ftColor = p.feedback_tipo === 'SBI' ? '#38bdf8' : '#a78bfa';
         return `
-        <div class="chart-card gente-profile-card" style="padding:0;display:flex;flex-direction:column;gap:0;border-left:4px solid ${domColor};overflow:hidden">
+        <div class="chart-card gente-profile-card" style="padding:0;display:flex;flex-direction:column;gap:0;border-left:4px solid ${domColor};overflow:hidden;cursor:pointer" onclick="genteOpenPessoaModal(${globalIdx})" title="Editar ${p.nome}">
           <!-- cabeçalho colorido -->
           <div style="background:${domColor}12;padding:14px 16px 12px;border-bottom:2px solid ${domColor}30">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
