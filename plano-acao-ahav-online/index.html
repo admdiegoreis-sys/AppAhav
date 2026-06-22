@@ -7119,16 +7119,66 @@ const GENTE_ORG_DEFAULT = [
   {id:'anajulia', nome:'Ana Julia', cargo:'',               pai:'joao'},
 ];
 
+const GENTE_REDE_EPI_DEFAULT = [
+  // === GOIÂNIA ===
+  {nome:'Alysson Silva',          cargo:'Vendedor',   area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Goiânia', perfil:'Especialista',         fator:'Bifatorial SC',    D:20, I:20, S:65, C:62, medo:'Mudanças e conflitos',           motiv:'Segurança, regras e previsibilidade', notas:''},
+  {nome:'Jafeson Almeida Queiroz',cargo:'Vendedor',   area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Goiânia', perfil:'Especialista',         fator:'Bifatorial SC',    D:20, I:25, S:63, C:65, medo:'Mudanças e conflitos',           motiv:'Segurança, regras e previsibilidade', notas:''},
+  {nome:'Jefferson',              cargo:'Vendedor',   area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Goiânia', perfil:'Criativo Crítico',     fator:'Trifatorial DIC',  D:65, I:58, S:15, C:65, medo:'Mediocridade',                   motiv:'Inovação com rigor',                 notas:''},
+  {nome:'Lenir',                  cargo:'Vendedora',  area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Goiânia', perfil:'Perfeccionista',       fator:'Bifatorial DC',    D:65, I:15, S:20, C:62, medo:'Falhar e perder numa discussão', motiv:'Resultados, controle e precisão',    notas:''},
+  {nome:'Luciana Alves',          cargo:'Vendedora',  area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Goiânia', perfil:'Perfeccionista',       fator:'Bifatorial DC',    D:65, I:15, S:20, C:62, medo:'Falhar e perder numa discussão', motiv:'Resultados, controle e precisão',    notas:''},
+  {nome:'Luiz Fernando',          cargo:'Vendedor',   area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Goiânia', perfil:'Perfeccionista',       fator:'Bifatorial DC',    D:65, I:15, S:20, C:62, medo:'Falhar e perder numa discussão', motiv:'Resultados, controle e precisão',    notas:''},
+  {nome:'Matheus',                cargo:'Vendedor',   area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Goiânia', perfil:'Analista',             fator:'Monofatorial C',   D:15, I:15, S:25, C:72, medo:'Erros e críticas sem base',      motiv:'Precisão e qualidade',               notas:''},
+  {nome:'Renata Carla',           cargo:'Vendedora',  area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Goiânia', perfil:'Perfeccionista',       fator:'Bifatorial DC',    D:65, I:15, S:20, C:62, medo:'Falhar e perder numa discussão', motiv:'Resultados, controle e precisão',    notas:''},
+  {nome:'Renato',                 cargo:'Vendedor',   area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Goiânia', perfil:'Analista Harmonizador',fator:'Trifatorial ISC',  D:15, I:65, S:62, C:62, medo:'Desorientação Operacional',      motiv:'Equilíbrio entre Técnica e Pessoas', notas:''},
+  {nome:'Rubem Mesquita',         cargo:'Vendedor',   area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Goiânia', perfil:'Especialista',         fator:'Bifatorial SC',    D:15, I:20, S:65, C:62, medo:'Mudanças e conflitos',           motiv:'Segurança, regras e previsibilidade', notas:''},
+  {nome:'Christielly',            cargo:'Vendedora',  area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Goiânia', perfil:'Suporte Influente',    fator:'Bifatorial IS',    D:15, I:65, S:62, C:20, medo:'Rejeição e mudanças',           motiv:'Reconhecimento, pertencimento e segurança', notas:''},
+  {nome:'Kellen Cristina',        cargo:'Vendedora',  area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Goiânia', perfil:'Estável Puro',         fator:'Monofatorial S',   D:15, I:25, S:72, C:20, medo:'Insegurança e mudanças bruscas', motiv:'Previsibilidade e harmonia',         notas:''},
+  {nome:'Layane',                 cargo:'Vendedora',  area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Goiânia', perfil:'Estável Puro',         fator:'Monofatorial S',   D:15, I:25, S:72, C:20, medo:'Insegurança e mudanças bruscas', motiv:'Previsibilidade e harmonia',         notas:''},
+  {nome:'Leonardo',               cargo:'Vendedor',   area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Goiânia', perfil:'Estável Puro',         fator:'Monofatorial S',   D:15, I:25, S:72, C:20, medo:'Insegurança e mudanças bruscas', motiv:'Previsibilidade e harmonia',         notas:''},
+  {nome:'Rafaela Fernandes',      cargo:'Vendedora',  area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Goiânia', perfil:'Estável Puro',         fator:'Monofatorial S',   D:15, I:25, S:72, C:20, medo:'Insegurança e mudanças bruscas', motiv:'Previsibilidade e harmonia',         notas:''},
+  {nome:'Audrea',                 cargo:'Vendedora',  area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Goiânia', perfil:'Executor',             fator:'Monofatorial D',   D:72, I:20, S:10, C:20, medo:'Perder o controle',              motiv:'Resultados e autonomia',             notas:''},
+  {nome:'Dara',                   cargo:'Vendedora',  area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Goiânia', perfil:'Realizador',           fator:'Trifatorial DIS',  D:65, I:63, S:62, C:15, medo:'Estagnação',                    motiv:'Crescimento com pessoas',            notas:''},
+  {nome:'Hugo',                   cargo:'Vendedor',   area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Goiânia', perfil:'Investigador',         fator:'Bifatorial DS',    D:68, I:15, S:62, C:20, medo:'Falhar e mudanças inesperadas',  motiv:'Resultados com segurança',           notas:''},
+  {nome:'Karita',                 cargo:'Vendedora',  area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Goiânia', perfil:'Executor',             fator:'Monofatorial D',   D:72, I:20, S:10, C:20, medo:'Perder o controle',              motiv:'Resultados e autonomia',             notas:'Teste DISC não enviado — perfil inferido pelo relatório'},
+  {nome:'Lucemilda',              cargo:'Vendedora',  area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Goiânia', perfil:'Investigador',         fator:'Bifatorial DS',    D:68, I:15, S:62, C:20, medo:'Falhar e mudanças inesperadas',  motiv:'Resultados com segurança',           notas:''},
+  {nome:'Danielle',               cargo:'Vendedora',  area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Goiânia', perfil:'Suporte Influente',    fator:'Bifatorial IS',    D:15, I:65, S:62, C:20, medo:'Rejeição e mudanças',           motiv:'Reconhecimento, pertencimento e segurança', notas:''},
+  // === BRASÍLIA ===
+  {nome:'Diega',                  cargo:'Vendedora',  area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Brasília', perfil:'Especialista',        fator:'Bifatorial SC',    D:15, I:20, S:65, C:62, medo:'Mudanças e conflitos',           motiv:'Segurança, regras e previsibilidade', notas:''},
+  {nome:'Kariane',                cargo:'Vendedora',  area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Brasília', perfil:'Executor Metódico',   fator:'Trifatorial DSC',  D:65, I:15, S:62, C:62, medo:'Caos e improvisação',           motiv:'Execução estruturada',               notas:''},
+  {nome:'Kenia',                  cargo:'Vendedora',  area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Brasília', perfil:'Perfeccionista',      fator:'Bifatorial DC',    D:65, I:15, S:20, C:62, medo:'Falhar e perder numa discussão', motiv:'Resultados, controle e precisão',    notas:''},
+  {nome:'Pablo',                  cargo:'Vendedor',   area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Brasília', perfil:'Perfeccionista',      fator:'Bifatorial DC',    D:65, I:15, S:20, C:62, medo:'Falhar e perder numa discussão', motiv:'Resultados, controle e precisão',    notas:''},
+  {nome:'Paulo',                  cargo:'Vendedor',   area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Brasília', perfil:'Perfeccionista',      fator:'Bifatorial DC',    D:65, I:15, S:20, C:62, medo:'Falhar e perder numa discussão', motiv:'Resultados, controle e precisão',    notas:''},
+  {nome:'Simone',                 cargo:'Vendedora',  area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Brasília', perfil:'Analista',            fator:'Monofatorial C',   D:15, I:15, S:25, C:72, medo:'Erros e críticas sem base',      motiv:'Precisão e qualidade',               notas:''},
+  {nome:'Tahis',                  cargo:'Vendedora',  area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Brasília', perfil:'Perfeccionista',      fator:'Bifatorial DC',    D:65, I:15, S:20, C:62, medo:'Falhar e perder numa discussão', motiv:'Resultados, controle e precisão',    notas:''},
+  {nome:'Bruno',                  cargo:'Vendedor',   area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Brasília', perfil:'Estável Puro',        fator:'Monofatorial S',   D:15, I:25, S:72, C:20, medo:'Insegurança e mudanças bruscas', motiv:'Previsibilidade e harmonia',         notas:''},
+  {nome:'Cecília',                cargo:'Vendedora',  area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Brasília', perfil:'Realizador',          fator:'Trifatorial DIS',  D:60, I:58, S:65, C:15, medo:'Estagnação',                    motiv:'Crescimento com pessoas',            notas:''},
+  {nome:'Erika Camila',           cargo:'Vendedora',  area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Brasília', perfil:'Suporte Influente',   fator:'Bifatorial IS',    D:15, I:65, S:62, C:20, medo:'Rejeição e mudanças',           motiv:'Reconhecimento, pertencimento e segurança', notas:''},
+  {nome:'Francimar',              cargo:'Vendedora',  area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Brasília', perfil:'Suporte Influente',   fator:'Bifatorial IS',    D:15, I:65, S:62, C:20, medo:'Rejeição e mudanças',           motiv:'Reconhecimento, pertencimento e segurança', notas:''},
+  {nome:'Anna Beatriz',           cargo:'Vendedora',  area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Brasília', perfil:'Executor',            fator:'Monofatorial D',   D:72, I:20, S:10, C:20, medo:'Perder o controle',              motiv:'Resultados e autonomia',             notas:''},
+  {nome:'Amanda',                 cargo:'Vendedora',  area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Brasília', perfil:'Motivador',           fator:'Bifatorial DI',    D:65, I:65, S:20, C:20, medo:'Falhar e perder reconhecimento', motiv:'Desafios, poder e visibilidade',     notas:''},
+  {nome:'Valdemar',               cargo:'Vendedor',   area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Brasília', perfil:'Investigador',        fator:'Bifatorial DS',    D:68, I:15, S:62, C:20, medo:'Falhar e mudanças inesperadas',  motiv:'Resultados com segurança',           notas:''},
+  {nome:'Alessandro',             cargo:'Vendedor',   area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Brasília', perfil:'Realizador',          fator:'Trifatorial DIS',  D:62, I:65, S:62, C:15, medo:'Estagnação',                    motiv:'Crescimento com pessoas',            notas:''},
+  {nome:'Willian',                cargo:'Vendedor',   area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Brasília', perfil:'Realizador',          fator:'Trifatorial DIS',  D:62, I:60, S:65, C:15, medo:'Estagnação',                    motiv:'Crescimento com pessoas',            notas:''},
+];
+
 function genteLoadPessoas() {
   try {
     const stored = localStorage.getItem(GENTE_PESSOAS_KEY);
     if (stored) {
-      const parsed = JSON.parse(stored).map(p => ({...p, empresa: p.empresa || 'Ahav'}));
-      localStorage.setItem(GENTE_PESSOAS_KEY, JSON.stringify(parsed));
+      let parsed = JSON.parse(stored).map(p => ({...p, empresa: p.empresa || 'Ahav'}));
+      // seed REDE EPI se ainda não existir
+      const hasRedeEpi = parsed.some(p => p.empresa === 'REDE EPI');
+      if (!hasRedeEpi) {
+        parsed = parsed.concat(GENTE_REDE_EPI_DEFAULT);
+        localStorage.setItem(GENTE_PESSOAS_KEY, JSON.stringify(parsed));
+      }
       return parsed.sort((a,b) => (a.nome||'').localeCompare(b.nome||'', 'pt-BR'));
     }
   } catch(e) {}
-  const d = GENTE_DISC_DEFAULT.map(p => ({...p, empresa:'Ahav'}));
+  const d = [
+    ...GENTE_DISC_DEFAULT.map(p => ({...p, empresa:'Ahav'})),
+    ...GENTE_REDE_EPI_DEFAULT,
+  ];
   localStorage.setItem(GENTE_PESSOAS_KEY, JSON.stringify(d));
   return d.sort((a,b) => (a.nome||'').localeCompare(b.nome||'', 'pt-BR'));
 }
