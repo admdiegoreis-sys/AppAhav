@@ -5470,7 +5470,8 @@ function renderSmartProducts() {
       Ações:`<div class="smart-row-actions"><button class="btn btn-ghost btn-sm smart-icon-btn" title="Editar produto" aria-label="Editar produto" onclick="event.stopPropagation();openSmartProductModal('${escapeHtml(String(p.codprod || ''))}')">✎</button></div>`
     }));
   smartTable('smart-prod-head', 'smart-prod-body', rows, {
-    headers:['codprod','descrprod ERP','Categoria','Unidade','Data Estoque Inicial','Estoque Inicial','Estoque Inicial Ajuste','Estoque Inicial Ajustado','Status','Ações'],
+    headers:['codprod','descrprod ERP','Categoria','Unidade','Data Estoque Inicial','Estoque Inicial','Ajustes','Estoque Inicial Ajustado','Status','Ações'],
+    fieldMap:{'Ajustes':'Estoque Inicial Ajuste'},
     htmlFields:['Ações']
   });
 }
