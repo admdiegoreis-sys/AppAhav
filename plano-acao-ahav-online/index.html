@@ -5602,10 +5602,10 @@ function renderSmartSales() {
   if (title) title.textContent = `Pedidos de Venda (${rows.length}/${baseRows.length})`;
   smartTable('smart-vendas-head', 'smart-vendas-body', rows, {
     limit:300,
-    headers:['Data','Nota','Cliente','codprod','Produto','Quantidade','Valor Unitário','Valor Produtos','Descontos','Valor Frete','Valor Total','Status','CFOP','Cadastro','Ações'],
+    headers:['Data','Nota','Cliente','codprod','Produto','Quantidade','Valor Unitário','Valor Produtos','Descontos','Valor Frete','Valor Total','Status','Cadastro','Ações'],
     fieldMap:{'Produto':'Produto ERP'},
     htmlFields:['Cadastro','Ações'],
-    colWidths:{'Data':'80px','Nota':'60px','Cliente':'140px','codprod':'70px','Produto':'170px','Quantidade':'70px','Valor Unitário':'85px','Valor Produtos':'90px','Descontos':'80px','Valor Frete':'80px','Valor Total':'85px','Status':'85px','CFOP':'55px','Cadastro':'60px','Ações':'55px'}
+    colWidths:{'Data':'80px','Nota':'60px','Cliente':'150px','codprod':'70px','Produto':'180px','Quantidade':'70px','Valor Unitário':'85px','Valor Produtos':'90px','Descontos':'80px','Valor Frete':'80px','Valor Total':'85px','Status':'90px','Cadastro':'60px','Ações':'55px'}
   });
 }
 
