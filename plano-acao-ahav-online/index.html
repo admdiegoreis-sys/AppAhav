@@ -4871,14 +4871,18 @@ function syncSmartFaturamentoData(state) {
 
 function normalizeSmartState(state = {}) {
   const normalized = {...smartDefaultState(), ...(state || {})};
-  // merge seed products (update existing by codprod, add new ones)
-  const prodMap = new Map((normalized.produtos || []).map(p => [String(p.codprod), p]));
-  SMARTMOLD_PRODUTOS_SEED.forEach(seed => {
+  // seed é autoritativo: substitui lista inteira, preserva apenas campos manuais (limites)
+  const oldProdMap = new Map((normalized.produtos || []).map(p => [String(p.codprod), p]));
+  normalized.produtos = SMARTMOLD_PRODUTOS_SEED.map(seed => {
     const key = String(seed.codprod);
-    const existing = prodMap.get(key) || {};
-    prodMap.set(key, {...normalizeSmartProduct({...existing, ...seed})});
+    const existing = oldProdMap.get(key) || {};
+    return normalizeSmartProduct({
+      ...seed,
+      'Estoque Mínimo': existing['Estoque Mínimo'] ?? seed['Estoque Mínimo'],
+      'Estoque Máximo': existing['Estoque Máximo'] ?? seed['Estoque Máximo'],
+      'Status Código': existing['Status Código'] || seed['Status Código'] || '',
+    });
   });
-  normalized.produtos = [...prodMap.values()];
   normalized.produtos = dedupeSmartProducts(normalized.produtos || []);
   normalized.producao = normalizeSmartProductionRows(normalized.producao || []);
   applySmartProductInputs(normalized);
