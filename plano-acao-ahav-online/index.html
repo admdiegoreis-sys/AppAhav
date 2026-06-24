@@ -2199,6 +2199,14 @@ function createSupabaseRestClient(url, key) {
               });
             }
           };
+        },
+        upsert(rows) {
+          const arr = Array.isArray(rows) ? rows : [rows];
+          return request(`/${table}`, {
+            method: 'POST',
+            headers: {Prefer: 'resolution=merge-duplicates,return=representation'},
+            body: JSON.stringify(arr)
+          });
         }
       };
     },
@@ -7330,28 +7338,63 @@ const GENTE_REDE_EPI_DEFAULT = [
   {nome:'Willian',                cargo:'Vendedor',   area:'Vendas', lider:'', empresa:'REDE EPI', cidade:'Brasília', perfil:'Realizador',          fator:'Trifatorial DIS',  D:62, I:60, S:65, C:15, medo:'Estagnação',                    motiv:'Crescimento com pessoas',            notas:''},
 ];
 
-function genteLoadPessoas() {
-  try {
-    const stored = localStorage.getItem(GENTE_PESSOAS_KEY);
-    if (stored) {
-      let parsed = JSON.parse(stored).map(p => ({...p, empresa: p.empresa || 'Ahav'}));
-      // seed REDE EPI se ainda não existir
-      const hasRedeEpi = parsed.some(p => p.empresa === 'REDE EPI');
-      if (!hasRedeEpi) {
-        parsed = parsed.concat(GENTE_REDE_EPI_DEFAULT);
-        localStorage.setItem(GENTE_PESSOAS_KEY, JSON.stringify(parsed));
-      }
-      return parsed.sort((a,b) => (a.nome||'').localeCompare(b.nome||'', 'pt-BR'));
-    }
-  } catch(e) {}
-  const d = [
+let _gentePessoasCache = null;
+
+function _genteDefaultPessoas() {
+  return [
     ...GENTE_DISC_DEFAULT.map(p => ({...p, empresa:'Ahav'})),
     ...GENTE_REDE_EPI_DEFAULT,
   ];
-  localStorage.setItem(GENTE_PESSOAS_KEY, JSON.stringify(d));
-  return d.sort((a,b) => (a.nome||'').localeCompare(b.nome||'', 'pt-BR'));
 }
-function genteSavePessoas(list) { localStorage.setItem(GENTE_PESSOAS_KEY, JSON.stringify(list)); }
+
+function _genteNormalizePessoas(list) {
+  list = list.map(p => ({...p, empresa: p.empresa || 'Ahav'}));
+  const hasRedeEpi = list.some(p => p.empresa === 'REDE EPI');
+  if (!hasRedeEpi) list = list.concat(GENTE_REDE_EPI_DEFAULT);
+  return list.sort((a,b) => (a.nome||'').localeCompare(b.nome||'', 'pt-BR'));
+}
+
+function genteLoadPessoas() {
+  if (_gentePessoasCache) return _gentePessoasCache;
+  try {
+    const stored = localStorage.getItem(GENTE_PESSOAS_KEY);
+    if (stored) {
+      _gentePessoasCache = _genteNormalizePessoas(JSON.parse(stored));
+      return _gentePessoasCache;
+    }
+  } catch(e) {}
+  _gentePessoasCache = _genteNormalizePessoas(_genteDefaultPessoas());
+  localStorage.setItem(GENTE_PESSOAS_KEY, JSON.stringify(_gentePessoasCache));
+  return _gentePessoasCache;
+}
+
+async function genteLoadPessoasRemote() {
+  try {
+    const {data, error} = await supabase.from('gente_state').select('*').eq('key','pessoas');
+    if (!error && Array.isArray(data) && data.length > 0) {
+      const remote = Array.isArray(data[0].data) ? data[0].data : JSON.parse(data[0].data || '[]');
+      _gentePessoasCache = _genteNormalizePessoas(remote);
+      localStorage.setItem(GENTE_PESSOAS_KEY, JSON.stringify(_gentePessoasCache));
+      return _gentePessoasCache;
+    }
+  } catch(e) {}
+  // fallback: push localStorage to Supabase so it gets synced on first run
+  const local = genteLoadPessoas();
+  _genteUpsertRemote(local);
+  return local;
+}
+
+async function _genteUpsertRemote(list) {
+  try {
+    await supabase.from('gente_state').upsert([{key:'pessoas', data: list, updated_at: new Date().toISOString()}]);
+  } catch(e) {}
+}
+
+function genteSavePessoas(list) {
+  _gentePessoasCache = list;
+  localStorage.setItem(GENTE_PESSOAS_KEY, JSON.stringify(list));
+  _genteUpsertRemote(list);
+}
 
 function genteEmpresaAtual() {
   const allowed = getUserGenteEmpresas();
@@ -7489,11 +7532,22 @@ function genteReprocessarDisc() {
   return updated;
 }
 
-function genteInit() {
+async function genteInit() {
+  _gentePessoasCache = null;
+  await genteLoadPessoasRemote();
   genteReprocessarDisc();
   genteSetupEmpresaFilter();
   renderGenteAccessTabs();
   genteShowTab(hasCompanyPageAccess('gente', genteActiveTab) ? genteActiveTab : (getFirstCompanyPage('gente') || 'pessoas'));
+}
+
+async function genteRefresh() {
+  const btn = document.getElementById('gente-refresh-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Atualizando...'; }
+  _gentePessoasCache = null;
+  await genteLoadPessoasRemote();
+  genteShowTab(genteActiveTab || 'pessoas');
+  if (btn) { btn.disabled = false; btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg> Atualizar'; }
 }
 
 function genteShowTab(tab) {
@@ -8324,6 +8378,10 @@ function genteSaveOrgMembro() {
         <option value="REDE EPI">REDE EPI</option>
       </select>
     </div>
+    <button class="btn btn-ghost" id="gente-refresh-btn" onclick="genteRefresh()" style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:13px">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+      Atualizar
+    </button>
   </div>
 
   <!-- TAB: PESSOAS -->
