@@ -7619,6 +7619,31 @@ function genteRenderPessoas() {
     </div>`;
 }
 
+const GENTE_CARGOS_POR_AREA = {
+  'Liderança':    ['Diretor','Gestor','Especialista','Analista','Assistente'],
+  'Comercial':    ['Supervisor de Vendas','Consultor de Vendas Externo','Vendedor','Assistente Administrativo'],
+  'Compras':      ['Supervisora de Compras','Analista de Compras Júnior','Analista de Compras Pleno','Analista de Compras Sênior'],
+  'Estoque':      ['Supervisor de Estoque','Encarregado de Estoque','Analista Logístico','Auxiliar de Estoque','Motorista'],
+  'Financeiro':   ['Analista de Crédito','Analista de Cobrança','Analista de Gastos','Tesouraria','Assistente Conciliação Bancária'],
+  'Vendas':       ['Supervisor de Vendas','Consultor de Vendas Externo','Vendedor','Vendedora','Assistente Administrativo'],
+  'Administrativo':['Assistente Administrativo','Analista Administrativo','Coordenador Administrativo'],
+  'RH':           ['Analista de RH','Assistente de RH','Coordenador de RH'],
+  'Operações':    ['Analista de Operações','Coordenador de Operações','Supervisor de Operações'],
+  'Diretoria':    ['Diretor','Diretor Geral','CEO','Sócio'],
+  'TI':           ['Analista de TI','Desenvolvedor','Coordenador de TI'],
+};
+
+function genteUpdateCargosByArea(keepCargo) {
+  const area = document.getElementById('gp-area')?.value || '';
+  const cargoSel = document.getElementById('gp-cargo');
+  if (!cargoSel) return;
+  const cargos = GENTE_CARGOS_POR_AREA[area] || [];
+  const current = keepCargo || cargoSel.value;
+  cargoSel.innerHTML = '<option value="">— Selecionar —</option>' +
+    cargos.map(c => `<option value="${c}"${c===current?' selected':''}>${c}</option>`).join('');
+  if (!cargos.length) cargoSel.innerHTML += '<option value="_outro">Outro</option>';
+}
+
 function genteOpenPessoaModal(idx) {
   const pessoas = genteLoadPessoas();
   const p = idx !== undefined ? pessoas[idx] : {};
@@ -7627,9 +7652,9 @@ function genteOpenPessoaModal(idx) {
   document.getElementById('gp-idx').value   = idx !== undefined ? idx : '';
   document.getElementById('gp-nome').value  = p.nome  || '';
   genteSetupPessoaEmpresaOptions(p.empresa || genteEmpresaAtual() || 'Ahav');
-  document.getElementById('gp-cargo').value  = p.cargo  || '';
   document.getElementById('gp-funcao').value = p.funcao || '';
   document.getElementById('gp-area').value   = p.area   || '';
+  genteUpdateCargosByArea(p.cargo || '');
   document.getElementById('gp-d').value     = p.D !== undefined ? p.D : '';
   document.getElementById('gp-i').value     = p.I !== undefined ? p.I : '';
   document.getElementById('gp-s').value     = p.S !== undefined ? p.S : '';
@@ -8646,52 +8671,10 @@ function genteSaveOrgMembro() {
             </select>
           </div>
           <div>
-            <label class="form-label">Cargo</label>
-            <select id="gp-cargo" style="width:100%">
+            <label class="form-label">Departamento</label>
+            <select id="gp-area" style="width:100%" onchange="genteUpdateCargosByArea()">
               <option value="">— Selecionar —</option>
-              <optgroup label="Liderança">
-                <option value="Diretor">Diretor</option>
-                <option value="Gestor">Gestor</option>
-                <option value="Especialista">Especialista</option>
-                <option value="Analista">Analista</option>
-                <option value="Assistente">Assistente</option>
-              </optgroup>
-              <optgroup label="Departamento Comercial">
-                <option value="Supervisor de Vendas">Supervisor de Vendas</option>
-                <option value="Consultor de Vendas Externo">Consultor de Vendas Externo</option>
-                <option value="Vendedor">Vendedor</option>
-                <option value="Assistente Administrativo">Assistente Administrativo</option>
-              </optgroup>
-              <optgroup label="Departamento de Compras">
-                <option value="Supervisora de Compras">Supervisora de Compras</option>
-                <option value="Analista de Compras Júnior">Analista de Compras Júnior</option>
-                <option value="Analista de Compras Pleno">Analista de Compras Pleno</option>
-                <option value="Analista de Compras Sênior">Analista de Compras Sênior</option>
-              </optgroup>
-              <optgroup label="Departamento de Estoque">
-                <option value="Supervisor de Estoque">Supervisor de Estoque</option>
-                <option value="Encarregado de Estoque">Encarregado de Estoque</option>
-                <option value="Analista Logístico">Analista Logístico</option>
-                <option value="Auxiliar de Estoque">Auxiliar de Estoque</option>
-                <option value="Motorista">Motorista</option>
-              </optgroup>
-            </select>
-          </div>
-          <div>
-            <label class="form-label">Função</label>
-            <select id="gp-funcao" style="width:100%">
-              <option value="">— Selecionar —</option>
-              <option value="Analista de Crédito">Analista de Crédito</option>
-              <option value="Analista de Cobrança">Analista de Cobrança</option>
-              <option value="Analista de Gastos">Analista de Gastos</option>
-              <option value="Tesouraria">Tesouraria</option>
-              <option value="Assistente Conciliação Bancária">Assistente Conciliação Bancária</option>
-            </select>
-          </div>
-          <div>
-            <label class="form-label">Área / Departamento</label>
-            <select id="gp-area" style="width:100%">
-              <option value="">— Selecionar —</option>
+              <option value="Liderança">Liderança</option>
               <option value="Comercial">Comercial</option>
               <option value="Compras">Compras</option>
               <option value="Estoque">Estoque</option>
@@ -8704,6 +8687,13 @@ function genteSaveOrgMembro() {
               <option value="TI">TI</option>
             </select>
           </div>
+          <div>
+            <label class="form-label">Cargo</label>
+            <select id="gp-cargo" style="width:100%">
+              <option value="">— Selecionar —</option>
+            </select>
+          </div>
+          <input type="hidden" id="gp-funcao" value="">
           <div>
             <label class="form-label">Líder direto</label>
             <select id="gp-lider" style="width:100%">
