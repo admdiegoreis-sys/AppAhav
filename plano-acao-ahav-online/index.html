@@ -1628,6 +1628,15 @@ body.sidebar-collapsed #page-gente{
           <label style="display:flex;align-items:center;gap:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;cursor:pointer;font-size:13px;color:#e2e8f0">
             <input class="adm-gente-empresa" type="checkbox" value="REDE EPI" style="width:15px;height:15px;accent-color:#3b82f6;flex-shrink:0"> REDE EPI
           </label>
+          <label style="display:flex;align-items:center;gap:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;cursor:pointer;font-size:13px;color:#e2e8f0">
+            <input class="adm-gente-empresa" type="checkbox" value="REDE - GO" style="width:15px;height:15px;accent-color:#3b82f6;flex-shrink:0"> REDE - GO
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;cursor:pointer;font-size:13px;color:#e2e8f0">
+            <input class="adm-gente-empresa" type="checkbox" value="REDE - DF" style="width:15px;height:15px;accent-color:#3b82f6;flex-shrink:0"> REDE - DF
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;cursor:pointer;font-size:13px;color:#e2e8f0">
+            <input class="adm-gente-empresa" type="checkbox" value="REDE - MT" style="width:15px;height:15px;accent-color:#3b82f6;flex-shrink:0"> REDE - MT
+          </label>
         </div>
       </div>
       <div style="grid-column:1/-1;display:flex;gap:10px;justify-content:flex-end;padding-top:4px">
@@ -7257,7 +7266,7 @@ loadConfig();
 // ===== GENTE =====
 const GENTE_PESSOAS_KEY = 'ahav_gente_pessoas';
 const GENTE_ORG_KEY     = 'ahav_gente_org';
-const GENTE_EMPRESAS = ['Ahav','REDE EPI'];
+const GENTE_EMPRESAS = ['Ahav','REDE EPI','REDE - GO','REDE - DF','REDE - MT'];
 let genteActiveTab = 'pessoas';
 
 const GENTE_DISC_DEFAULT = [
@@ -8573,17 +8582,41 @@ function genteSaveOrgMembro() {
             <select id="gp-empresa" style="width:100%">
               <option value="Ahav">Ahav</option>
               <option value="REDE EPI">REDE EPI</option>
+              <option value="REDE - GO">REDE - GO</option>
+              <option value="REDE - DF">REDE - DF</option>
+              <option value="REDE - MT">REDE - MT</option>
             </select>
           </div>
           <div>
             <label class="form-label">Cargo</label>
             <select id="gp-cargo" style="width:100%">
               <option value="">— Selecionar —</option>
-              <option value="Diretor">Diretor</option>
-              <option value="Gestor">Gestor</option>
-              <option value="Especialista">Especialista</option>
-              <option value="Analista">Analista</option>
-              <option value="Assistente">Assistente</option>
+              <optgroup label="Liderança">
+                <option value="Diretor">Diretor</option>
+                <option value="Gestor">Gestor</option>
+                <option value="Especialista">Especialista</option>
+                <option value="Analista">Analista</option>
+                <option value="Assistente">Assistente</option>
+              </optgroup>
+              <optgroup label="Departamento Comercial">
+                <option value="Supervisor de Vendas">Supervisor de Vendas</option>
+                <option value="Consultor de Vendas Externo">Consultor de Vendas Externo</option>
+                <option value="Vendedor">Vendedor</option>
+                <option value="Assistente Administrativo">Assistente Administrativo</option>
+              </optgroup>
+              <optgroup label="Departamento de Compras">
+                <option value="Supervisora de Compras">Supervisora de Compras</option>
+                <option value="Analista de Compras Júnior">Analista de Compras Júnior</option>
+                <option value="Analista de Compras Pleno">Analista de Compras Pleno</option>
+                <option value="Analista de Compras Sênior">Analista de Compras Sênior</option>
+              </optgroup>
+              <optgroup label="Departamento de Estoque">
+                <option value="Supervisor de Estoque">Supervisor de Estoque</option>
+                <option value="Encarregado de Estoque">Encarregado de Estoque</option>
+                <option value="Analista Logístico">Analista Logístico</option>
+                <option value="Auxiliar de Estoque">Auxiliar de Estoque</option>
+                <option value="Motorista">Motorista</option>
+              </optgroup>
             </select>
           </div>
           <div>
