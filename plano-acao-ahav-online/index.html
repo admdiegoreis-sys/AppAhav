@@ -7620,17 +7620,10 @@ function genteRenderPessoas() {
 }
 
 const GENTE_CARGOS_POR_AREA = {
-  'Liderança':    ['Diretor','Gestor','Especialista','Analista','Assistente'],
-  'Comercial':    ['Supervisor de Vendas','Consultor de Vendas Externo','Vendedor','Assistente Administrativo'],
-  'Compras':      ['Supervisora de Compras','Analista de Compras Júnior','Analista de Compras Pleno','Analista de Compras Sênior'],
-  'Estoque':      ['Supervisor de Estoque','Encarregado de Estoque','Analista Logístico','Auxiliar de Estoque','Motorista'],
-  'Financeiro':   ['Analista de Crédito','Analista de Cobrança','Analista de Gastos','Tesouraria','Assistente Conciliação Bancária'],
   'Vendas':       ['Supervisor de Vendas','Consultor de Vendas Externo','Vendedor','Vendedora','Assistente Administrativo'],
-  'Administrativo':['Assistente Administrativo','Analista Administrativo','Coordenador Administrativo'],
-  'RH':           ['Analista de RH','Assistente de RH','Coordenador de RH'],
-  'Operações':    ['Analista de Operações','Coordenador de Operações','Supervisor de Operações'],
-  'Diretoria':    ['Diretor','Diretor Geral','CEO','Sócio'],
-  'TI':           ['Analista de TI','Desenvolvedor','Coordenador de TI'],
+  'Compras':      ['Supervisora de Compras','Analista de Compras Júnior','Analista de Compras Pleno','Analista de Compras Sênior'],
+  'Logística':    ['Supervisor de Estoque','Encarregado de Estoque','Analista Logístico','Auxiliar de Estoque','Motorista'],
+  'Administrativo':['Diretor','Gestor','Especialista','Analista','Assistente Administrativo','Analista Administrativo','Coordenador Administrativo'],
 };
 
 function genteUpdateCargosByArea(keepCargo) {
@@ -8674,17 +8667,10 @@ function genteSaveOrgMembro() {
             <label class="form-label">Departamento</label>
             <select id="gp-area" style="width:100%" onchange="genteUpdateCargosByArea()">
               <option value="">— Selecionar —</option>
-              <option value="Liderança">Liderança</option>
-              <option value="Comercial">Comercial</option>
-              <option value="Compras">Compras</option>
-              <option value="Estoque">Estoque</option>
-              <option value="Financeiro">Financeiro</option>
-              <option value="Operações">Operações</option>
-              <option value="Administrativo">Administrativo</option>
-              <option value="RH">RH</option>
-              <option value="Diretoria">Diretoria</option>
               <option value="Vendas">Vendas</option>
-              <option value="TI">TI</option>
+              <option value="Compras">Compras</option>
+              <option value="Logística">Logística</option>
+              <option value="Administrativo">Administrativo</option>
             </select>
           </div>
           <div>
