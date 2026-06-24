@@ -3115,7 +3115,7 @@ function getUserGenteEmpresas(user = currentUser) {
   if (!user) return [];
   if (user.role === 'admin') return GENTE_EMPRESAS;
   if (Array.isArray(user.gente_empresas) && user.gente_empresas.length) return user.gente_empresas;
-  if (normalizeAccessName(user.username) === 'leandro') return ['REDE EPI'];
+  if (normalizeAccessName(user.username) === 'leandro') return ['REDE EPI','REDE - GO','REDE - DF','REDE - MT'];
   return GENTE_EMPRESAS;
 }
 
