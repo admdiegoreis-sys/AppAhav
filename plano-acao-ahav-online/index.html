@@ -1586,12 +1586,12 @@ body.sidebar-collapsed #page-gente{
 
 <!-- Sub-modal: editar / criar usuário -->
 <div id="edit-user-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1100;align-items:center;justify-content:center;padding:20px">
-  <div style="background:#1e293b;border:1px solid #475569;border-radius:16px;width:100%;max-width:520px">
-    <div style="padding:18px 22px;border-bottom:1px solid #334155;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#1e293b;border-radius:16px 16px 0 0">
+  <div style="background:#1e293b;border:1px solid #475569;border-radius:16px;width:100%;max-width:560px;max-height:90vh;display:flex;flex-direction:column">
+    <div style="padding:18px 22px;border-bottom:1px solid #334155;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:#1e293b;border-radius:16px 16px 0 0">
       <h2 id="edit-user-modal-title" style="font-size:15px;font-weight:700;color:#f1f5f9">Novo usuário</h2>
       <button class="btn btn-ghost btn-sm" onclick="closeEditUserModal()">✕ Fechar</button>
     </div>
-    <div style="padding:22px;display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div style="padding:22px;display:grid;grid-template-columns:1fr 1fr;gap:14px;overflow-y:auto;flex:1">
       <div class="field">
         <label>Usuário</label>
         <input type="text" id="adm-username" placeholder="ex: flavia">
