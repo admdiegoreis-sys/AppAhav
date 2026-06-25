@@ -7353,6 +7353,10 @@ function _genteDefaultPessoas() {
 
 function _genteNormalizePessoas(list) {
   list = list.map(p => ({...p, empresa: p.empresa || 'Ahav'}));
+  // re-seed Ahav se não houver nenhum
+  const hasAhav = list.some(p => (p.empresa || 'Ahav') === 'Ahav');
+  if (!hasAhav) list = list.concat(GENTE_DISC_DEFAULT.map(p => ({...p, empresa:'Ahav'})));
+  // re-seed REDE EPI se não houver nenhum
   const hasRedeEpi = list.some(p => p.empresa === 'REDE EPI');
   if (!hasRedeEpi) list = list.concat(GENTE_REDE_EPI_DEFAULT);
   return list.sort((a,b) => (a.nome||'').localeCompare(b.nome||'', 'pt-BR'));
@@ -7377,9 +7381,12 @@ async function genteLoadPessoasRemote() {
     const {data, error} = await supabase.from('gente_state').select('*').eq('key','pessoas');
     if (!error && Array.isArray(data) && data.length > 0) {
       const remote = Array.isArray(data[0].data) ? data[0].data : JSON.parse(data[0].data || '[]');
-      _gentePessoasCache = _genteNormalizePessoas(remote);
-      localStorage.setItem(GENTE_PESSOAS_KEY, JSON.stringify(_gentePessoasCache));
-      return _gentePessoasCache;
+      const normalized = _genteNormalizePessoas(remote);
+      _gentePessoasCache = normalized;
+      localStorage.setItem(GENTE_PESSOAS_KEY, JSON.stringify(normalized));
+      // se re-seed aconteceu (lista cresceu), salvar de volta no Supabase
+      if (normalized.length > remote.length) _genteUpsertRemote(normalized);
+      return normalized;
     }
   } catch(e) {}
   // fallback: push localStorage to Supabase so it gets synced on first run
