@@ -2723,7 +2723,6 @@ async function saveUserAdmin() {
       } else break;
     } while (attempts < 5);
     if (result.error) { showToast('Erro ao salvar usuário: ' + result.error.message, true); return; }
-    if (attempts > 0) showToast('Usuário salvo. Rode o SQL para adicionar colunas novas no Supabase.', true);
   } else {
     const next = current ? users.map(u => u.username === username ? payload : u) : [...users, payload];
     writeLocalUsers(next);
