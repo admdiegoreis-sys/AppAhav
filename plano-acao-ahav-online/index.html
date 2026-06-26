@@ -7687,13 +7687,13 @@ function genteRenderFeedbacks() {
     .map((fb, i) => {
       const orig = _gpFeedbacks.indexOf(fb);
       const dtFmt = fb.data ? fb.data.split('-').reverse().join('/') : '—';
-      return `<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start">
+      return `<div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start">
         <div style="flex:1;min-width:0">
-          <div style="font-size:11px;font-weight:700;color:#38bdf8;margin-bottom:4px">${dtFmt}</div>
-          <div style="font-size:13px;color:#e2e8f0;white-space:pre-wrap;word-break:break-word">${fb.texto.replace(/</g,'&lt;')}</div>
+          <div style="font-size:11px;font-weight:700;color:#0ea5e9;margin-bottom:6px;letter-spacing:.04em">${dtFmt}</div>
+          <div style="font-size:13px;color:#1e293b;white-space:pre-wrap;word-break:break-word;line-height:1.5">${fb.texto.replace(/</g,'&lt;')}</div>
         </div>
         <button onclick="genteRemoveFeedback(${orig})" title="Excluir"
-          style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px;line-height:1;padding:0;flex-shrink:0">✕</button>
+          style="background:none;border:none;color:#cbd5e1;cursor:pointer;font-size:16px;line-height:1;padding:0;flex-shrink:0" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#cbd5e1'">✕</button>
       </div>`;
     }).join('');
 }
@@ -8722,33 +8722,35 @@ function genteSaveOrgMembro() {
 
   <!-- MODAL: PESSOA -->
   <div id="gente-pessoa-modal" class="modal-overlay hidden">
-    <div class="modal" style="max-width:600px;width:95%;max-height:92vh;display:flex;flex-direction:column">
-      <div class="modal-header" style="flex-shrink:0">
-        <h3 id="gente-pessoa-modal-title">Nova Pessoa</h3>
-        <button class="modal-close" onclick="genteClosePessoaModal()">✕</button>
+    <div style="background:#ffffff;border-radius:16px;width:95%;max-width:700px;max-height:95vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.35)">
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px 0;flex-shrink:0">
+        <h3 id="gente-pessoa-modal-title" style="font-size:18px;font-weight:700;color:#0f172a;margin:0">Nova Pessoa</h3>
+        <button onclick="genteClosePessoaModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#64748b;line-height:1;padding:4px">✕</button>
       </div>
       <!-- Abas -->
-      <div style="display:flex;gap:0;border-bottom:1px solid #334155;flex-shrink:0;padding:0 22px">
+      <div style="display:flex;gap:0;border-bottom:2px solid #e2e8f0;flex-shrink:0;padding:0 24px;margin-top:14px">
         <button id="gp-tab-btn-info"     onclick="genteSwitchPessoaTab('info')"
-          style="background:none;border:none;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;color:#94a3b8;border-bottom:2px solid transparent;transition:all .15s">Informações</button>
+          style="background:none;border:none;border-bottom:2px solid transparent;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;color:#94a3b8;margin-bottom:-2px;transition:all .15s">Informações</button>
         <button id="gp-tab-btn-disc"     onclick="genteSwitchPessoaTab('disc')"
-          style="background:none;border:none;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;color:#94a3b8;border-bottom:2px solid transparent;transition:all .15s">DISC</button>
+          style="background:none;border:none;border-bottom:2px solid transparent;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;color:#94a3b8;margin-bottom:-2px;transition:all .15s">DISC</button>
         <button id="gp-tab-btn-feedback" onclick="genteSwitchPessoaTab('feedback')"
-          style="background:none;border:none;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;color:#94a3b8;border-bottom:2px solid transparent;transition:all .15s">Feedback</button>
+          style="background:none;border:none;border-bottom:2px solid transparent;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;color:#94a3b8;margin-bottom:-2px;transition:all .15s">Feedback</button>
       </div>
-      <div class="modal-body" style="overflow-y:auto;flex:1">
+      <!-- Corpo com scroll -->
+      <div style="overflow-y:auto;flex:1;padding:22px 24px">
         <input type="hidden" id="gp-idx">
 
         <!-- ABA: INFORMAÇÕES -->
         <div id="gp-tab-info" style="display:flex;flex-direction:column;gap:16px">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
             <div style="grid-column:1/-1">
-              <label class="form-label">Nome *</label>
-              <input id="gp-nome" placeholder="Nome completo" style="width:100%">
+              <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:5px">Nome *</label>
+              <input id="gp-nome" placeholder="Nome completo" style="width:100%;background:#f8fafc;border:1.5px solid #e2e8f0;color:#0f172a;border-radius:8px;padding:9px 12px;font-size:14px;box-sizing:border-box">
             </div>
             <div>
-              <label class="form-label">Empresa</label>
-              <select id="gp-empresa" style="width:100%">
+              <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:5px">Empresa</label>
+              <select id="gp-empresa" style="width:100%;background:#f8fafc;border:1.5px solid #e2e8f0;color:#0f172a;border-radius:8px;padding:9px 12px;font-size:14px;box-sizing:border-box">
                 <option value="Ahav">Ahav</option>
                 <option value="REDE EPI">REDE EPI</option>
                 <option value="REDE - GO">REDE - GO</option>
@@ -8757,8 +8759,8 @@ function genteSaveOrgMembro() {
               </select>
             </div>
             <div>
-              <label class="form-label">Departamento</label>
-              <select id="gp-area" style="width:100%" onchange="genteUpdateCargosByArea()">
+              <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:5px">Departamento</label>
+              <select id="gp-area" style="width:100%;background:#f8fafc;border:1.5px solid #e2e8f0;color:#0f172a;border-radius:8px;padding:9px 12px;font-size:14px;box-sizing:border-box" onchange="genteUpdateCargosByArea()">
                 <option value="">— Selecionar —</option>
                 <option value="Vendas">Vendas</option>
                 <option value="Compras">Compras</option>
@@ -8767,75 +8769,75 @@ function genteSaveOrgMembro() {
               </select>
             </div>
             <div>
-              <label class="form-label">Cargo</label>
-              <select id="gp-cargo" style="width:100%">
+              <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:5px">Cargo</label>
+              <select id="gp-cargo" style="width:100%;background:#f8fafc;border:1.5px solid #e2e8f0;color:#0f172a;border-radius:8px;padding:9px 12px;font-size:14px;box-sizing:border-box">
                 <option value="">— Selecionar —</option>
               </select>
             </div>
             <input type="hidden" id="gp-funcao" value="">
             <div>
-              <label class="form-label">Líder direto</label>
-              <select id="gp-lider" style="width:100%">
+              <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:5px">Líder direto</label>
+              <select id="gp-lider" style="width:100%;background:#f8fafc;border:1.5px solid #e2e8f0;color:#0f172a;border-radius:8px;padding:9px 12px;font-size:14px;box-sizing:border-box">
                 <option value="">— Sem líder (topo) —</option>
               </select>
             </div>
           </div>
           <div>
-            <label class="form-label">Anotações Gerais</label>
-            <textarea id="gp-notas" style="width:100%;height:90px;resize:vertical;background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:6px;padding:8px 10px;font-family:inherit;font-size:13px;box-sizing:border-box" placeholder="Pontos de desenvolvimento, projetos, observações..."></textarea>
+            <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:5px">Anotações Gerais</label>
+            <textarea id="gp-notas" style="width:100%;height:100px;resize:vertical;background:#f8fafc;border:1.5px solid #e2e8f0;color:#0f172a;border-radius:8px;padding:9px 12px;font-family:inherit;font-size:13px;box-sizing:border-box" placeholder="Pontos de desenvolvimento, projetos, observações..."></textarea>
           </div>
         </div>
 
         <!-- ABA: DISC -->
         <div id="gp-tab-disc" style="display:none;flex-direction:column;gap:16px">
-          <div style="background:#0f172a;border-radius:10px;padding:16px">
-            <div style="font-size:11px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">Resultado DISC</div>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+          <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:20px">
+            <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.1em;margin-bottom:18px">Pontuação DISC</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
               <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
-                <div style="font-size:13px;font-weight:800;color:#ef4444">D</div>
+                <div style="font-size:14px;font-weight:800;color:#ef4444">D</div>
                 <input id="gp-d" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()"
-                  style="width:100%;box-sizing:border-box;text-align:center;font-size:22px;font-weight:700;color:#ef4444;background:#1e293b;border:2px solid #ef444444;border-radius:8px;padding:10px 4px">
+                  style="width:100%;box-sizing:border-box;text-align:center;font-size:24px;font-weight:700;color:#ef4444;background:#fff;border:2px solid #fecaca;border-radius:10px;padding:12px 4px">
                 <div style="width:100%;height:52px;display:flex;align-items:flex-end;padding:0 4px;box-sizing:border-box">
                   <div id="gp-bar-d" style="width:100%;background:#ef4444;border-radius:4px 4px 0 0;height:3px;transition:height .25s ease"></div>
                 </div>
               </div>
               <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
-                <div style="font-size:13px;font-weight:800;color:#eab308">I</div>
+                <div style="font-size:14px;font-weight:800;color:#eab308">I</div>
                 <input id="gp-i" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()"
-                  style="width:100%;box-sizing:border-box;text-align:center;font-size:22px;font-weight:700;color:#eab308;background:#1e293b;border:2px solid #eab30844;border-radius:8px;padding:10px 4px">
+                  style="width:100%;box-sizing:border-box;text-align:center;font-size:24px;font-weight:700;color:#eab308;background:#fff;border:2px solid #fef08a;border-radius:10px;padding:12px 4px">
                 <div style="width:100%;height:52px;display:flex;align-items:flex-end;padding:0 4px;box-sizing:border-box">
                   <div id="gp-bar-i" style="width:100%;background:#eab308;border-radius:4px 4px 0 0;height:3px;transition:height .25s ease"></div>
                 </div>
               </div>
               <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
-                <div style="font-size:13px;font-weight:800;color:#22c55e">S</div>
+                <div style="font-size:14px;font-weight:800;color:#22c55e">S</div>
                 <input id="gp-s" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()"
-                  style="width:100%;box-sizing:border-box;text-align:center;font-size:22px;font-weight:700;color:#22c55e;background:#1e293b;border:2px solid #22c55e44;border-radius:8px;padding:10px 4px">
+                  style="width:100%;box-sizing:border-box;text-align:center;font-size:24px;font-weight:700;color:#22c55e;background:#fff;border:2px solid #bbf7d0;border-radius:10px;padding:12px 4px">
                 <div style="width:100%;height:52px;display:flex;align-items:flex-end;padding:0 4px;box-sizing:border-box">
                   <div id="gp-bar-s" style="width:100%;background:#22c55e;border-radius:4px 4px 0 0;height:3px;transition:height .25s ease"></div>
                 </div>
               </div>
               <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
-                <div style="font-size:13px;font-weight:800;color:#38bdf8">C</div>
+                <div style="font-size:14px;font-weight:800;color:#0ea5e9">C</div>
                 <input id="gp-c" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()"
-                  style="width:100%;box-sizing:border-box;text-align:center;font-size:22px;font-weight:700;color:#38bdf8;background:#1e293b;border:2px solid #38bdf844;border-radius:8px;padding:10px 4px">
+                  style="width:100%;box-sizing:border-box;text-align:center;font-size:24px;font-weight:700;color:#0ea5e9;background:#fff;border:2px solid #bae6fd;border-radius:10px;padding:12px 4px">
                 <div style="width:100%;height:52px;display:flex;align-items:flex-end;padding:0 4px;box-sizing:border-box">
-                  <div id="gp-bar-c" style="width:100%;background:#38bdf8;border-radius:4px 4px 0 0;height:3px;transition:height .25s ease"></div>
+                  <div id="gp-bar-c" style="width:100%;background:#0ea5e9;border-radius:4px 4px 0 0;height:3px;transition:height .25s ease"></div>
                 </div>
               </div>
             </div>
-            <div style="border-top:1px solid #334155;margin:4px 0 14px"></div>
-            <div id="gp-disc-resultado" style="display:none;background:#1e293b;border-radius:8px;padding:10px 14px">
-              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+            <div style="border-top:1.5px solid #e2e8f0;margin:8px 0 16px"></div>
+            <div id="gp-disc-resultado" style="display:none;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;padding:12px 16px">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
                 <div>
-                  <div id="gp-perfil-display" style="font-size:15px;font-weight:700;color:#e2e8f0"></div>
-                  <div id="gp-fator-display" style="font-size:12px;color:#64748b;margin-top:2px"></div>
+                  <div id="gp-perfil-display" style="font-size:15px;font-weight:700;color:#0f172a"></div>
+                  <div id="gp-fator-display" style="font-size:12px;color:#64748b;margin-top:3px"></div>
                 </div>
                 <div style="text-align:right">
-                  <div style="font-size:11px;color:#64748b">Medo básico</div>
-                  <div id="gp-medo-display" style="font-size:12px;color:#fca5a5"></div>
-                  <div style="font-size:11px;color:#64748b;margin-top:4px">Motivação</div>
-                  <div id="gp-motiv-display" style="font-size:12px;color:#86efac"></div>
+                  <div style="font-size:11px;color:#94a3b8;font-weight:600">Medo básico</div>
+                  <div id="gp-medo-display" style="font-size:13px;color:#ef4444;font-weight:500"></div>
+                  <div style="font-size:11px;color:#94a3b8;font-weight:600;margin-top:5px">Motivação</div>
+                  <div id="gp-motiv-display" style="font-size:13px;color:#16a34a;font-weight:500"></div>
                 </div>
               </div>
             </div>
@@ -8847,29 +8849,28 @@ function genteSaveOrgMembro() {
         </div>
 
         <!-- ABA: FEEDBACK -->
-        <div id="gp-tab-feedback" style="display:none;flex-direction:column;gap:14px">
+        <div id="gp-tab-feedback" style="display:none;flex-direction:column;gap:16px">
           <!-- Formulário novo registro -->
-          <div style="background:#0f172a;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px">
-            <div style="font-size:11px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:.08em">Novo Registro</div>
-            <div style="display:grid;grid-template-columns:160px 1fr;gap:10px;align-items:start">
-              <div>
-                <label class="form-label">Data</label>
-                <input id="gp-fb-data" type="date" style="width:100%;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:6px;padding:7px 10px;font-size:13px;box-sizing:border-box">
-              </div>
-              <div>
-                <label class="form-label">Registro</label>
-                <textarea id="gp-fb-texto" rows="3" style="width:100%;resize:vertical;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:6px;padding:8px 10px;font-family:inherit;font-size:13px;box-sizing:border-box" placeholder="Descreva o feedback, comportamento observado, pontos de desenvolvimento..."></textarea>
-              </div>
+          <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:12px">
+            <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.1em">Novo Registro</div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:5px">Data</label>
+              <input id="gp-fb-data" type="date" style="background:#fff;border:1.5px solid #e2e8f0;color:#0f172a;border-radius:8px;padding:9px 12px;font-size:14px;box-sizing:border-box;width:200px">
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:5px">Registro</label>
+              <textarea id="gp-fb-texto" rows="5" style="width:100%;resize:vertical;background:#fff;border:1.5px solid #e2e8f0;color:#0f172a;border-radius:8px;padding:10px 12px;font-family:inherit;font-size:14px;box-sizing:border-box" placeholder="Descreva o feedback, comportamento observado, pontos de desenvolvimento..."></textarea>
             </div>
             <div style="display:flex;justify-content:flex-end">
-              <button class="btn btn-primary btn-sm" onclick="genteAddFeedback()">+ Adicionar</button>
+              <button class="btn btn-primary" onclick="genteAddFeedback()">+ Adicionar registro</button>
             </div>
           </div>
           <!-- Lista de registros -->
-          <div id="gp-fb-lista" style="display:flex;flex-direction:column;gap:8px"></div>
+          <div id="gp-fb-lista" style="display:flex;flex-direction:column;gap:10px"></div>
         </div>
       </div>
-      <div class="modal-footer" style="flex-shrink:0">
+      <!-- Footer -->
+      <div style="display:flex;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1.5px solid #e2e8f0;flex-shrink:0">
         <button class="btn btn-ghost" onclick="genteClosePessoaModal()">Cancelar</button>
         <button class="btn btn-danger hidden" id="gp-btn-del" onclick="genteDeletePessoa()">Excluir</button>
         <button class="btn btn-primary" onclick="genteSavePessoa()">Salvar</button>
