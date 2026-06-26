@@ -7658,6 +7658,62 @@ function genteUpdateCargosByArea(keepCargo) {
   if (!cargos.length) cargoSel.innerHTML += '<option value="_outro">Outro</option>';
 }
 
+// ---- TABS DA PESSOA MODAL ----
+function genteSwitchPessoaTab(tab) {
+  ['info','disc','feedback'].forEach(t => {
+    const panel = document.getElementById(`gp-tab-${t}`);
+    const btn   = document.getElementById(`gp-tab-btn-${t}`);
+    const active = t === tab;
+    if (panel) panel.style.display = active ? 'flex' : 'none';
+    if (btn) {
+      btn.style.color       = active ? '#38bdf8' : '#94a3b8';
+      btn.style.borderBottom = active ? '2px solid #38bdf8' : '2px solid transparent';
+    }
+  });
+}
+
+// ---- FEEDBACK ----
+let _gpFeedbacks = [];
+
+function genteRenderFeedbacks() {
+  const lista = document.getElementById('gp-fb-lista');
+  if (!lista) return;
+  if (!_gpFeedbacks.length) {
+    lista.innerHTML = '<div style="color:#475569;font-size:13px;text-align:center;padding:20px 0">Nenhum registro ainda.</div>';
+    return;
+  }
+  lista.innerHTML = [..._gpFeedbacks]
+    .sort((a,b) => b.data.localeCompare(a.data))
+    .map((fb, i) => {
+      const orig = _gpFeedbacks.indexOf(fb);
+      const dtFmt = fb.data ? fb.data.split('-').reverse().join('/') : '—';
+      return `<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;font-weight:700;color:#38bdf8;margin-bottom:4px">${dtFmt}</div>
+          <div style="font-size:13px;color:#e2e8f0;white-space:pre-wrap;word-break:break-word">${fb.texto.replace(/</g,'&lt;')}</div>
+        </div>
+        <button onclick="genteRemoveFeedback(${orig})" title="Excluir"
+          style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px;line-height:1;padding:0;flex-shrink:0">✕</button>
+      </div>`;
+    }).join('');
+}
+
+function genteAddFeedback() {
+  const data  = document.getElementById('gp-fb-data').value;
+  const texto = document.getElementById('gp-fb-texto').value.trim();
+  if (!texto) { alert('Escreva o registro antes de adicionar.'); return; }
+  _gpFeedbacks.push({ data: data || new Date().toISOString().slice(0,10), texto });
+  document.getElementById('gp-fb-texto').value = '';
+  genteRenderFeedbacks();
+}
+
+function genteRemoveFeedback(idx) {
+  if (!confirm('Excluir este registro?')) return;
+  _gpFeedbacks.splice(idx, 1);
+  genteRenderFeedbacks();
+}
+
+// ---- OPEN / CLOSE / SAVE ----
 function genteOpenPessoaModal(idx) {
   const pessoas = genteLoadPessoas();
   const p = idx !== undefined ? pessoas[idx] : {};
@@ -7674,11 +7730,16 @@ function genteOpenPessoaModal(idx) {
   document.getElementById('gp-s').value     = p.S !== undefined ? p.S : '';
   document.getElementById('gp-c').value     = p.C !== undefined ? p.C : '';
   document.getElementById('gp-notas').value = p.notas || '';
-  // popular select de líder com todos os outros nomes
   const liderSel = document.getElementById('gp-lider');
   liderSel.innerHTML = '<option value="">— Sem líder (topo) —</option>' +
     todas.filter((_,i2) => i2 !== idx).map(o => `<option value="${o.nome}"${o.nome===p.lider?' selected':''}>${o.nome}</option>`).join('');
+  // feedback
+  _gpFeedbacks = Array.isArray(p.feedbacks) ? p.feedbacks.map(f => ({...f})) : [];
+  document.getElementById('gp-fb-data').value  = new Date().toISOString().slice(0,10);
+  document.getElementById('gp-fb-texto').value = '';
+  genteRenderFeedbacks();
   document.getElementById('gp-btn-del').classList.toggle('hidden', idx === undefined);
+  genteSwitchPessoaTab('info');
   document.getElementById('gente-pessoa-modal').classList.remove('hidden');
   genteApplyAutoDisc();
 }
@@ -7704,6 +7765,7 @@ function genteSavePessoa() {
     medo:   document.getElementById('gp-medo').value.trim(),
     motiv:  document.getElementById('gp-motiv').value.trim(),
     notas:  document.getElementById('gp-notas').value.trim(),
+    feedbacks: _gpFeedbacks,
   };
   const idxStr = document.getElementById('gp-idx').value;
   if (idxStr !== '') pessoas[Number(idxStr)] = obj;
@@ -8660,124 +8722,154 @@ function genteSaveOrgMembro() {
 
   <!-- MODAL: PESSOA -->
   <div id="gente-pessoa-modal" class="modal-overlay hidden">
-    <div class="modal" style="max-width:580px;width:95%">
-      <div class="modal-header">
+    <div class="modal" style="max-width:600px;width:95%;max-height:92vh;display:flex;flex-direction:column">
+      <div class="modal-header" style="flex-shrink:0">
         <h3 id="gente-pessoa-modal-title">Nova Pessoa</h3>
         <button class="modal-close" onclick="genteClosePessoaModal()">✕</button>
       </div>
-      <div class="modal-body" style="display:flex;flex-direction:column;gap:16px">
+      <!-- Abas -->
+      <div style="display:flex;gap:0;border-bottom:1px solid #334155;flex-shrink:0;padding:0 22px">
+        <button id="gp-tab-btn-info"     onclick="genteSwitchPessoaTab('info')"
+          style="background:none;border:none;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;color:#94a3b8;border-bottom:2px solid transparent;transition:all .15s">Informações</button>
+        <button id="gp-tab-btn-disc"     onclick="genteSwitchPessoaTab('disc')"
+          style="background:none;border:none;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;color:#94a3b8;border-bottom:2px solid transparent;transition:all .15s">DISC</button>
+        <button id="gp-tab-btn-feedback" onclick="genteSwitchPessoaTab('feedback')"
+          style="background:none;border:none;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;color:#94a3b8;border-bottom:2px solid transparent;transition:all .15s">Feedback</button>
+      </div>
+      <div class="modal-body" style="overflow-y:auto;flex:1">
         <input type="hidden" id="gp-idx">
 
-        <!-- Identificação -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div style="grid-column:1/-1">
-            <label class="form-label">Nome *</label>
-            <input id="gp-nome" placeholder="Nome completo" style="width:100%">
+        <!-- ABA: INFORMAÇÕES -->
+        <div id="gp-tab-info" style="display:flex;flex-direction:column;gap:16px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div style="grid-column:1/-1">
+              <label class="form-label">Nome *</label>
+              <input id="gp-nome" placeholder="Nome completo" style="width:100%">
+            </div>
+            <div>
+              <label class="form-label">Empresa</label>
+              <select id="gp-empresa" style="width:100%">
+                <option value="Ahav">Ahav</option>
+                <option value="REDE EPI">REDE EPI</option>
+                <option value="REDE - GO">REDE - GO</option>
+                <option value="REDE - DF">REDE - DF</option>
+                <option value="REDE - MT">REDE - MT</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Departamento</label>
+              <select id="gp-area" style="width:100%" onchange="genteUpdateCargosByArea()">
+                <option value="">— Selecionar —</option>
+                <option value="Vendas">Vendas</option>
+                <option value="Compras">Compras</option>
+                <option value="Logística">Logística</option>
+                <option value="Administrativo">Administrativo</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Cargo</label>
+              <select id="gp-cargo" style="width:100%">
+                <option value="">— Selecionar —</option>
+              </select>
+            </div>
+            <input type="hidden" id="gp-funcao" value="">
+            <div>
+              <label class="form-label">Líder direto</label>
+              <select id="gp-lider" style="width:100%">
+                <option value="">— Sem líder (topo) —</option>
+              </select>
+            </div>
           </div>
           <div>
-            <label class="form-label">Empresa</label>
-            <select id="gp-empresa" style="width:100%">
-              <option value="Ahav">Ahav</option>
-              <option value="REDE EPI">REDE EPI</option>
-              <option value="REDE - GO">REDE - GO</option>
-              <option value="REDE - DF">REDE - DF</option>
-              <option value="REDE - MT">REDE - MT</option>
-            </select>
-          </div>
-          <div>
-            <label class="form-label">Departamento</label>
-            <select id="gp-area" style="width:100%" onchange="genteUpdateCargosByArea()">
-              <option value="">— Selecionar —</option>
-              <option value="Vendas">Vendas</option>
-              <option value="Compras">Compras</option>
-              <option value="Logística">Logística</option>
-              <option value="Administrativo">Administrativo</option>
-            </select>
-          </div>
-          <div>
-            <label class="form-label">Cargo</label>
-            <select id="gp-cargo" style="width:100%">
-              <option value="">— Selecionar —</option>
-            </select>
-          </div>
-          <input type="hidden" id="gp-funcao" value="">
-          <div>
-            <label class="form-label">Líder direto</label>
-            <select id="gp-lider" style="width:100%">
-              <option value="">— Sem líder (topo) —</option>
-            </select>
+            <label class="form-label">Anotações Gerais</label>
+            <textarea id="gp-notas" style="width:100%;height:90px;resize:vertical;background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:6px;padding:8px 10px;font-family:inherit;font-size:13px;box-sizing:border-box" placeholder="Pontos de desenvolvimento, projetos, observações..."></textarea>
           </div>
         </div>
 
-        <!-- DISC scores + preview -->
-        <div style="background:#0f172a;border-radius:10px;padding:16px">
-          <div style="font-size:11px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">Resultado DISC</div>
-          <!-- inputs + barras por coluna -->
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
-            <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
-              <div style="font-size:13px;font-weight:800;color:#ef4444">D</div>
-              <input id="gp-d" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()"
-                style="width:100%;box-sizing:border-box;text-align:center;font-size:22px;font-weight:700;color:#ef4444;background:#1e293b;border:2px solid #ef444444;border-radius:8px;padding:10px 4px">
-              <div style="width:100%;height:52px;display:flex;align-items:flex-end;padding:0 4px;box-sizing:border-box">
-                <div id="gp-bar-d" style="width:100%;background:#ef4444;border-radius:4px 4px 0 0;height:3px;transition:height .25s ease"></div>
+        <!-- ABA: DISC -->
+        <div id="gp-tab-disc" style="display:none;flex-direction:column;gap:16px">
+          <div style="background:#0f172a;border-radius:10px;padding:16px">
+            <div style="font-size:11px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">Resultado DISC</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+                <div style="font-size:13px;font-weight:800;color:#ef4444">D</div>
+                <input id="gp-d" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()"
+                  style="width:100%;box-sizing:border-box;text-align:center;font-size:22px;font-weight:700;color:#ef4444;background:#1e293b;border:2px solid #ef444444;border-radius:8px;padding:10px 4px">
+                <div style="width:100%;height:52px;display:flex;align-items:flex-end;padding:0 4px;box-sizing:border-box">
+                  <div id="gp-bar-d" style="width:100%;background:#ef4444;border-radius:4px 4px 0 0;height:3px;transition:height .25s ease"></div>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+                <div style="font-size:13px;font-weight:800;color:#eab308">I</div>
+                <input id="gp-i" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()"
+                  style="width:100%;box-sizing:border-box;text-align:center;font-size:22px;font-weight:700;color:#eab308;background:#1e293b;border:2px solid #eab30844;border-radius:8px;padding:10px 4px">
+                <div style="width:100%;height:52px;display:flex;align-items:flex-end;padding:0 4px;box-sizing:border-box">
+                  <div id="gp-bar-i" style="width:100%;background:#eab308;border-radius:4px 4px 0 0;height:3px;transition:height .25s ease"></div>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+                <div style="font-size:13px;font-weight:800;color:#22c55e">S</div>
+                <input id="gp-s" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()"
+                  style="width:100%;box-sizing:border-box;text-align:center;font-size:22px;font-weight:700;color:#22c55e;background:#1e293b;border:2px solid #22c55e44;border-radius:8px;padding:10px 4px">
+                <div style="width:100%;height:52px;display:flex;align-items:flex-end;padding:0 4px;box-sizing:border-box">
+                  <div id="gp-bar-s" style="width:100%;background:#22c55e;border-radius:4px 4px 0 0;height:3px;transition:height .25s ease"></div>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+                <div style="font-size:13px;font-weight:800;color:#38bdf8">C</div>
+                <input id="gp-c" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()"
+                  style="width:100%;box-sizing:border-box;text-align:center;font-size:22px;font-weight:700;color:#38bdf8;background:#1e293b;border:2px solid #38bdf844;border-radius:8px;padding:10px 4px">
+                <div style="width:100%;height:52px;display:flex;align-items:flex-end;padding:0 4px;box-sizing:border-box">
+                  <div id="gp-bar-c" style="width:100%;background:#38bdf8;border-radius:4px 4px 0 0;height:3px;transition:height .25s ease"></div>
+                </div>
               </div>
             </div>
-            <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
-              <div style="font-size:13px;font-weight:800;color:#eab308">I</div>
-              <input id="gp-i" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()"
-                style="width:100%;box-sizing:border-box;text-align:center;font-size:22px;font-weight:700;color:#eab308;background:#1e293b;border:2px solid #eab30844;border-radius:8px;padding:10px 4px">
-              <div style="width:100%;height:52px;display:flex;align-items:flex-end;padding:0 4px;box-sizing:border-box">
-                <div id="gp-bar-i" style="width:100%;background:#eab308;border-radius:4px 4px 0 0;height:3px;transition:height .25s ease"></div>
+            <div style="border-top:1px solid #334155;margin:4px 0 14px"></div>
+            <div id="gp-disc-resultado" style="display:none;background:#1e293b;border-radius:8px;padding:10px 14px">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+                <div>
+                  <div id="gp-perfil-display" style="font-size:15px;font-weight:700;color:#e2e8f0"></div>
+                  <div id="gp-fator-display" style="font-size:12px;color:#64748b;margin-top:2px"></div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:11px;color:#64748b">Medo básico</div>
+                  <div id="gp-medo-display" style="font-size:12px;color:#fca5a5"></div>
+                  <div style="font-size:11px;color:#64748b;margin-top:4px">Motivação</div>
+                  <div id="gp-motiv-display" style="font-size:12px;color:#86efac"></div>
+                </div>
               </div>
             </div>
-            <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
-              <div style="font-size:13px;font-weight:800;color:#22c55e">S</div>
-              <input id="gp-s" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()"
-                style="width:100%;box-sizing:border-box;text-align:center;font-size:22px;font-weight:700;color:#22c55e;background:#1e293b;border:2px solid #22c55e44;border-radius:8px;padding:10px 4px">
-              <div style="width:100%;height:52px;display:flex;align-items:flex-end;padding:0 4px;box-sizing:border-box">
-                <div id="gp-bar-s" style="width:100%;background:#22c55e;border-radius:4px 4px 0 0;height:3px;transition:height .25s ease"></div>
-              </div>
-            </div>
-            <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
-              <div style="font-size:13px;font-weight:800;color:#38bdf8">C</div>
-              <input id="gp-c" type="number" min="0" max="100" placeholder="0" oninput="genteApplyAutoDisc()"
-                style="width:100%;box-sizing:border-box;text-align:center;font-size:22px;font-weight:700;color:#38bdf8;background:#1e293b;border:2px solid #38bdf844;border-radius:8px;padding:10px 4px">
-              <div style="width:100%;height:52px;display:flex;align-items:flex-end;padding:0 4px;box-sizing:border-box">
-                <div id="gp-bar-c" style="width:100%;background:#38bdf8;border-radius:4px 4px 0 0;height:3px;transition:height .25s ease"></div>
-              </div>
-            </div>
+            <input type="hidden" id="gp-perfil">
+            <input type="hidden" id="gp-fator">
+            <input type="hidden" id="gp-medo">
+            <input type="hidden" id="gp-motiv">
           </div>
-          <!-- linha de base -->
-          <div style="border-top:1px solid #334155;margin:4px 0 14px"></div>
-          <!-- resultado automático -->
-          <div id="gp-disc-resultado" style="display:none;background:#1e293b;border-radius:8px;padding:10px 14px">
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+        </div>
+
+        <!-- ABA: FEEDBACK -->
+        <div id="gp-tab-feedback" style="display:none;flex-direction:column;gap:14px">
+          <!-- Formulário novo registro -->
+          <div style="background:#0f172a;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px">
+            <div style="font-size:11px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:.08em">Novo Registro</div>
+            <div style="display:grid;grid-template-columns:160px 1fr;gap:10px;align-items:start">
               <div>
-                <div id="gp-perfil-display" style="font-size:15px;font-weight:700;color:#e2e8f0"></div>
-                <div id="gp-fator-display" style="font-size:12px;color:#64748b;margin-top:2px"></div>
+                <label class="form-label">Data</label>
+                <input id="gp-fb-data" type="date" style="width:100%;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:6px;padding:7px 10px;font-size:13px;box-sizing:border-box">
               </div>
-              <div style="text-align:right">
-                <div style="font-size:11px;color:#64748b">Medo básico</div>
-                <div id="gp-medo-display" style="font-size:12px;color:#fca5a5"></div>
-                <div style="font-size:11px;color:#64748b;margin-top:4px">Motivação</div>
-                <div id="gp-motiv-display" style="font-size:12px;color:#86efac"></div>
+              <div>
+                <label class="form-label">Registro</label>
+                <textarea id="gp-fb-texto" rows="3" style="width:100%;resize:vertical;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:6px;padding:8px 10px;font-family:inherit;font-size:13px;box-sizing:border-box" placeholder="Descreva o feedback, comportamento observado, pontos de desenvolvimento..."></textarea>
               </div>
             </div>
+            <div style="display:flex;justify-content:flex-end">
+              <button class="btn btn-primary btn-sm" onclick="genteAddFeedback()">+ Adicionar</button>
+            </div>
           </div>
-          <!-- campos ocultos que guardam o valor -->
-          <input type="hidden" id="gp-perfil">
-          <input type="hidden" id="gp-fator">
-          <input type="hidden" id="gp-medo">
-          <input type="hidden" id="gp-motiv">
-        </div>
-
-        <!-- Anotações -->
-        <div>
-          <label class="form-label">Anotações Gerais</label>
-          <textarea id="gp-notas" style="width:100%;height:90px;resize:vertical;background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:6px;padding:8px 10px;font-family:inherit;font-size:13px;box-sizing:border-box" placeholder="Pontos de desenvolvimento, projetos, observações..."></textarea>
+          <!-- Lista de registros -->
+          <div id="gp-fb-lista" style="display:flex;flex-direction:column;gap:8px"></div>
         </div>
       </div>
-      <div class="modal-footer">
+      <div class="modal-footer" style="flex-shrink:0">
         <button class="btn btn-ghost" onclick="genteClosePessoaModal()">Cancelar</button>
         <button class="btn btn-danger hidden" id="gp-btn-del" onclick="genteDeletePessoa()">Excluir</button>
         <button class="btn btn-primary" onclick="genteSavePessoa()">Salvar</button>
