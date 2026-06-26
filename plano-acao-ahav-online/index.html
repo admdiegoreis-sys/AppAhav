@@ -7282,12 +7282,17 @@ const GENTE_EMPRESAS = ['Ahav','REDE EPI','REDE - GO','REDE - DF','REDE - MT'];
 let genteActiveTab = 'pessoas';
 
 const GENTE_DISC_DEFAULT = [
-  {nome:'Ana Kelly',                   cargo:'Analista',    area:'', lider:'',       perfil:'Estável Puro',         fator:'Monofatorial S',    D:20, I:52, S:68, C:20, medo:'Insegurança',                     motiv:'Previsibilidade',                    notas:''},
-  {nome:'Carlos Antonio do Nascimento',cargo:'Analista',    area:'', lider:'',       perfil:'Especialista',          fator:'Bifatorial SC',     D:15, I:30, S:60, C:58, medo:'Caos Operacional',                 motiv:'Domínio Técnico',                    notas:''},
-  {nome:'Danilo',                      cargo:'Analista',    area:'', lider:'',       perfil:'Analista Harmonizador', fator:'Trifatorial ISC',   D:10, I:50, S:57, C:57, medo:'Desorientação Operacional',         motiv:'Equilíbrio entre Técnica e Pessoas', notas:''},
-  {nome:'Dayane',                      cargo:'Assistente',  area:'', lider:'',       perfil:'Especialista',          fator:'Bifatorial SC',     D:5,  I:10, S:67, C:62, medo:'Caos Operacional',                 motiv:'Domínio Técnico',                    notas:''},
-  {nome:'Marco',                       cargo:'Analista',    area:'', lider:'',       perfil:'Especialista',          fator:'Bifatorial SC',     D:15, I:5,  S:65, C:62, medo:'Mudanças e conflitos',              motiv:'Segurança, regras e previsibilidade', notas:''},
-  {nome:'Mayara',                      cargo:'Assistente',  area:'', lider:'Flávia', perfil:'Perfil Equilibrado',    fator:'Perfil Equilibrado',D:52, I:50, S:52, C:40, medo:'Julgamento Precipitado',            motiv:'Moderação e Equilíbrio',             notas:''},
+  {nome:'Ana Kelly',                   cargo:'Analista',       area:'Administrativo', lider:'Flávia',  perfil:'Estável Puro',         fator:'Monofatorial S',    D:20, I:52, S:68, C:20, medo:'Insegurança',                     motiv:'Previsibilidade',                    notas:''},
+  {nome:'Ariena Santos',               cargo:'Assistente',     area:'Administrativo', lider:'Flávia',  perfil:'Comunicador',          fator:'Monofatorial I',    D:35, I:63, S:50, C:25, medo:'Rejeição social',                  motiv:'Reconhecimento e conexão',           notas:''},
+  {nome:'Carlos Antonio do Nascimento',cargo:'Analista',       area:'Administrativo', lider:'',        perfil:'Especialista',         fator:'Bifatorial SC',     D:15, I:30, S:60, C:58, medo:'Caos Operacional',                 motiv:'Domínio Técnico',                    notas:''},
+  {nome:'Danilo',                      cargo:'Analista',       area:'Administrativo', lider:'',        perfil:'Analista Harmonizador', fator:'Trifatorial ISC',  D:10, I:50, S:57, C:57, medo:'Desorientação Operacional',         motiv:'Equilíbrio entre Técnica e Pessoas', notas:''},
+  {nome:'Dayane',                      cargo:'Assistente',     area:'Administrativo', lider:'',        perfil:'Especialista',         fator:'Bifatorial SC',     D:5,  I:10, S:67, C:62, medo:'Caos Operacional',                 motiv:'Domínio Técnico',                    notas:''},
+  {nome:'Diego Reis',                  cargo:'Diretor',        area:'Diretoria',      lider:'',        perfil:'',                     fator:'',                  D:0,  I:0,  S:0,  C:0,  medo:'',                                motiv:'',                                   notas:''},
+  {nome:'Douglas',                     cargo:'Gestor',         area:'Administrativo', lider:'Diego',   perfil:'',                     fator:'',                  D:0,  I:0,  S:0,  C:0,  medo:'',                                motiv:'',                                   notas:''},
+  {nome:'Flávia',                      cargo:'Gestor',         area:'Administrativo', lider:'Diego',   perfil:'',                     fator:'',                  D:0,  I:0,  S:0,  C:0,  medo:'',                                motiv:'',                                   notas:''},
+  {nome:'João',                        cargo:'Gestor',         area:'Administrativo', lider:'Diego',   perfil:'',                     fator:'',                  D:0,  I:0,  S:0,  C:0,  medo:'',                                motiv:'',                                   notas:''},
+  {nome:'Marco',                       cargo:'Analista',       area:'Administrativo', lider:'',        perfil:'Especialista',         fator:'Bifatorial SC',     D:15, I:5,  S:65, C:62, medo:'Mudanças e conflitos',             motiv:'Segurança, regras e previsibilidade', notas:''},
+  {nome:'Mayara',                      cargo:'Assistente',     area:'Administrativo', lider:'Flávia',  perfil:'Perfil Equilibrado',   fator:'Perfil Equilibrado',D:52, I:50, S:52, C:40, medo:'Julgamento Precipitado',           motiv:'Moderação e Equilíbrio',             notas:''},
 ];
 
 const GENTE_ORG_DEFAULT = [
@@ -7353,9 +7358,14 @@ function _genteDefaultPessoas() {
 
 function _genteNormalizePessoas(list) {
   list = list.map(p => ({...p, empresa: p.empresa || 'Ahav'}));
-  // re-seed Ahav se não houver nenhum
-  const hasAhav = list.some(p => (p.empresa || 'Ahav') === 'Ahav');
-  if (!hasAhav) list = list.concat(GENTE_DISC_DEFAULT.map(p => ({...p, empresa:'Ahav'})));
+  // re-seed cada pessoa Ahav do default que estiver faltando (por nome)
+  const names = new Set(list.map(p => (p.nome||'').toLowerCase().trim()));
+  for (const def of GENTE_DISC_DEFAULT) {
+    if (!names.has((def.nome||'').toLowerCase().trim())) {
+      list.push({...def, empresa:'Ahav'});
+      names.add((def.nome||'').toLowerCase().trim());
+    }
+  }
   // re-seed REDE EPI se não houver nenhum
   const hasRedeEpi = list.some(p => p.empresa === 'REDE EPI');
   if (!hasRedeEpi) list = list.concat(GENTE_REDE_EPI_DEFAULT);
