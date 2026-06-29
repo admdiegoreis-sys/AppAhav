@@ -3167,12 +3167,17 @@ function optionHtml(value, selectedValue) {
 }
 
 function getResponsaveis() {
-  return uniqueSorted([
+  // Apenas responsáveis que têm pelo menos um item nos dados visíveis
+  const comDados = new Set(
+    getVisiblePlanoData().map(a => a.quem).filter(Boolean).map(normalizeResponsibleName)
+  );
+  const todos = uniqueSorted([
     ...cachedUserNames,
     ...DEFAULT_RESPONSAVEIS,
     ...readCadastro(CAD_RESP_KEY),
     ...dados.map(a => a.quem)
   ].map(normalizeResponsibleName));
+  return todos.filter(r => comDados.has(r));
 }
 
 function getProjetos() {
