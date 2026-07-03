@@ -4906,6 +4906,7 @@ function normalizeSmartState(state = {}) {
   });
   normalized.produtos = dedupeSmartProducts(normalized.produtos || []);
   normalized.producao = normalizeSmartProductionRows(normalized.producao || []);
+  syncSmartStockBaseFromProducts(normalized);
   applySmartProductInputs(normalized);
   applySmartProductionInputs(normalized);
   syncSmartFaturamentoData(normalized);
