@@ -5249,7 +5249,7 @@ function smartNum(value) {
 }
 
 function smartProductOptions(selected = '', fallbackLabel = '') {
-  const options = getSmartState().produtos.map(p => {
+  const options = getSmartState().produtos.filter(p => (p.Status || 'Ativo') === 'Ativo').map(p => {
     const code = String(p.codprod || '');
     const label = `${code} - ${smartProductText(p['descrprod ERP'] || p['Produto ERP'] || '')}`;
     return `<option value="${escapeHtml(code)}" ${String(selected)===code?'selected':''}>${escapeHtml(label)}</option>`;
@@ -5313,7 +5313,7 @@ function smartInitialAdjusted(row = {}, fallback = {}) {
 function smartComputedStock() {
   const state = getSmartState();
   const stockByCode = new Map((state.estoqueBase || []).map(row => [String(row.codprod || ''), row]));
-  const products = (state.produtos || []).length ? state.produtos : (state.estoqueBase || []).map(row => ({
+  const allProducts = (state.produtos || []).length ? state.produtos : (state.estoqueBase || []).map(row => ({
     codprod: row.codprod,
     'descrprod ERP': smartProductText(row['Produto ERP'] || row['descrprod ERP'] || ''),
     Categoria: row.Categoria || '',
@@ -5321,6 +5321,7 @@ function smartComputedStock() {
     'Estoque Inicial': row['Estoque Inicial'] || 0,
     'Estoque Inicial Ajuste': row['Estoque Inicial Ajuste'] || 0
   }));
+  const products = allProducts.filter(p => (p.Status || 'Ativo') === 'Ativo');
   const initialDateByCode = {};
   products.forEach(p => initialDateByCode[p.codprod] = smartDateSerial(p['Data Estoque Inicial']));
   const producedByCode = {};
@@ -5777,9 +5778,11 @@ function renderSmartProduction() {
   const cat = document.getElementById('smart-producao-categoria')?.value || '';
   const inicio = smartDateSerial(document.getElementById('smart-producao-data-inicio')?.value);
   const fim = smartDateSerial(document.getElementById('smart-producao-data-fim')?.value);
+  const activeCodes = new Set((state.produtos || []).filter(p => (p.Status || 'Ativo') === 'Ativo').map(p => String(p.codprod)));
   const rows = state.producao
     .map((p, i) => ({...p, _id:i, 'Produto ERP': smartProductName(p.codprod, p['Produto ERP'])}))
     .filter(p => {
+      if (!activeCodes.has(String(p.codprod))) return false;
       const data = smartDateSerial(p.Data);
       return (!cat || p.Categoria === cat)
         && (!codigo || String(p.codprod || '').toLowerCase().includes(codigo))
@@ -5991,7 +5994,9 @@ function renderSmartStaticTables() {
 
 function renderSmartPrecificacao() {
   const busca = (document.getElementById('smart-preco-busca')?.value || '').toLowerCase();
+  const activeCodes = new Set((getSmartState().produtos || []).filter(p => (p.Status || 'Ativo') === 'Ativo').map(p => String(p.codprod)));
   const rows = (getSmartState().precos || []).map((p,i) => ({...p, _id:i})).filter(p => {
+    if (!activeCodes.has(String(p.codprod))) return false;
     if (!busca) return true;
     return (p.Produto||'').toLowerCase().includes(busca) || (p.codprod||'').toLowerCase().includes(busca);
   });
