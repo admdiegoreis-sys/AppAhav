@@ -1093,7 +1093,6 @@ body.sidebar-collapsed #page-gente{
     <div class="page-actions-title">Smartmold ERP</div>
     <div class="page-actions-buttons">
       <button class="btn btn-ghost btn-sm" onclick="exportSmartmoldPDF()">📄 PDF Smartmold</button>
-      <button class="btn btn-success btn-sm" onclick="openSmartSaleModal(null)">+ Venda</button>
     </div>
   </div>
 
@@ -1157,6 +1156,7 @@ body.sidebar-collapsed #page-gente{
       <button class="btn btn-primary btn-sm" onclick="renderSmartSales()">Aplicar filtros</button>
       <button class="btn btn-ghost btn-sm" onclick="clearSmartSalesFilters()">Limpar filtros</button>
       <button class="btn btn-ghost btn-sm" onclick="importSmartSalesXlsx()" title="Importar planilha .xlsx">⬆ Importar XLSX</button>
+      <button class="btn btn-success btn-sm" onclick="openSmartSaleModal(null)">+ Venda</button>
       <input type="file" id="smart-sales-xlsx-input" accept=".xlsx" style="display:none" onchange="handleSmartSalesXlsxFile(this)">
     </div>
     <div class="table-wrap"><div class="table-header"><h3 id="smart-vendas-title">Pedidos de Venda</h3></div><div style="overflow-x:auto"><table class="smart-table smart-table-sales" id="smart-vendas-table"><thead id="smart-vendas-head"></thead><tbody id="smart-vendas-body"></tbody></table></div></div>
