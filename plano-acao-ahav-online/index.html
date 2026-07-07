@@ -1174,7 +1174,11 @@ body.sidebar-collapsed #page-gente{
   </div>
 
   <div class="smart-section" id="smart-section-precificacao">
-    <div class="table-wrap"><div class="table-header"><h3>Precificação</h3></div><div style="overflow-x:auto"><table class="smart-table"><thead id="smart-precificacao-head"></thead><tbody id="smart-precificacao-body"></tbody></table></div></div>
+    <div class="filters">
+      <div class="filter-group"><label>Busca</label><input type="text" id="smart-preco-busca" placeholder="Produto, código..." oninput="renderSmartPrecificacao()"></div>
+      <button class="btn btn-success btn-sm" onclick="openSmartPrecoModal(null)">+ Cadastrar Preço</button>
+    </div>
+    <div class="table-wrap"><div class="table-header"><h3>Precificação de Produtos</h3></div><div style="overflow-x:auto"><table class="smart-table"><thead id="smart-precificacao-head"></thead><tbody id="smart-precificacao-body"></tbody></table></div></div>
   </div>
 
   <div class="smart-section" id="smart-section-dre">
@@ -1843,6 +1847,27 @@ body.sidebar-collapsed #page-gente{
       <div style="flex:1"></div>
       <button class="btn btn-ghost" onclick="closeSmartSaleModal()">Cancelar</button>
       <button class="btn btn-primary" onclick="saveSmartSale()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Smartmold Preco Modal -->
+<div class="modal-overlay hidden" id="smart-preco-modal" onclick="if(event.target===this)closeSmartPrecoModal()">
+  <div class="modal">
+    <div class="modal-header"><h2 id="smart-preco-title">Cadastrar Preço</h2><button class="modal-close" onclick="closeSmartPrecoModal()">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="smart-preco-id">
+      <div class="field full"><label>Produto</label><select id="smart-preco-produto" onchange="recalcSmartPrecoSugerido()"></select></div>
+      <div class="field"><label>Custo Unitário (R$)</label><input type="text" inputmode="decimal" id="smart-preco-custo" oninput="recalcSmartPrecoSugerido()" placeholder="0,00"></div>
+      <div class="field"><label>Margem Alvo (%)</label><input type="text" inputmode="decimal" id="smart-preco-margem" oninput="recalcSmartPrecoSugerido()" placeholder="0"></div>
+      <div class="field"><label>Preço Sugerido (R$)</label><input type="text" id="smart-preco-sugerido" readonly style="opacity:.7;cursor:default" placeholder="calculado automático"></div>
+      <div class="field"><label>Preço Atual (R$)</label><input type="text" inputmode="decimal" id="smart-preco-atual" placeholder="0,00"></div>
+      <div class="field full"><label>Observação</label><textarea id="smart-preco-obs" rows="2"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost hidden" id="smart-preco-delete" onclick="deleteSmartPreco()">Excluir</button>
+      <button class="btn btn-ghost" onclick="closeSmartPrecoModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveSmartPreco()">Salvar</button>
     </div>
   </div>
 </div>
@@ -4984,7 +5009,8 @@ function smartDefaultState() {
     custos: d.Premissas_Custos || [],
     tracos: d.Tracos_Simulados || [],
     dre: d.DRE_Modelo || [],
-    resumoProducao: d.Resumo_Producao || []
+    resumoProducao: d.Resumo_Producao || [],
+    precos: []
   };
 }
 
@@ -5958,9 +5984,79 @@ function renderSmartStaticTables() {
   smartTable('smart-compras-head', 'smart-compras-body', [], {headers:['Data','Fornecedor','Insumo','Quantidade','Custo Unitário','Valor Total','Status']});
   smartTable('smart-custos-head', 'smart-custos-body', s.custos);
   smartTable('smart-tracos-head', 'smart-tracos-body', s.tracos);
-  smartTable('smart-precificacao-head', 'smart-precificacao-body', [], {headers:['Produto','Custo Unitário','Margem Alvo','Preço Sugerido','Preço Atual','Observação']});
+  renderSmartPrecificacao();
   renderSmartDreAndFlow(s);
   smartTable('smart-pcp-head', 'smart-pcp-body', [], {headers:['Semana','Produto','Estoque Atual','Estoque Mínimo','Pedidos','Produção Sugerida','Prioridade']});
+}
+
+function renderSmartPrecificacao() {
+  const busca = (document.getElementById('smart-preco-busca')?.value || '').toLowerCase();
+  const rows = (getSmartState().precos || []).map((p,i) => ({...p, _id:i})).filter(p => {
+    if (!busca) return true;
+    return (p.Produto||'').toLowerCase().includes(busca) || (p.codprod||'').toLowerCase().includes(busca);
+  });
+  smartTable('smart-precificacao-head', 'smart-precificacao-body', rows, {
+    headers:['Produto','Custo Unitário','Margem Alvo','Preço Sugerido','Preço Atual','Observação'],
+    onClick:'openSmartPrecoModal'
+  });
+}
+
+function openSmartPrecoModal(id) {
+  const state = getSmartState();
+  const row = id === null ? null : (state.precos || [])[Number(id)];
+  document.getElementById('smart-preco-id').value = id ?? '';
+  document.getElementById('smart-preco-title').textContent = row ? 'Editar Preço' : 'Cadastrar Preço';
+  document.getElementById('smart-preco-produto').innerHTML = smartProductOptions(row?.codprod || '');
+  document.getElementById('smart-preco-custo').value = row?.['Custo Unitário'] ?? '';
+  document.getElementById('smart-preco-margem').value = row?.['Margem Alvo'] ?? '';
+  document.getElementById('smart-preco-atual').value = row?.['Preço Atual'] ?? '';
+  document.getElementById('smart-preco-obs').value = row?.Observação || '';
+  document.getElementById('smart-preco-delete').classList.toggle('hidden', row === null);
+  recalcSmartPrecoSugerido();
+  document.getElementById('smart-preco-modal').classList.remove('hidden');
+}
+
+function closeSmartPrecoModal() { document.getElementById('smart-preco-modal').classList.add('hidden'); }
+
+function recalcSmartPrecoSugerido() {
+  const custo = smartNum(document.getElementById('smart-preco-custo').value);
+  const margem = smartNum(document.getElementById('smart-preco-margem').value);
+  const sugerido = margem > 0 ? custo / (1 - margem / 100) : custo;
+  document.getElementById('smart-preco-sugerido').value = sugerido > 0
+    ? sugerido.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '';
+}
+
+function saveSmartPreco() {
+  const state = getSmartState();
+  const id = document.getElementById('smart-preco-id').value;
+  const codprod = document.getElementById('smart-preco-produto').value;
+  const produto = document.getElementById('smart-preco-produto').selectedOptions[0]?.text || '';
+  const custo = smartNum(document.getElementById('smart-preco-custo').value);
+  const margem = smartNum(document.getElementById('smart-preco-margem').value);
+  const sugerido = margem > 0 ? custo / (1 - margem / 100) : custo;
+  const atual = smartNum(document.getElementById('smart-preco-atual').value);
+  if (!codprod) { alert('Selecione um produto.'); return; }
+  const row = {
+    codprod, Produto: produto,
+    'Custo Unitário': custo, 'Margem Alvo': margem,
+    'Preço Sugerido': sugerido, 'Preço Atual': atual,
+    Observação: document.getElementById('smart-preco-obs').value.trim()
+  };
+  if (!state.precos) state.precos = [];
+  if (id === '') state.precos.unshift(row); else state.precos[Number(id)] = row;
+  saveSmartSharedState(state);
+  closeSmartPrecoModal();
+  renderSmartPrecificacao();
+}
+
+function deleteSmartPreco() {
+  if (!confirm('Excluir este preço?')) return;
+  const state = getSmartState();
+  const id = Number(document.getElementById('smart-preco-id').value);
+  state.precos.splice(id, 1);
+  saveSmartSharedState(state);
+  closeSmartPrecoModal();
+  renderSmartPrecificacao();
 }
 
 function smartMoneyDisplay(value) {
