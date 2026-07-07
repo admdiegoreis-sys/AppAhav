@@ -5833,12 +5833,12 @@ function renderSmartStock() {
   const categoria = document.getElementById('smart-estoque-categoria')?.value || '';
   const status = document.getElementById('smart-estoque-status')?.value || '';
   const precoMap = new Map((getSmartState().precos || []).map(p => [String(p.codprod), p]));
-  const rows = rowsBase
-    .filter(p => (!categoria || p.Categoria === categoria) && (!status || p['Status Estoque'] === status) && JSON.stringify(p).toLowerCase().includes(busca))
-    .map(p => {
+  const filtered = rowsBase.filter(p => (!categoria || p.Categoria === categoria) && (!status || p['Status Estoque'] === status) && JSON.stringify(p).toLowerCase().includes(busca));
+  const rows = filtered.map(p => {
       const preco = precoMap.get(String(p.codprod)) || {};
       const custo = smartNum(preco['Custo Unitário']);
       const venda = smartNum(preco['Preço Atual']) || smartNum(preco['Preço Sugerido']);
+      const ef = smartNum(p['Estoque Final']);
       return {
         ...p,
         'Produto ERP': String(p['Produto ERP'] || '').toUpperCase(),
@@ -5846,12 +5846,13 @@ function renderSmartStock() {
         Entradas: smartSignedCell(p.Produção, 'positive'),
         Saídas: smartSignedCell(p.Vendas, 'negative'),
         Ajustes: smartSignedCell(p.Ajustes, 'signed'),
-        Final: smartSignedCell(p['Estoque Final'], 'signed'),
+        Final: smartSignedCell(ef, 'signed'),
         Limites:`<span class="stock-limits"><span>Mín: ${smartFormatCell(p['Estoque Mínimo'])}</span><span>Máx: ${smartFormatCell(p['Estoque Máximo'])}</span></span>`,
         'Preço Custo': custo ? `R$ ${custo.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}` : '—',
         'Preço Venda': venda ? `R$ ${venda.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}` : '—',
-        'VLR Custo': (() => { const ef = smartNum(p['Estoque Final']); return custo && ef ? `R$ ${(custo*ef).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}` : '—'; })(),
-        'VLR Venda': (() => { const ef = smartNum(p['Estoque Final']); return venda && ef ? `R$ ${(venda*ef).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}` : '—'; })(),
+        'VLR Custo': custo && ef ? `R$ ${(custo*ef).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}` : '—',
+        'VLR Venda': venda && ef ? `R$ ${(venda*ef).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}` : '—',
+        _custoNum: custo, _vendaNum: venda, _efNum: ef,
         Status:p['Status Estoque'] === 'Estoque negativo' ? '<span class="stock-status-alert">N/OK</span>' : escapeHtml(p['Status Estoque']),
         Ações:`<div class="stock-actions"><button class="btn btn-ghost btn-sm" title="Ajustar estoque" aria-label="Ajustar estoque" onclick="event.stopPropagation();openSmartAdjustmentModal(null,'${escapeHtml(String(p.codprod || ''))}')">±</button><button class="btn btn-ghost btn-sm" title="Editar limites" aria-label="Editar limites" onclick="event.stopPropagation();openSmartStockLimitsModal('${escapeHtml(String(p.codprod || ''))}')">↕</button></div>`
       };
@@ -5861,6 +5862,36 @@ function renderSmartStock() {
     fieldMap:{'CÓD':'codprod','PRODUTO':'Produto ERP','DT. INICIAL':'Data Estoque Inicial','INICIAL':'Inicial Ajus','ENTRADAS':'Entradas','SAÍDAS':'Saídas','AJUSTES':'Ajustes','FINAL':'Final','LIMITES':'Limites','P. CUSTO':'Preço Custo','P. VENDA':'Preço Venda','VLR CUSTO':'VLR Custo','VLR VENDA':'VLR Venda','STATUS':'Status','AÇÕES':'Ações'},
     htmlFields:['Inicial Ajus','Entradas','Saídas','Ajustes','Final','Limites','Status','Ações']
   });
+  // totalizador
+  const tot = rows.reduce((acc, r) => {
+    acc.inicial += smartNum(r['Estoque Inicial Ajustado']);
+    acc.entradas += smartNum(r.Produção);
+    acc.saidas += Math.abs(smartNum(r.Vendas));
+    acc.ajustes += smartNum(r.Ajustes);
+    acc.final += r._efNum || 0;
+    acc.vlrCusto += (r._custoNum && r._efNum) ? r._custoNum * r._efNum : 0;
+    acc.vlrVenda += (r._vendaNum && r._efNum) ? r._vendaNum * r._efNum : 0;
+    return acc;
+  }, {inicial:0, entradas:0, saidas:0, ajustes:0, final:0, vlrCusto:0, vlrVenda:0});
+  const fmt = n => n.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
+  const fmtR = n => `R$ ${n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+  const tfoot = document.getElementById('smart-estoque-body')?.closest('table')?.querySelector('tfoot') || document.createElement('tfoot');
+  tfoot.innerHTML = `<tr style="background:#1e293b;font-weight:800;font-size:11px;border-top:2px solid #38bdf8">
+    <td colspan="3" style="padding:8px 8px;color:#38bdf8;text-transform:uppercase;letter-spacing:.06em">${rows.length} produtos</td>
+    <td style="text-align:center;padding:8px">${fmt(tot.inicial)}</td>
+    <td style="text-align:center;padding:8px;color:#86efac">+${fmt(tot.entradas)}</td>
+    <td style="text-align:center;padding:8px;color:#fca5a5">-${fmt(tot.saidas)}</td>
+    <td style="text-align:center;padding:8px">${tot.ajustes>=0?'+':''}${fmt(tot.ajustes)}</td>
+    <td style="text-align:center;padding:8px;color:#38bdf8">${fmt(tot.final)}</td>
+    <td style="padding:8px"></td>
+    <td colspan="2" style="padding:8px"></td>
+    <td style="text-align:right;padding:8px;color:#fbbf24">${tot.vlrCusto ? fmtR(tot.vlrCusto) : '—'}</td>
+    <td style="text-align:right;padding:8px;color:#34d399">${tot.vlrVenda ? fmtR(tot.vlrVenda) : '—'}</td>
+    <td colspan="2" style="padding:8px"></td>
+  </tr>`;
+  const table = document.getElementById('smart-estoque-body')?.closest('table');
+  if (table && !table.querySelector('tfoot')) table.appendChild(tfoot);
+  else if (table) table.replaceChild(tfoot, table.querySelector('tfoot'));
 }
 
 function renderSmartSales() {
