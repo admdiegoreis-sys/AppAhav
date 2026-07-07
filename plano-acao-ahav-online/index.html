@@ -2652,6 +2652,13 @@ function enterApp() {
   document.getElementById('btn-credit-params')?.classList.toggle('hidden', !admin);
   applyNavPermissions();
   showStartPage();
+  // auto-navega para usuários sem acesso à home
+  if (!hasPageAccess('home')) {
+    if (hasCompanyAccess('smartmold')) showSmartModule(getFirstCompanyPage('smartmold') || 'dashboard');
+    else if (hasCompanyAccess('vjm')) showPage('vjm');
+    else if (hasPageAccess('credit')) showPage('credit');
+    else if (hasCompanyAccess('gente')) showPage('gente');
+  }
   loadData();
   subscribeRealtime();
   loadCachedUserNames();
