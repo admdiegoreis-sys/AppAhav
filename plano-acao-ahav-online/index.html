@@ -6178,7 +6178,7 @@ function openSmartSaleModal(id) {
   document.getElementById('smart-sale-vlrprod').value = row?.['Valor Produtos'] ?? '';
   document.getElementById('smart-sale-desconto').value = row?.Descontos ?? '';
   document.getElementById('smart-sale-frete').value = row?.['Valor Frete'] ?? '';
-  document.getElementById('smart-sale-cfop').value = row?.CFOP || '';
+  if (document.getElementById('smart-sale-cfop')) document.getElementById('smart-sale-cfop').value = row?.CFOP || '';
   document.getElementById('smart-sale-status').value = row?.Status || 'Orçamento';
   document.getElementById('smart-sale-obs').value = row?.Observação || '';
   document.getElementById('smart-sale-delete').classList.toggle('hidden', row === null);
