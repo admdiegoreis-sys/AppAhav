@@ -203,21 +203,24 @@ td.wrap{white-space:normal}
 .smart-table-sales th,.smart-table-sales td{padding:6px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:none}
 .smart-table thead th{position:sticky;top:0;z-index:5}
 .smart-table thead{position:sticky;top:0;z-index:6}
-.stock-table{min-width:0;width:100%;table-layout:fixed}
-.stock-table th,.stock-table td{padding:8px 7px;font-size:11px;vertical-align:middle}
-.stock-table th{font-size:10px;letter-spacing:.08em;color:#a7b7d8;background:#111827}
-.stock-table th:nth-child(1),.stock-table td:nth-child(1){width:72px}
-.stock-table th:nth-child(2),.stock-table td:nth-child(2){width:22%;white-space:normal;line-height:1.25;text-transform:uppercase;font-weight:700}
+.stock-table{min-width:1600px;width:100%;table-layout:auto;border-collapse:collapse}
+.stock-table th,.stock-table td{padding:7px 8px;font-size:11px;vertical-align:middle;white-space:nowrap}
+.stock-table th{font-size:10px;letter-spacing:.08em;color:#a7b7d8;background:#111827;position:sticky;top:0;z-index:5}
+.stock-table th:nth-child(1),.stock-table td:nth-child(1){width:64px}
+.stock-table th:nth-child(2),.stock-table td:nth-child(2){min-width:180px;white-space:normal;line-height:1.25;text-transform:uppercase;font-weight:700}
 .stock-table th:nth-child(3),.stock-table td:nth-child(3){width:82px}
 .stock-table th:nth-child(4),.stock-table td:nth-child(4),
 .stock-table th:nth-child(5),.stock-table td:nth-child(5),
 .stock-table th:nth-child(6),.stock-table td:nth-child(6),
 .stock-table th:nth-child(7),.stock-table td:nth-child(7),
-.stock-table th:nth-child(8),.stock-table td:nth-child(8){width:82px;text-align:center}
-.stock-table th:nth-child(9),.stock-table td:nth-child(9){width:92px}
-.stock-table th:nth-child(10),.stock-table td:nth-child(10){width:64px;text-align:center}
-.stock-table th:nth-child(11),.stock-table td:nth-child(11){width:138px;white-space:normal;line-height:1.25}
-.stock-table th:nth-child(12),.stock-table td:nth-child(12){width:104px;text-align:center}
+.stock-table th:nth-child(8),.stock-table td:nth-child(8){width:78px;text-align:center}
+.stock-table th:nth-child(9),.stock-table td:nth-child(9){width:110px}
+.stock-table th:nth-child(10),.stock-table td:nth-child(10),
+.stock-table th:nth-child(11),.stock-table td:nth-child(11){width:82px;text-align:right}
+.stock-table th:nth-child(12),.stock-table td:nth-child(12),
+.stock-table th:nth-child(13),.stock-table td:nth-child(13){width:100px;text-align:right;font-weight:700}
+.stock-table th:nth-child(14),.stock-table td:nth-child(14){width:56px;text-align:center}
+.stock-table th:nth-child(15),.stock-table td:nth-child(15){width:72px;text-align:center}
 .stock-flow{display:inline-flex;align-items:center;justify-content:center;min-width:74px;padding:4px 9px;border-radius:999px;font-weight:800;font-variant-numeric:tabular-nums}
 .stock-table .stock-flow{min-width:58px;padding:3px 6px}
 .stock-flow.positive{background:rgba(34,197,94,.16);color:#86efac;border:1px solid rgba(34,197,94,.32)}
@@ -5847,13 +5850,15 @@ function renderSmartStock() {
         Limites:`<span class="stock-limits"><span>Mín: ${smartFormatCell(p['Estoque Mínimo'])}</span><span>Máx: ${smartFormatCell(p['Estoque Máximo'])}</span></span>`,
         'Preço Custo': custo ? `R$ ${custo.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}` : '—',
         'Preço Venda': venda ? `R$ ${venda.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}` : '—',
+        'VLR Custo': (() => { const ef = smartNum(p['Estoque Final']); return custo && ef ? `R$ ${(custo*ef).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}` : '—'; })(),
+        'VLR Venda': (() => { const ef = smartNum(p['Estoque Final']); return venda && ef ? `R$ ${(venda*ef).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}` : '—'; })(),
         Status:p['Status Estoque'] === 'Estoque negativo' ? '<span class="stock-status-alert">N/OK</span>' : escapeHtml(p['Status Estoque']),
         Ações:`<div class="stock-actions"><button class="btn btn-ghost btn-sm" title="Ajustar estoque" aria-label="Ajustar estoque" onclick="event.stopPropagation();openSmartAdjustmentModal(null,'${escapeHtml(String(p.codprod || ''))}')">±</button><button class="btn btn-ghost btn-sm" title="Editar limites" aria-label="Editar limites" onclick="event.stopPropagation();openSmartStockLimitsModal('${escapeHtml(String(p.codprod || ''))}')">↕</button></div>`
       };
     });
   smartTable('smart-estoque-head', 'smart-estoque-body', rows, {
-    headers:['CODPROD','PRODUTO','DT. INICIAL','INICIAL*','ENTRADAS','SAÍDAS','AJUSTES','FINAL','LIMITES','CUSTO','VENDA','STATUS','VALIDAÇÃO','AÇÕES'],
-    fieldMap:{'CODPROD':'codprod','PRODUTO':'Produto ERP','DT. INICIAL':'Data Estoque Inicial','INICIAL*':'Inicial Ajus','ENTRADAS':'Entradas','SAÍDAS':'Saídas','AJUSTES':'Ajustes','FINAL':'Final','LIMITES':'Limites','CUSTO':'Preço Custo','VENDA':'Preço Venda','STATUS':'Status','VALIDAÇÃO':'Validação','AÇÕES':'Ações'},
+    headers:['CÓD','PRODUTO','DT. INICIAL','INICIAL','ENTRADAS','SAÍDAS','AJUSTES','FINAL','LIMITES','P. CUSTO','P. VENDA','VLR CUSTO','VLR VENDA','STATUS','AÇÕES'],
+    fieldMap:{'CÓD':'codprod','PRODUTO':'Produto ERP','DT. INICIAL':'Data Estoque Inicial','INICIAL':'Inicial Ajus','ENTRADAS':'Entradas','SAÍDAS':'Saídas','AJUSTES':'Ajustes','FINAL':'Final','LIMITES':'Limites','P. CUSTO':'Preço Custo','P. VENDA':'Preço Venda','VLR CUSTO':'VLR Custo','VLR VENDA':'VLR Venda','STATUS':'Status','AÇÕES':'Ações'},
     htmlFields:['Inicial Ajus','Entradas','Saídas','Ajustes','Final','Limites','Status','Ações']
   });
 }
