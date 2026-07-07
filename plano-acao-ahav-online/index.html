@@ -490,6 +490,10 @@ body{background:var(--shell-bg);color:var(--shell-text);font-family:Inter,system
   display:flex;align-items:center;justify-content:space-between;gap:18px;padding:16px 28px;box-shadow:0 1px 0 rgba(15,23,42,.02);
 }
 .topbar-left{display:flex;align-items:center;gap:14px;min-width:0}
+.sidebar-collapse-btn{position:absolute;right:-12px;top:50%;transform:translateY(-50%);width:24px;height:48px;background:var(--shell-sidebar-2);border:1px solid rgba(255,255,255,.13);border-radius:0 8px 8px 0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#b7d8e8;font-size:14px;z-index:330;transition:background .2s,color .2s}
+.sidebar-collapse-btn:hover{background:#00445f;color:#fff}
+body.sidebar-collapsed .sidebar-collapse-btn .collapse-icon::before{content:'›'}
+.sidebar-collapse-btn .collapse-icon::before{content:'‹'}
 .sidebar-toggle,.notification-btn{
   width:40px;height:40px;border-radius:12px;border:1px solid var(--shell-border);background:#fff;color:#334155;
   display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-weight:850;box-shadow:var(--shell-shadow);position:relative;
@@ -943,7 +947,8 @@ body.sidebar-collapsed #page-gente{
 </div>
 
 <div id="app" class="hidden">
-<div class="header">
+<div class="header" style="position:relative">
+  <button class="sidebar-collapse-btn" onclick="toggleSidebar()" title="Recolher/expandir menu"><span class="collapse-icon"></span></button>
   <div class="brand">
     <img src="logo-ahav.png" alt="Grupo AHAV" class="brand-logo">
     <h1 id="page-title">FINANCE - Executivo</h1>
