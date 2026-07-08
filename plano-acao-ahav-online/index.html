@@ -5878,13 +5878,10 @@ function renderSmartProduction() {
         && (!busca || JSON.stringify(p).toLowerCase().includes(busca));
     });
 
-  // cards de totais
+  // total produzido (para card)
   const totalQtd = filtered.reduce((s,p) => s + smartNum(p.Quantidade), 0);
-  const diasUnicos = new Set(filtered.map(p => p.Data)).size;
   const elQty = document.getElementById('smart-producao-card-qty');
-  const elDias = document.getElementById('smart-producao-card-dias');
   if (elQty) elQty.textContent = totalQtd.toLocaleString('pt-BR');
-  if (elDias) elDias.textContent = diasUnicos.toLocaleString('pt-BR');
 
   // gráfico produção por dia — um dataset por categoria, cada um com cor própria
   const CAT_COLORS = [
@@ -5945,6 +5942,8 @@ function renderSmartProduction() {
   const totalPorDia = dias.map(d => cats.reduce((s,c) => s + (byCatDay[c][d] || 0), 0));
   const diasComProducao = totalPorDia.filter(v => v > 0);
   const media = diasComProducao.length ? diasComProducao.reduce((s,v) => s + v, 0) / diasComProducao.length : 0;
+  const elDias = document.getElementById('smart-producao-card-dias');
+  if (elDias) elDias.textContent = diasComProducao.length.toLocaleString('pt-BR');
   datasets.push({
     label: `Média (${media.toLocaleString('pt-BR', {maximumFractionDigits:0})} un./dia)`,
     data: dias.map(() => media),
