@@ -5163,7 +5163,7 @@ const SMARTMOLD_PRODUCAO_SEED = [
 
 function smartProducaoMetodo(p) {
   const n = ((p['Produto ERP'] || '') + ' ' + (p.Categoria || '')).toLowerCase();
-  return (n.includes('paver') || n.includes('bloco')) ? 'Maquina' : 'Manual';
+  return (n.includes('paver') || n.includes('bloco') || n.includes('canaleta')) ? 'Maquina' : 'Manual';
 }
 
 function syncSmartProducaoSeed(state) {
