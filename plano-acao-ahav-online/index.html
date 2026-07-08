@@ -5627,7 +5627,9 @@ function smartTopClients() {
   const clientMap = {};
   const clients = smartClientDirectory();
   getSmartState().vendas.filter(v => String(v.Status || '') !== 'Cancelado').forEach(v => {
-    const key = smartClientKey(v);
+    // normaliza chave sempre pelo nome para evitar duplicatas quando codparc é inconsistente entre fontes
+    const nameKey = String(v.Cliente || 'Sem informação').replace(/\s+/g, ' ').trim().toUpperCase();
+    const key = nameKey || 'SEM INFORMACAO';
     const cliente = smartClientLabel(v, clients);
     if (!clientMap[key]) clientMap[key] = {label: cliente, codparc: smartPartnerCode(v), faturamento: 0, compensacao: 0};
     if (String(v.Status || '') === 'Compensação') clientMap[key].compensacao += Math.abs(smartNum(v['Valor Total']));
