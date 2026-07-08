@@ -7789,8 +7789,12 @@ async function genteLoadPessoasRemote() {
 
 async function _genteUpsertRemote(list) {
   try {
-    await supabase.from('gente_state').upsert([{key:'pessoas', data: list, updated_at: new Date().toISOString()}]);
-  } catch(e) {}
+    const {error} = await supabase.from('gente_state').upsert([{key:'pessoas', data: list, updated_at: new Date().toISOString()}]);
+    if (error) throw error;
+  } catch(e) {
+    console.error('Erro ao salvar pessoas no Supabase:', e);
+    alert('Erro ao salvar no servidor: ' + (e.message || e) + '\n\nOs dados foram salvos localmente mas podem não aparecer em outros dispositivos. Tente reduzir o tamanho do anexo (máx. recomendado: 500 KB).');
+  }
 }
 
 function genteSavePessoas(list) {
@@ -8094,6 +8098,10 @@ function genteAddFeedback() {
   if (!texto) { alert('Escreva o registro antes de adicionar.'); return; }
   const entry = { data: data || new Date().toISOString().slice(0,10), texto };
   if (file) {
+    if (file.size > 700 * 1024) {
+      alert(`Arquivo muito grande (${(file.size/1024).toFixed(0)} KB). O limite é 700 KB para garantir o salvamento no servidor.`);
+      return;
+    }
     const reader = new FileReader();
     reader.onload = e => {
       entry.anexo = { nome: file.name, tipo: file.type, base64: e.target.result };
