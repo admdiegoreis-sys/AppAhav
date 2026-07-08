@@ -1132,6 +1132,18 @@ body.sidebar-collapsed #page-gente{
       <button class="btn btn-ghost btn-sm" onclick="clearSmartProductionFilters()">Limpar filtros</button>
       <button class="btn btn-success btn-sm" onclick="openSmartProductionModal(null)">+ Nova Produção</button>
     </div>
+    <div style="display:flex;gap:16px;margin-bottom:16px">
+      <div class="chart-card" style="flex:1;text-align:center;padding:18px 12px">
+        <div style="font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Total Produzido</div>
+        <div id="smart-producao-card-qty" style="font-size:28px;font-weight:700;color:#38bdf8">—</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px">unidades</div>
+      </div>
+      <div class="chart-card" style="flex:1;text-align:center;padding:18px 12px">
+        <div style="font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Dias com Produção</div>
+        <div id="smart-producao-card-dias" style="font-size:28px;font-weight:700;color:#a78bfa">—</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px">dias úteis</div>
+      </div>
+    </div>
     <div class="chart-card" style="margin-bottom:20px;width:100%;box-sizing:border-box">
       <div class="chart-title-row"><h3>Produção por Dia</h3></div>
       <div style="width:100%;height:360px;position:relative"><canvas id="smartChartProducaoDia"></canvas></div>
@@ -5865,6 +5877,14 @@ function renderSmartProduction() {
         && (!fim || (data && data <= fim))
         && (!busca || JSON.stringify(p).toLowerCase().includes(busca));
     });
+
+  // cards de totais
+  const totalQtd = filtered.reduce((s,p) => s + smartNum(p.Quantidade), 0);
+  const diasUnicos = new Set(filtered.map(p => p.Data)).size;
+  const elQty = document.getElementById('smart-producao-card-qty');
+  const elDias = document.getElementById('smart-producao-card-dias');
+  if (elQty) elQty.textContent = totalQtd.toLocaleString('pt-BR');
+  if (elDias) elDias.textContent = diasUnicos.toLocaleString('pt-BR');
 
   // gráfico produção por dia — um dataset por categoria, cada um com cor própria
   const CAT_COLORS = [
