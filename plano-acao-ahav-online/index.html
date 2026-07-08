@@ -5822,19 +5822,40 @@ function renderSmartProduction() {
   ];
   const CAT_BORDERS = CAT_COLORS.map(c => c.replace('.75','1'));
 
-  const diasSet = new Set();
   const byCatDay = {};
+  let dataMin = null, dataMax = null;
   filtered.forEach(p => {
     const d = smartFormatDate(p.Data) || p.Data || '?';
     const c = p.Categoria || 'Sem Categoria';
-    diasSet.add(d);
     if (!byCatDay[c]) byCatDay[c] = {};
     byCatDay[c][d] = (byCatDay[c][d] || 0) + smartNum(p.Quantidade);
+    // rastreia intervalo
+    const iso = d.split('/').reverse().join('-');
+    if (!dataMin || iso < dataMin) dataMin = iso;
+    if (!dataMax || iso > dataMax) dataMax = iso;
   });
-  const dias = [...diasSet].sort((a,b) => {
-    const pa = a.split('/').reverse().join('-'), pb = b.split('/').reverse().join('-');
-    return pa.localeCompare(pb);
-  });
+  // se filtros de data estiverem definidos, usar como intervalo
+  const filtroInicio = document.getElementById('smart-producao-data-inicio')?.value;
+  const filtroFim    = document.getElementById('smart-producao-data-fim')?.value;
+  if (filtroInicio) dataMin = filtroInicio < (dataMin||filtroInicio) ? filtroInicio : dataMin;
+  if (filtroFim)    dataMax = filtroFim   > (dataMax||filtroFim)    ? filtroFim    : dataMax;
+
+  // gera sequência de dias úteis (seg–sex) no intervalo
+  const dias = [];
+  if (dataMin && dataMax) {
+    const cur = new Date(dataMin + 'T00:00:00');
+    const end = new Date(dataMax + 'T00:00:00');
+    while (cur <= end) {
+      const dow = cur.getDay();
+      if (dow >= 1 && dow <= 5) {
+        const dd = String(cur.getDate()).padStart(2,'0');
+        const mm = String(cur.getMonth()+1).padStart(2,'0');
+        const yyyy = cur.getFullYear();
+        dias.push(`${dd}/${mm}/${yyyy}`);
+      }
+      cur.setDate(cur.getDate() + 1);
+    }
+  }
   const cats = Object.keys(byCatDay).sort();
   const datasets = cats.map((c, i) => ({
     label: c,
