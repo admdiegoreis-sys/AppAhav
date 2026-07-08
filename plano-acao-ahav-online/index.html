@@ -5221,6 +5221,7 @@ function normalizeSmartState(state = {}) {
   applySmartProductInputs(normalized);
   applySmartProductionInputs(normalized);
   syncSmartProducaoSeed(normalized);
+  normalized.producao = (normalized.producao || []).filter(p => smartNum(p.Quantidade) > 0);
   syncSmartFaturamentoData(normalized);
   // migração: preenche Valor Produtos com Valor Total quando ambos eram 0
   normalized.vendas = (normalized.vendas || []).map(v => {
