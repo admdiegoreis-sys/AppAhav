@@ -1129,12 +1129,16 @@ body.sidebar-collapsed #page-gente{
   <div class="smart-section" id="smart-section-producao">
     <div class="filters">
       <div class="filter-group"><label>Busca</label><input type="text" id="smart-producao-busca" placeholder="Produto, código..." oninput="renderSmartProduction()"></div>
-      <div class="filter-group"><label>Código Produto</label><input type="text" id="smart-producao-codigo" placeholder="CODPROD" oninput="renderSmartProduction()"></div>
-      <div class="filter-group"><label>Categoria</label><select id="smart-producao-categoria" onchange="renderSmartProduction()"></select></div>
+      <div class="filter-group"><label>Grupo / Categoria</label><select id="smart-producao-categoria" onchange="renderSmartProduction()"></select></div>
+      <div class="filter-group"><label>Produto</label><select id="smart-producao-produto" onchange="renderSmartProduction()"></select></div>
       <div class="filter-group"><label>Data inicial</label><input type="date" id="smart-producao-data-inicio" onchange="renderSmartProduction()"></div>
       <div class="filter-group"><label>Data final</label><input type="date" id="smart-producao-data-fim" onchange="renderSmartProduction()"></div>
       <button class="btn btn-ghost btn-sm" onclick="clearSmartProductionFilters()">Limpar filtros</button>
       <button class="btn btn-success btn-sm" onclick="openSmartProductionModal(null)">+ Nova Produção</button>
+    </div>
+    <div class="chart-card" style="margin-bottom:20px">
+      <div class="chart-title-row"><h3>Produção por Dia</h3></div>
+      <div class="chart-wrap"><canvas id="smartChartProducaoDia"></canvas></div>
     </div>
     <div class="table-wrap"><div class="table-header"><h3>Apontamentos de Produção</h3></div><div style="overflow-x:auto"><table class="smart-table"><thead id="smart-producao-head"></thead><tbody id="smart-producao-body"></tbody></table></div></div>
   </div>
@@ -5773,26 +5777,87 @@ function renderSmartProducts() {
   });
 }
 
+let _chartProducaoDia = null;
 function renderSmartProduction() {
   const state = getSmartState();
-  fillSmartSelect('smart-producao-categoria', smartUnique(state.producao, 'Categoria'), 'Todas');
-  const busca = (document.getElementById('smart-producao-busca')?.value || '').toLowerCase();
-  const codigo = (document.getElementById('smart-producao-codigo')?.value || '').toLowerCase();
+  const activeCodes = new Set((state.produtos || []).filter(p => (p.Status || 'Ativo') === 'Ativo').map(p => String(p.codprod)));
+
+  // preenche filtro categoria
+  fillSmartSelect('smart-producao-categoria', smartUnique(
+    state.producao.filter(p => activeCodes.has(String(p.codprod))), 'Categoria'), 'Todas');
+
   const cat = document.getElementById('smart-producao-categoria')?.value || '';
+
+  // preenche filtro produto (filtrado pela categoria)
+  const produtosParaFiltro = state.producao
+    .filter(p => activeCodes.has(String(p.codprod)) && (!cat || p.Categoria === cat));
+  const uniqueProd = [...new Map(produtosParaFiltro.map(p => [String(p.codprod),
+    {value: String(p.codprod), label: `${p.codprod} - ${smartProductName(p.codprod, p['Produto ERP'])}`}
+  ])).values()].sort((a,b) => a.label.localeCompare(b.label));
+  const prodSel = document.getElementById('smart-producao-produto');
+  if (prodSel) {
+    const cur = prodSel.value;
+    prodSel.innerHTML = '<option value="">Todos</option>' + uniqueProd.map(p =>
+      `<option value="${p.value}" ${cur === p.value ? 'selected' : ''}>${p.label}</option>`).join('');
+  }
+
+  const busca = (document.getElementById('smart-producao-busca')?.value || '').toLowerCase();
+  const prodFiltro = document.getElementById('smart-producao-produto')?.value || '';
   const inicio = smartDateSerial(document.getElementById('smart-producao-data-inicio')?.value);
   const fim = smartDateSerial(document.getElementById('smart-producao-data-fim')?.value);
-  const activeCodes = new Set((state.produtos || []).filter(p => (p.Status || 'Ativo') === 'Ativo').map(p => String(p.codprod)));
-  const rows = state.producao
+
+  const filtered = state.producao
     .map((p, i) => ({...p, _id:i, 'Produto ERP': smartProductName(p.codprod, p['Produto ERP'])}))
     .filter(p => {
       if (!activeCodes.has(String(p.codprod))) return false;
       const data = smartDateSerial(p.Data);
       return (!cat || p.Categoria === cat)
-        && (!codigo || String(p.codprod || '').toLowerCase().includes(codigo))
+        && (!prodFiltro || String(p.codprod) === prodFiltro)
         && (!inicio || (data && data >= inicio))
         && (!fim || (data && data <= fim))
         && (!busca || JSON.stringify(p).toLowerCase().includes(busca));
-    })
+    });
+
+  // gráfico produção por dia
+  const byDay = {};
+  filtered.forEach(p => {
+    const d = smartFormatDate(p.Data) || p.Data || '?';
+    byDay[d] = (byDay[d] || 0) + smartNum(p.Quantidade);
+  });
+  const dias = Object.keys(byDay).sort((a,b) => {
+    const pa = a.split('/').reverse().join('-'), pb = b.split('/').reverse().join('-');
+    return pa.localeCompare(pb);
+  });
+  const canvas = document.getElementById('smartChartProducaoDia');
+  if (canvas && typeof Chart !== 'undefined') {
+    if (_chartProducaoDia) { _chartProducaoDia.destroy(); _chartProducaoDia = null; }
+    _chartProducaoDia = new Chart(canvas.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: dias,
+        datasets: [{
+          label: 'Produção (un.)',
+          data: dias.map(d => byDay[d]),
+          backgroundColor: 'rgba(56,189,248,.7)',
+          borderColor: '#38bdf8',
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: true,
+        plugins: { legend: { display: false }, tooltip: { callbacks: {
+          label: ctx => ctx.parsed.y.toLocaleString('pt-BR') + ' un.'
+        }}},
+        scales: {
+          x: { ticks: { color:'#94a3b8', maxRotation:45, font:{size:10} }, grid:{color:'rgba(255,255,255,.05)'} },
+          y: { ticks: { color:'#94a3b8', callback: v => v.toLocaleString('pt-BR') }, grid:{color:'rgba(255,255,255,.08)'}, beginAtZero:true }
+        }
+      }
+    });
+  }
+
+  const rows = filtered
     .sort((a,b) => (smartDateSerial(b.Data) || 0) - (smartDateSerial(a.Data) || 0))
     .map(p => ({
       ...p,
@@ -5808,12 +5873,14 @@ function renderSmartProduction() {
 }
 
 function clearSmartProductionFilters() {
-  ['smart-producao-busca','smart-producao-codigo','smart-producao-data-inicio','smart-producao-data-fim'].forEach(id => {
+  ['smart-producao-busca','smart-producao-data-inicio','smart-producao-data-fim'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
   const cat = document.getElementById('smart-producao-categoria');
   if (cat) cat.value = '';
+  const prod = document.getElementById('smart-producao-produto');
+  if (prod) prod.value = '';
   renderSmartProduction();
 }
 
