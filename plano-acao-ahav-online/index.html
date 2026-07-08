@@ -1126,6 +1126,7 @@ body.sidebar-collapsed #page-gente{
       <div class="filter-group"><label>Busca</label><input type="text" id="smart-producao-busca" placeholder="Produto, código..." oninput="renderSmartProduction()"></div>
       <div class="filter-group"><label>Grupo / Categoria</label><select id="smart-producao-categoria" onchange="renderSmartProduction()"></select></div>
       <div class="filter-group"><label>Produto</label><select id="smart-producao-produto" onchange="renderSmartProduction()"></select></div>
+      <div class="filter-group"><label>Método</label><select id="smart-producao-metodo" onchange="renderSmartProduction()"><option value="">Todos</option><option value="Maquina">Máquina</option><option value="Manual">Manual</option></select></div>
       <div class="filter-group"><label>Data inicial</label><input type="date" id="smart-producao-data-inicio" onchange="renderSmartProduction()"></div>
       <div class="filter-group"><label>Data final</label><input type="date" id="smart-producao-data-fim" onchange="renderSmartProduction()"></div>
       <button class="btn btn-ghost btn-sm" onclick="clearSmartProductionFilters()">Limpar filtros</button>
@@ -5129,6 +5130,53 @@ function syncSmartStockBaseFromProducts(state) {
   });
 }
 
+const SMARTMOLD_PRODUCAO_SEED = [
+  {Data:"16/06/2026",codprod:"31103","Produto ERP":"PAVER (AREIA BRANCA) 10 MPA - 10X20X5 CM",Quantidade:5376,Categoria:"Pavers",Metodo:"Maquina"},
+  {Data:"16/06/2026",codprod:"31103","Produto ERP":"Cocho tipo J 2,00m",Quantidade:1,Categoria:"Pavers",Metodo:"Manual"},
+  {Data:"17/06/2026",codprod:"31103","Produto ERP":"PAVER (AREIA BRANCA) 10 MPA - 10X20X5 CM",Quantidade:6048,Categoria:"Pavers",Metodo:"Maquina"},
+  {Data:"17/06/2026",codprod:"31103","Produto ERP":"Cocho tipo J 2,00m",Quantidade:1,Categoria:"Pavers",Metodo:"Manual"},
+  {Data:"18/06/2026",codprod:"31103","Produto ERP":"PAVER (AREIA BRANCA) 10 MPA - 10X20X5 CM",Quantidade:0,Categoria:"Pavers",Metodo:"Maquina"},
+  {Data:"18/06/2026",codprod:"30635","Produto ERP":"COCHO TIPO J - 2,0 X 81 X 52 X 64,5",Quantidade:0,Categoria:"Outros",Metodo:"Manual"},
+  {Data:"19/06/2026",codprod:"31103","Produto ERP":"PAVER (AREIA BRANCA) 10 MPA - 10X20X5 CM",Quantidade:0,Categoria:"Pavers",Metodo:"Maquina"},
+  {Data:"19/06/2026",codprod:"30635","Produto ERP":"COCHO TIPO J - 2,0 X 81 X 52 X 64,5",Quantidade:1,Categoria:"Outros",Metodo:"Manual"},
+  {Data:"22/06/2026",codprod:"31103","Produto ERP":"PAVER (AREIA BRANCA) 10 MPA - 10X20X5 CM",Quantidade:8960,Categoria:"Pavers",Metodo:"Maquina"},
+  {Data:"22/06/2026",codprod:"30635","Produto ERP":"COCHO TIPO J - 2,0 X 81 X 52 X 64,5",Quantidade:1,Categoria:"Outros",Metodo:"Manual"},
+  {Data:"23/06/2026",codprod:"31103","Produto ERP":"PAVER (AREIA BRANCA) 10 MPA - 10X20X5 CM",Quantidade:9232,Categoria:"Pavers",Metodo:"Maquina"},
+  {Data:"23/06/2026",codprod:"30635","Produto ERP":"COCHO TIPO J - 2,0 X 81 X 52 X 64,5",Quantidade:1,Categoria:"Outros",Metodo:"Manual"},
+  {Data:"24/06/2026",codprod:"30566","Produto ERP":"BLOCO DE VEDACAO 19X19X39 (0,20)",Quantidade:0,Categoria:"Blocos",Metodo:"Maquina"},
+  {Data:"24/06/2026",codprod:"30635","Produto ERP":"COCHO TIPO J - 2,0 X 81 X 52 X 64,5",Quantidade:1,Categoria:"Outros",Metodo:"Manual"},
+  {Data:"25/06/2026",codprod:"30566","Produto ERP":"BLOCO DE VEDACAO 19X19X39 (0,20)",Quantidade:1118,Categoria:"Blocos",Metodo:"Maquina"},
+  {Data:"25/06/2026",codprod:"30635","Produto ERP":"COCHO TIPO J - 2,0 X 81 X 52 X 64,5",Quantidade:1,Categoria:"Outros",Metodo:"Manual"},
+  {Data:"26/06/2026",codprod:"30566","Produto ERP":"BLOCO DE VEDACAO 19X19X39 (0,20)",Quantidade:450,Categoria:"Blocos",Metodo:"Maquina"},
+  {Data:"26/06/2026",codprod:"30635","Produto ERP":"COCHO TIPO J - 2,0 X 81 X 52 X 64,5",Quantidade:1,Categoria:"Outros",Metodo:"Manual"},
+  {Data:"29/06/2026",codprod:"30589","Produto ERP":"BLOCO DE VEDACAO 14X19X39 (0,15)",Quantidade:828,Categoria:"Blocos",Metodo:"Maquina"},
+  {Data:"29/06/2026",codprod:"30635","Produto ERP":"COCHO TIPO J - 2,0 X 81 X 52 X 64,5",Quantidade:1,Categoria:"Outros",Metodo:"Manual"},
+  {Data:"30/06/2026",codprod:"30589","Produto ERP":"BLOCO DE VEDACAO 14X19X39 (0,15)",Quantidade:159,Categoria:"Blocos",Metodo:"Maquina"},
+  {Data:"30/06/2026",codprod:"30635","Produto ERP":"COCHO TIPO J - 2,0 X 81 X 52 X 64,5",Quantidade:1,Categoria:"Outros",Metodo:"Manual"},
+  {Data:"01/07/2026",codprod:"30589","Produto ERP":"BLOCO DE VEDACAO 14X19X39 (0,15)",Quantidade:798,Categoria:"Blocos",Metodo:"Maquina"},
+  {Data:"01/07/2026",codprod:"30635","Produto ERP":"COCHO TIPO J - 2,0 X 81 X 52 X 64,5",Quantidade:1,Categoria:"Outros",Metodo:"Manual"},
+  {Data:"02/07/2026",codprod:"30589","Produto ERP":"BLOCO DE VEDACAO 14X19X39 (0,15)",Quantidade:0,Categoria:"Blocos",Metodo:"Maquina"},
+  {Data:"02/07/2026",codprod:"30635","Produto ERP":"COCHO TIPO J - 2,0 X 81 X 52 X 64,5",Quantidade:1,Categoria:"Outros",Metodo:"Manual"},
+  {Data:"03/07/2026",codprod:"30589","Produto ERP":"BLOCO DE VEDACAO 14X19X39 (0,15)",Quantidade:531,Categoria:"Blocos",Metodo:"Maquina"},
+  {Data:"03/07/2026",codprod:"30635","Produto ERP":"COCHO TIPO J - 2,0 X 81 X 52 X 64,5",Quantidade:1,Categoria:"Outros",Metodo:"Manual"}
+];
+
+function smartProducaoMetodo(p) {
+  const n = ((p['Produto ERP'] || '') + ' ' + (p.Categoria || '')).toLowerCase();
+  return (n.includes('paver') || n.includes('bloco')) ? 'Maquina' : 'Manual';
+}
+
+function syncSmartProducaoSeed(state) {
+  const existing = state.producao || [];
+  const existKeys = new Set(existing.map(p => `${p.Data}|${p.codprod}|${(p['Produto ERP']||'').toLowerCase()}`));
+  const toAdd = SMARTMOLD_PRODUCAO_SEED.filter(p =>
+    !existKeys.has(`${p.Data}|${p.codprod}|${(p['Produto ERP']||'').toLowerCase()}`)
+  );
+  state.producao = [...existing, ...toAdd];
+  // garante campo Metodo em todos os registros
+  state.producao = state.producao.map(p => ({...p, Metodo: p.Metodo || smartProducaoMetodo(p)}));
+}
+
 function syncSmartFaturamentoData(state) {
   const imported = window.SMARTMOLD_DATA?.Faturamento_Smartmold || [];
   if (!imported.length) return;
@@ -5172,6 +5220,7 @@ function normalizeSmartState(state = {}) {
   syncSmartStockBaseFromProducts(normalized);
   applySmartProductInputs(normalized);
   applySmartProductionInputs(normalized);
+  syncSmartProducaoSeed(normalized);
   syncSmartFaturamentoData(normalized);
   // migração: preenche Valor Produtos com Valor Total quando ambos eram 0
   normalized.vendas = (normalized.vendas || []).map(v => {
@@ -5798,6 +5847,7 @@ function renderSmartProduction() {
 
   const busca = (document.getElementById('smart-producao-busca')?.value || '').toLowerCase();
   const prodFiltro = document.getElementById('smart-producao-produto')?.value || '';
+  const metodoFiltro = document.getElementById('smart-producao-metodo')?.value || '';
   const inicio = smartDateSerial(document.getElementById('smart-producao-data-inicio')?.value);
   const fim = smartDateSerial(document.getElementById('smart-producao-data-fim')?.value);
 
@@ -5806,8 +5856,10 @@ function renderSmartProduction() {
     .filter(p => {
       if (!activeCodes.has(String(p.codprod))) return false;
       const data = smartDateSerial(p.Data);
+      const metodo = p.Metodo || smartProducaoMetodo(p);
       return (!cat || p.Categoria === cat)
         && (!prodFiltro || String(p.codprod) === prodFiltro)
+        && (!metodoFiltro || metodo === metodoFiltro)
         && (!inicio || (data && data >= inicio))
         && (!fim || (data && data <= fim))
         && (!busca || JSON.stringify(p).toLowerCase().includes(busca));
@@ -5914,8 +5966,8 @@ function renderSmartProduction() {
     }));
   smartTable('smart-producao-head', 'smart-producao-body', rows, {
     limit:300,
-    headers:['Data','codprod','Produto','Quantidade','Categoria','Ações'],
-    fieldMap:{'Produto':'Produto ERP'},
+    headers:['Data','codprod','Produto','Quantidade','Categoria','Método','Ações'],
+    fieldMap:{'Produto':'Produto ERP','Método':'Metodo'},
     htmlFields:['Ações']
   });
 }
@@ -5929,6 +5981,8 @@ function clearSmartProductionFilters() {
   if (cat) cat.value = '';
   const prod = document.getElementById('smart-producao-produto');
   if (prod) prod.value = '';
+  const met = document.getElementById('smart-producao-metodo');
+  if (met) met.value = '';
   renderSmartProduction();
 }
 
