@@ -5963,7 +5963,7 @@ function renderSmartProduction() {
     .map(p => ({
       ...p,
       Data: smartFormatDate(p.Data),
-      Ações:`<div class="smart-row-actions"><button class="btn btn-ghost btn-sm smart-icon-btn" title="Editar produção" aria-label="Editar produção" onclick="event.stopPropagation();openSmartProductionModal('${p._id}')">✎</button></div>`
+      Ações:`<div class="smart-row-actions"><button class="btn btn-ghost btn-sm smart-icon-btn" title="Editar produção" aria-label="Editar produção" onclick="event.stopPropagation();openSmartProductionModal('${p._id}')">✎</button><button class="btn btn-ghost btn-sm smart-icon-btn" style="color:#f87171" title="Excluir produção" aria-label="Excluir produção" onclick="event.stopPropagation();deleteSmartProducao(${p._id})">✕</button></div>`
     }));
   smartTable('smart-producao-head', 'smart-producao-body', rows, {
     limit:300,
@@ -6426,6 +6426,17 @@ function deleteSmartProduct() {
   closeSmartProductModal();
   renderSmartmoldPage();
   showToast('✓ Produto excluído');
+}
+
+function deleteSmartProducao(id) {
+  const state = getSmartState();
+  const row = state.producao[Number(id)];
+  if (!row) return;
+  const label = `${row['Produto ERP'] || row.codprod} — ${row.Data || ''} (${row.Quantidade} un.)`;
+  if (!confirm(`Excluir este apontamento?\n${label}`)) return;
+  state.producao.splice(Number(id), 1);
+  saveSmartState(state);
+  renderSmartProduction();
 }
 
 function openSmartProductionModal(id) {
