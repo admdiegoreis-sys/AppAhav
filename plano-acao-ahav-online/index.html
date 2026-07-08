@@ -5922,7 +5922,8 @@ function renderSmartProduction() {
 
   // linha de média total por dia
   const totalPorDia = dias.map(d => cats.reduce((s,c) => s + (byCatDay[c][d] || 0), 0));
-  const media = dias.length ? totalPorDia.reduce((s,v) => s + v, 0) / dias.length : 0;
+  const diasComProducao = totalPorDia.filter(v => v > 0);
+  const media = diasComProducao.length ? diasComProducao.reduce((s,v) => s + v, 0) / diasComProducao.length : 0;
   datasets.push({
     label: `Média (${media.toLocaleString('pt-BR', {maximumFractionDigits:0})} un./dia)`,
     data: dias.map(() => media),
