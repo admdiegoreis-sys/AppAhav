@@ -1127,8 +1127,10 @@ body.sidebar-collapsed #page-gente{
       <div class="filter-group"><label>Grupo / Categoria</label><select id="smart-producao-categoria" onchange="renderSmartProduction()"></select></div>
       <div class="filter-group"><label>Produto</label><select id="smart-producao-produto" onchange="renderSmartProduction()"></select></div>
       <div class="filter-group"><label>Método</label><select id="smart-producao-metodo" onchange="renderSmartProduction()"><option value="">Todos</option><option value="Maquina">Máquina</option><option value="Manual">Manual</option></select></div>
-      <div class="filter-group"><label>Data inicial</label><input type="date" id="smart-producao-data-inicio" onchange="renderSmartProduction()"></div>
-      <div class="filter-group"><label>Data final</label><input type="date" id="smart-producao-data-fim" onchange="renderSmartProduction()"></div>
+      <div class="filter-group" style="display:flex;gap:8px;align-items:flex-end">
+        <div><label>Data inicial</label><input type="date" id="smart-producao-data-inicio" onchange="renderSmartProduction()"></div>
+        <div><label>Data final</label><input type="date" id="smart-producao-data-fim" onchange="renderSmartProduction()"></div>
+      </div>
       <button class="btn btn-ghost btn-sm" onclick="clearSmartProductionFilters()">Limpar filtros</button>
       <button class="btn btn-success btn-sm" onclick="openSmartProductionModal(null)">+ Nova Produção</button>
     </div>
