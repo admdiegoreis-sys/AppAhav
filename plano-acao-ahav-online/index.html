@@ -6604,7 +6604,7 @@ function saveSmartSale() {
     'Valor Frete': frete,
     'Valor Total': vlrProd + desconto + frete,
     Status: document.getElementById('smart-sale-status').value,
-    CFOP: document.getElementById('smart-sale-cfop').value,
+    CFOP: document.getElementById('smart-sale-cfop')?.value || '',
     Observação: document.getElementById('smart-sale-obs').value,
   };
   if (id === '') state.vendas.unshift(row); else state.vendas[Number(id)] = row;
