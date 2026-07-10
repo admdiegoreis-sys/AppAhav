@@ -5193,26 +5193,43 @@ function syncSmartProducaoSeed(state) {
   state.producao = state.producao.map(p => ({...p, Metodo: p.Metodo || smartProducaoMetodo(p)}));
 }
 
+function smartFaturamentoKey(row) {
+  const nf = String(row.NUNOTA || row.Nota || row.nota || '').trim();
+  const cod = String(row.codprod || row.CodProd || '').trim();
+  const data = String(row.Data || row.data || '').trim().slice(0, 10);
+  return `${nf}|${cod}|${data}`;
+}
+
+function dedupeVendas(vendas) {
+  const seen = new Map();
+  (vendas || []).forEach(v => {
+    const key = smartFaturamentoKey(v);
+    if (!seen.has(key)) seen.set(key, v);
+    // se duplicado, mantém o registro já existente (primeiro encontrado)
+  });
+  return [...seen.values()];
+}
+
 function syncSmartFaturamentoData(state) {
   const imported = window.SMARTMOLD_DATA?.Faturamento_Smartmold || [];
   if (!imported.length) return;
   const version = imported.reduce((acc, row) => {
-    const text = `${row.Chave || ''}|${row.NUNOTA || ''}|${row.codprod || ''}|${row.Status || ''}|${row['Valor Total'] || ''}|${row.Cliente || ''}`;
+    const text = `${row.NUNOTA || ''}|${row.codprod || ''}|${row.Data || ''}|${row.Status || ''}|${row['Valor Total'] || ''}`;
     for (let i = 0; i < text.length; i++) acc = ((acc << 5) - acc + text.charCodeAt(i)) | 0;
     return acc;
   }, imported.length);
   if (state._faturamentoSmartmoldVersion === version) return;
-  const rowKey = row => String(row.Chave || `${row.NUNOTA || row.Nota || ''}-${row['Sequência'] || row['SequÃªncia'] || ''}-${row.codprod || ''}`);
-  const existing = new Map((state.vendas || []).map((v, idx) => [rowKey(v), idx]));
+  // deduplica registros existentes antes de mesclar
+  const existingMap = new Map(dedupeVendas(state.vendas).map(v => [smartFaturamentoKey(v), v]));
   imported.forEach(row => {
-    const key = rowKey(row);
-    if (existing.has(key)) {
-      state.vendas[existing.get(key)] = {...state.vendas[existing.get(key)], ...row};
+    const key = smartFaturamentoKey(row);
+    if (existingMap.has(key)) {
+      existingMap.set(key, {...existingMap.get(key), ...row});
     } else {
-      existing.set(key, state.vendas.length);
-      state.vendas.push(row);
+      existingMap.set(key, row);
     }
   });
+  state.vendas = [...existingMap.values()];
   state._faturamentoSmartmoldVersion = version;
   try { localStorage.setItem(SMART_STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
 }
