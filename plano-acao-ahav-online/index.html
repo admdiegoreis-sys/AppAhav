@@ -1589,14 +1589,14 @@ body.sidebar-collapsed #page-gente{
       </div>
       <div class="field">
         <label>Status</label>
-        <select id="m-status-resumido"><option selected>Em andamento</option><option>Concluído</option></select>
+        <select id="m-status-resumido" onchange="onModalStatusChange()"><option selected>Em andamento</option><option>Concluído</option></select>
       </div>
       <div class="field">
         <label>Data Previsão</label>
         <input type="date" id="m-prazo" onchange="updatePrazoRequestFields()">
         <div class="field-note hidden" id="m-prazo-note"></div>
       </div>
-      <div class="field"><label>Data Conclusão</label><input type="date" id="m-conclusao"></div>
+      <div class="field"><label>Data Conclusão</label><input type="date" id="m-conclusao" onchange="onModalConclusaoChange()"></div>
       <div class="field full hidden" id="m-prazo-reason-wrap">
         <label>Motivo da alteração do prazo</label>
         <textarea id="m-prazo-motivo" placeholder="Informe por que a data de previsão precisa ser alterada"></textarea>
@@ -3265,7 +3265,7 @@ async function loadData() {
     dados = data.map(a => normalizePrazoGovernance({
       ...a,
       quem: normalizeResponsibleName(a.quem),
-      statusResumo: a.status_resumido || (a.status && a.status.toLowerCase().includes('finaliz') ? 'Concluído' : 'Em andamento')
+      statusResumo: a.conclusao ? 'Concluído' : (a.status_resumido || (a.status && a.status.toLowerCase().includes('finaliz') ? 'Concluído' : 'Em andamento'))
     }));
     setStatus(true);
     updateKPIs();
@@ -7501,11 +7501,32 @@ function closeModal() {
   modalPrazoAtual = null;
 }
 
+function onModalConclusaoChange() {
+  const data = document.getElementById('m-conclusao').value;
+  if (data) document.getElementById('m-status-resumido').value = 'Concluído';
+}
+
+function onModalStatusChange() {
+  const status = document.getElementById('m-status-resumido').value;
+  const conclusao = document.getElementById('m-conclusao');
+  if (status === 'Concluído' && !conclusao.value) {
+    conclusao.value = new Date().toISOString().slice(0, 10);
+  } else if (status !== 'Concluído') {
+    conclusao.value = '';
+  }
+}
+
 async function saveAcao() {
   const oque = document.getElementById('m-oque').value.trim();
   if (!oque) { alert('Preencha o campo "O quê"'); return; }
   const conclusao = document.getElementById('m-conclusao').value || null;
-  if (conclusao && new Date(conclusao) > HOJE) {
+  const statusSelecionado = document.getElementById('m-status-resumido').value;
+  if (statusSelecionado === 'Concluído' && !conclusao) {
+    alert('Informe a data de conclusão para marcar a ação como Concluída.');
+    document.getElementById('m-conclusao').focus();
+    return;
+  }
+  if (conclusao && new Date(conclusao + 'T00:00:00') > HOJE) {
     alert('A Data de Conclusão não pode ser maior que hoje.');
     document.getElementById('m-conclusao').focus();
     return;
@@ -7529,7 +7550,7 @@ async function saveAcao() {
     // Qualquer usuário pode delegar (mudar quem); normaliza o nome
     quem: normalizeResponsibleName(document.getElementById('m-quem').value),
     prioridade: document.getElementById('m-prioridade').value,
-    status_resumido: document.getElementById('m-status-resumido').value,
+    status_resumido: conclusao ? 'Concluído' : document.getElementById('m-status-resumido').value,
     // Admin aplica a data diretamente; não-admin mantém prazo atual e solicita aprovação
     prazo: admin ? (prazoDigitado || prazoAtual) : (currentAction ? prazoAtual : prazoDigitado),
     prazo_original: prazoOriginal,
