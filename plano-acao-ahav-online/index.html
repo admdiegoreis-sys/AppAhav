@@ -1609,27 +1609,38 @@ body.sidebar-collapsed #page-gente{
       <div class="field"><label>Onde</label><input type="text" id="m-onde"></div>
       <div class="field full"><label>Como</label><textarea id="m-como" placeholder="Descreva como a ação será executada"></textarea></div>
       <div class="field full"><label>Quanto (R$)</label><input type="text" inputmode="decimal" id="m-quanto" placeholder="0,00"></div>
-      <div class="field full" style="border-top:1px solid #334155;padding-top:14px;margin-top:4px">
-        <label style="color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:.06em">Vincular a Valor Gerado (FVC)</label>
-        <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
-          <select id="m-fvc-uid" style="flex:1" onchange="onModalFvcChange()">
-            <option value="">— Nenhum —</option>
-          </select>
-          <button type="button" class="btn btn-sm" style="white-space:nowrap;font-size:11px" onclick="openFvcModalFromAcao()">+ Criar FVC</button>
-        </div>
-        <div id="m-fvc-preview" style="margin-top:8px;display:none;padding:8px 10px;background:#0f172a;border-radius:6px;border-left:3px solid #22c55e"></div>
+      <div class="field full" style="border-top:1px solid #334155;padding-top:12px;margin-top:4px">
+        <button type="button" id="btn-toggle-vinculos" onclick="toggleVinculos()"
+          style="display:flex;align-items:center;gap:8px;background:none;border:1px solid #334155;border-radius:6px;padding:7px 12px;cursor:pointer;color:#94a3b8;font-size:12px;width:100%;text-align:left;transition:all .2s">
+          <span id="vinculos-chevron" style="font-size:10px;transition:transform .2s">▶</span>
+          <span>Vínculos</span>
+          <span id="vinculos-badges" style="display:flex;gap:6px;margin-left:auto"></span>
+        </button>
       </div>
-      <div class="field full" style="border-top:1px solid #334155;padding-top:14px;margin-top:4px">
-        <label style="color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:.06em">Vincular a Risco</label>
-        <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
-          <select id="m-risk-uid" style="flex:1" onchange="onModalRiskChange()">
-            <option value="">— Nenhum —</option>
-          </select>
-          <button type="button" class="btn btn-sm" style="white-space:nowrap;font-size:11px" onclick="openRiskModalFromAcao()">+ Criar risco</button>
+      <div id="m-vinculos-section" style="display:none" class="field full">
+        <div style="padding:12px;background:#0f172a;border-radius:8px;border:1px solid #1e293b;display:flex;flex-direction:column;gap:14px">
+          <div>
+            <label style="color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:.06em">Valor Gerado (FVC)</label>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+              <select id="m-fvc-uid" style="flex:1" onchange="onModalFvcChange()">
+                <option value="">— Nenhum —</option>
+              </select>
+              <button type="button" class="btn btn-sm" style="white-space:nowrap;font-size:11px" onclick="openFvcModalFromAcao()">+ Criar FVC</button>
+            </div>
+            <div id="m-fvc-preview" style="margin-top:8px;display:none;padding:8px 10px;background:#162032;border-radius:6px;border-left:3px solid #22c55e"></div>
+          </div>
+          <div>
+            <label style="color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:.06em">Risco</label>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+              <select id="m-risk-uid" style="flex:1" onchange="onModalRiskChange()">
+                <option value="">— Nenhum —</option>
+              </select>
+              <button type="button" class="btn btn-sm" style="white-space:nowrap;font-size:11px" onclick="openRiskModalFromAcao()">+ Criar risco</button>
+            </div>
+            <div id="m-risk-preview" style="margin-top:8px;display:none;padding:8px 10px;background:#162032;border-radius:6px;border-left:3px solid #f97316"></div>
+          </div>
         </div>
-        <div id="m-risk-preview" style="margin-top:8px;display:none;padding:8px 10px;background:#0f172a;border-radius:6px;border-left:3px solid #f97316"></div>
       </div>
-    </div>
     <div class="modal-footer">
       <button class="btn btn-danger btn-sm hidden" id="btn-delete" onclick="deleteAcao()">🗑 Excluir</button>
       <div style="flex:1"></div>
@@ -7589,6 +7600,8 @@ function openModal(id) {
     document.getElementById('m-prazo-motivo').value = '';
     populateFvcDropdown(null);
     populateRiskDropdown(null);
+    toggleVinculos(false);
+    updateVinculosBadges();
     updatePrazoRequestFields();
   } else {
     const a = dados.find(x=>x.id==id);
@@ -7613,6 +7626,8 @@ function openModal(id) {
     document.getElementById('m-prazo-motivo').value = '';
     populateFvcDropdown(a.fvc_uid || null);
     populateRiskDropdown(a.risk_uid || null);
+    toggleVinculos(!!(a.fvc_uid || a.risk_uid));
+    updateVinculosBadges();
     updatePrazoRequestFields();
   }
 }
@@ -7626,6 +7641,29 @@ function closeModal() {
 function onModalConclusaoChange() {
   const data = document.getElementById('m-conclusao').value;
   if (data) document.getElementById('m-status-resumido').value = 'Concluído';
+}
+
+function toggleVinculos(forceOpen) {
+  const section = document.getElementById('m-vinculos-section');
+  const chevron = document.getElementById('vinculos-chevron');
+  const btn = document.getElementById('btn-toggle-vinculos');
+  if (!section) return;
+  const open = forceOpen !== undefined ? forceOpen : section.style.display === 'none';
+  section.style.display = open ? 'block' : 'none';
+  chevron.style.transform = open ? 'rotate(90deg)' : '';
+  btn.style.borderColor = open ? '#3b82f6' : '#334155';
+  btn.style.color = open ? '#93c5fd' : '#94a3b8';
+}
+
+function updateVinculosBadges() {
+  const badges = document.getElementById('vinculos-badges');
+  if (!badges) return;
+  const riskUid = document.getElementById('m-risk-uid')?.value;
+  const fvcUid = document.getElementById('m-fvc-uid')?.value;
+  let html = '';
+  if (fvcUid) html += '<span style="background:#14532d;color:#86efac;padding:2px 6px;border-radius:4px;font-size:10px">💰 FVC</span>';
+  if (riskUid) html += '<span style="background:#7c2d12;color:#fdba74;padding:2px 6px;border-radius:4px;font-size:10px">⚠ Risco</span>';
+  badges.innerHTML = html;
 }
 
 function onModalStatusChange() {
@@ -7655,6 +7693,7 @@ function populateRiskDropdown(selectedUid) {
 
 function onModalRiskChange() {
   updateRiskPreview(document.getElementById('m-risk-uid').value);
+  updateVinculosBadges();
 }
 
 function updateRiskPreview(uid) {
@@ -7701,6 +7740,7 @@ function populateFvcDropdown(selectedUid) {
 
 function onModalFvcChange() {
   updateFvcPreview(document.getElementById('m-fvc-uid').value);
+  updateVinculosBadges();
 }
 
 function updateFvcPreview(uid) {
