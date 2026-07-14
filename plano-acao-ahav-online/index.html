@@ -146,6 +146,20 @@ td.wrap{white-space:normal}
 .kanban-col{background:#0f172a;border:1px solid #334155;border-radius:12px;padding:12px;min-height:170px}
 .kanban-title{display:flex;justify-content:space-between;gap:8px;color:#e2e8f0;font-size:12px;font-weight:700;margin-bottom:10px}
 .kanban-pill{font-size:11px;color:#94a3b8;background:#1e293b;border-radius:999px;padding:1px 7px}
+.kb-board{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
+.kb-col{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:12px;min-height:120px}
+.kb-col-hdr{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid #334155}
+.kb-col-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.kb-card{background:#0f172a;border:1px solid #334155;border-radius:8px;padding:10px 12px;margin-bottom:8px;cursor:pointer;transition:border-color .15s}
+.kb-card:hover{border-color:#3b82f6}
+.kb-card-title{font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:6px;line-height:1.35}
+.kb-card-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.kb-card-tag{font-size:10px;padding:2px 7px;border-radius:999px;font-weight:700}
+.kb-card-foot{display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
+.kb-card-pessoa{font-size:11px;color:#94a3b8}
+.kb-card-prazo{font-size:10px;color:#64748b;margin-top:2px}
+.kb-card-prazo.atrasado{color:#f87171}
+@media(max-width:700px){.kb-board{grid-template-columns:1fr}}
 .mini-item{border-left:3px solid #3b82f6;background:#1e293b;border-radius:8px;padding:8px 9px;margin-bottom:8px;color:#cbd5e1;font-size:12px;line-height:1.35}
 .mini-item.risk{border-left-color:#ef4444}.mini-item.done{border-left-color:#22c55e}.mini-item.wait{border-left-color:#64748b}
 .status-bars{display:flex;flex-direction:column;gap:10px}
@@ -1208,6 +1222,23 @@ body.sidebar-collapsed #page-gente{
   <div class="smart-section" id="smart-section-pcp">
     <div class="table-wrap"><div class="table-header"><h3>PCP Semanal</h3></div><div style="overflow-x:auto"><table class="smart-table"><thead id="smart-pcp-head"></thead><tbody id="smart-pcp-body"></tbody></table></div></div>
   </div>
+</div>
+
+<div class="container page hidden" id="page-kanban">
+  <div class="smart-tabs" id="gestao-tabs-kanban"></div>
+  <div class="page-actions">
+    <div class="page-actions-title">Kanban — Plano de Ação</div>
+    <div class="page-actions-buttons">
+      <button class="btn btn-success btn-sm" onclick="showPage('plano');setTimeout(()=>openModal(null),100)">+ Nova Ação</button>
+    </div>
+  </div>
+  <div class="filters" style="margin-bottom:16px">
+    <div class="filter-group"><label>Responsável</label><select id="kb-quem" onchange="renderKanban()"><option value="">Todos</option></select></div>
+    <div class="filter-group"><label>Projeto</label><select id="kb-projeto" onchange="renderKanban()"><option value="">Todos</option></select></div>
+    <div class="filter-group"><label>Prioridade</label><select id="kb-prio" onchange="renderKanban()"><option value="">Todas</option><option>Alta</option><option>Média</option><option>Baixa</option></select></div>
+    <div class="filter-group"><label>Busca</label><input type="text" id="kb-busca" placeholder="Buscar ação..." oninput="renderKanban()" style="width:200px"></div>
+  </div>
+  <div class="kb-board" id="kb-board"></div>
 </div>
 
 <div class="container page hidden" id="page-plano">
@@ -3050,6 +3081,124 @@ function setStatus(online) {
   document.getElementById('status-text').textContent = online ? 'Conectado' : 'Offline';
 }
 
+// ---- KANBAN ----
+function renderKanban() {
+  if (!dados) return;
+  const quemSel = document.getElementById('kb-quem');
+  const projSel = document.getElementById('kb-projeto');
+  if (!quemSel) return;
+
+  const quemAtual = quemSel.value;
+  const projAtual = projSel.value;
+
+  const quems = [...new Set(dados.map(a => a.quem).filter(Boolean))].sort();
+  quemSel.innerHTML = '<option value="">Todos</option>' + quems.map(q => `<option${q===quemAtual?' selected':''}>${q}</option>`).join('');
+
+  const projs = [...new Set(dados.map(a => a.projeto).filter(Boolean))].sort();
+  projSel.innerHTML = '<option value="">Todos</option>' + projs.map(p => `<option${p===projAtual?' selected':''}>${p}</option>`).join('');
+
+  const fQuem = quemSel.value;
+  const fProj = projSel.value;
+  const fPrio = document.getElementById('kb-prio').value;
+  const fBusca = (document.getElementById('kb-busca').value || '').toLowerCase();
+
+  const filtrados = dados.filter(a => {
+    if (fQuem && a.quem !== fQuem) return false;
+    if (fProj && a.projeto !== fProj) return false;
+    if (fPrio && a.prioridade !== fPrio) return false;
+    if (fBusca && !(a.oque||'').toLowerCase().includes(fBusca) && !(a.projeto||'').toLowerCase().includes(fBusca)) return false;
+    return true;
+  });
+
+  const colunas = {
+    'Em andamento': filtrados.filter(a => statusCalculado(a) === 'Em andamento' || statusCalculado(a) === 'Pendência prazo'),
+    'Atrasado':     filtrados.filter(a => statusCalculado(a) === 'Atrasado'),
+    'Concluído':    filtrados.filter(a => statusCalculado(a) === 'Concluído'),
+  };
+
+  const colConfig = [
+    { key: 'Em andamento', label: 'Em andamento', color: '#3b82f6' },
+    { key: 'Atrasado',     label: 'Atrasado',     color: '#ef4444' },
+    { key: 'Concluído',    label: 'Concluído',     color: '#22c55e' },
+  ];
+
+  function prioStyle(p) {
+    if (p === 'Alta')  return 'background:#7f1d1d;color:#fca5a5';
+    if (p === 'Média') return 'background:#713f12;color:#fde68a';
+    return 'background:#1e3a5f;color:#93c5fd';
+  }
+
+  function cardActions(a) {
+    const st = statusCalculado(a);
+    if (st === 'Concluído') {
+      return `<button class="btn btn-sm" style="font-size:10px;padding:2px 8px" onclick="kanbanReopenAcao(${a.id})">Reabrir</button>`;
+    }
+    return `<button class="btn btn-success btn-sm" style="font-size:10px;padding:2px 8px" onclick="kanbanConcluir(${a.id})">Concluir</button>`;
+  }
+
+  const board = document.getElementById('kb-board');
+  board.innerHTML = colConfig.map(col => {
+    const items = colunas[col.key];
+    const cards = items.map(a => {
+      const prazoAtrasado = isAtrasado(a) && !a.conclusao;
+      const prazoFmt = a.prazo ? new Date(a.prazo + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+      return `<div class="kb-card" onclick="kanbanOpenAcao(${a.id})">
+        <div class="kb-card-title">${a.oque || '(sem título)'}</div>
+        <div class="kb-card-tags">
+          ${a.prioridade ? `<span class="kb-card-tag" style="${prioStyle(a.prioridade)}">${a.prioridade}</span>` : ''}
+          ${a.projeto ? `<span class="kb-card-tag" style="background:#1e293b;color:#94a3b8;border:1px solid #334155">${a.projeto}</span>` : ''}
+        </div>
+        <div class="kb-card-foot">
+          <div>
+            <div class="kb-card-pessoa">${a.quem || ''}</div>
+            ${prazoFmt ? `<div class="kb-card-prazo${prazoAtrasado?' atrasado':''}">${prazoAtrasado?'⚠ ':''}Prazo: ${prazoFmt}</div>` : ''}
+          </div>
+          <div onclick="event.stopPropagation()">${cardActions(a)}</div>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="kb-col">
+      <div class="kb-col-hdr">
+        <span class="kb-col-title" style="color:${col.color}">${col.label}</span>
+        <span style="font-size:12px;color:#64748b">${items.length}</span>
+      </div>
+      ${cards || '<div style="color:#475569;font-size:12px;text-align:center;padding:16px">Nenhuma ação</div>'}
+    </div>`;
+  }).join('');
+}
+
+async function kanbanConcluir(id) {
+  const hoje = new Date().toISOString().slice(0, 10);
+  try {
+    const {error} = await supabase.from('acoes').update({conclusao: hoje, status_resumido: 'Concluído'}).eq('id', id);
+    if (error) throw error;
+    const a = dados.find(x => x.id == id);
+    if (a) { a.conclusao = hoje; a.statusResumo = 'Concluído'; }
+    renderKanban();
+    showToast('Ação concluída!');
+  } catch(e) {
+    showToast('Erro ao concluir ação: ' + e.message, true);
+  }
+}
+
+async function kanbanReopenAcao(id) {
+  try {
+    const {error} = await supabase.from('acoes').update({conclusao: null, status_resumido: 'Em andamento'}).eq('id', id);
+    if (error) throw error;
+    const a = dados.find(x => x.id == id);
+    if (a) { a.conclusao = null; a.statusResumo = 'Em andamento'; }
+    renderKanban();
+    showToast('Ação reaberta.');
+  } catch(e) {
+    showToast('Erro ao reabrir ação: ' + e.message, true);
+  }
+}
+
+function kanbanOpenAcao(id) {
+  showPage('plano');
+  setTimeout(() => openModal(id), 80);
+}
+
 // ---- DATA ----
 async function loadData() {
   try {
@@ -3067,6 +3216,7 @@ async function loadData() {
     updateCadastroOptions();
     renderExecutiveDashboard();
     applyFilters(false);
+    if (!document.getElementById('page-kanban')?.classList.contains('hidden')) renderKanban();
   } catch(e) {
     setStatus(false);
     showToast('Erro ao carregar dados: ' + e.message, true);
@@ -3308,6 +3458,7 @@ function hasPageAccess(page) {
   if (!currentUser) return false;
   if (page === 'smartmold') return hasCompanyAccess('smartmold');
   if (page === 'gente') return hasCompanyAccess('gente');
+  if (page === 'kanban') return getUserPermissions(currentUser).includes('plano');
   return getUserPermissions(currentUser).includes(page);
 }
 
@@ -4617,17 +4768,18 @@ function exportCreditPDF() {
 // ---- SUB-NAV RENDERERS ----
 function renderGestaoSubNav(activePage) {
   const tabs = [
-    {key:'home', label:'Dashboard'},
-    {key:'plano', label:'Plano de Ação'},
-    {key:'fvc',   label:'FVC - Valor Gerado'},
-    {key:'risk',  label:'Gestão de Riscos'},
-    {key:'prazos',label:'Aprovação de Prazos'},
+    {key:'home',   label:'Dashboard'},
+    {key:'plano',  label:'Plano de Ação'},
+    {key:'kanban', label:'Kanban'},
+    {key:'fvc',    label:'FVC - Valor Gerado'},
+    {key:'risk',   label:'Gestão de Riscos'},
+    {key:'prazos', label:'Aprovação de Prazos'},
   ];
   const visible = tabs.filter(t => hasPageAccess(t.key));
   const html = visible.map(t =>
     `<button class="smart-tab${t.key===activePage?' active':''}" onclick="showPage('${t.key}')">${t.label}</button>`
   ).join('');
-  ['home','plano','fvc','risk','prazos'].forEach(p => {
+  ['home','plano','kanban','fvc','risk','prazos'].forEach(p => {
     const el = document.getElementById(`gestao-tabs-${p}`);
     if (el) { el.innerHTML = html; el.style.display = visible.length > 1 ? '' : 'none'; }
   });
@@ -4680,6 +4832,7 @@ function showPage(page) {
   document.getElementById('page-start')?.classList.add('hidden');
   document.getElementById('page-home').classList.toggle('hidden', page !== 'home');
   document.getElementById('page-smartmold')?.classList.toggle('hidden', page !== 'smartmold');
+  document.getElementById('page-kanban')?.classList.toggle('hidden', page !== 'kanban');
   document.getElementById('page-plano').classList.toggle('hidden', page !== 'plano');
   document.getElementById('page-fvc').classList.toggle('hidden', page !== 'fvc');
   document.getElementById('page-risk').classList.toggle('hidden', page !== 'risk');
@@ -4688,10 +4841,11 @@ function showPage(page) {
   document.getElementById('page-vjm')?.classList.toggle('hidden', page !== 'vjm');
   document.getElementById('page-gente')?.classList.toggle('hidden', page !== 'gente');
   ['smartmold','vjm','gente'].forEach(key => document.getElementById(`nav-${key}`)?.classList.toggle('active', page === key));
-  const gestaoPages = ['home','plano','fvc','risk','prazos'];
+  const gestaoPages = ['home','plano','kanban','fvc','risk','prazos'];
   document.getElementById('nav-gestao')?.classList.toggle('active', gestaoPages.includes(page));
   document.getElementById('nav-rede-epi')?.classList.toggle('active', page === 'credit');
   if (gestaoPages.includes(page)) renderGestaoSubNav(page);
+  if (page === 'kanban') renderKanban();
   if (page === 'credit') renderRedeSubNav();
   document.querySelectorAll('.mobile-menu-panel .nav-btn').forEach(btn => {
     const text = btn.textContent || '';
