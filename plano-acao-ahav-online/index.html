@@ -7519,6 +7519,10 @@ function onModalStatusChange() {
 async function saveAcao() {
   const oque = document.getElementById('m-oque').value.trim();
   if (!oque) { alert('Preencha o campo "O quê"'); return; }
+  const quem = document.getElementById('m-quem').value.trim();
+  if (!quem) { alert('Informe o Responsável pela ação.'); document.getElementById('m-quem').focus(); return; }
+  const prazoField = document.getElementById('m-prazo').value;
+  if (!prazoField) { alert('Informe a Data de Previsão da ação.'); document.getElementById('m-prazo').focus(); return; }
   const conclusao = document.getElementById('m-conclusao').value || null;
   const statusSelecionado = document.getElementById('m-status-resumido').value;
   if (statusSelecionado === 'Concluído' && !conclusao) {
