@@ -3225,8 +3225,8 @@ function renderKanban() {
       const hasRisk = !!a.risk_uid;
       const hasFvc  = !!a.fvc_uid;
       const cornerIcons = (hasRisk || hasFvc) ? `<div style="display:flex;gap:4px">
-        ${hasRisk ? `<span title="Vinculado a Risco" style="font-size:18px;line-height:1" >⚠️</span>` : ''}
-        ${hasFvc  ? `<span title="Vinculado a Valor Gerado" style="font-size:18px;line-height:1">💰</span>` : ''}
+        ${hasRisk ? `<span title="Vinculado a Risco" style="font-size:27px;line-height:1">⚠️</span>` : ''}
+        ${hasFvc  ? `<span title="Vinculado a Valor Gerado" style="font-size:27px;line-height:1">💰</span>` : ''}
       </div>` : '';
       return `<div class="kb-card ${prioClass(a.prioridade)}" onclick="kanbanOpenAcao(${a.id})">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
