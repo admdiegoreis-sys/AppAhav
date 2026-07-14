@@ -1365,9 +1365,10 @@ body.sidebar-collapsed #page-gente{
         <th onclick="sortBy('conclusao')" id="th-conclusao">Conclusão ↕</th>
         <th>Status</th>
         <th>Risco</th>
+        <th>FVC</th>
         <th>!</th>
       </tr></thead>
-      <tbody id="tabela-body"><tr><td colspan="10" class="loading">Carregando dados...</td></tr></tbody>
+      <tbody id="tabela-body"><tr><td colspan="11" class="loading">Carregando dados...</td></tr></tbody>
     </table>
     </div>
   </div>
@@ -1415,9 +1416,9 @@ body.sidebar-collapsed #page-gente{
     <div style="overflow-x:auto">
       <table>
         <thead><tr>
-          <th>#</th><th>Oportunidade</th><th>Negócio</th><th>Valor Ano</th><th>Valor Mensal</th><th>Referência</th><th>Competência</th><th>Responsável</th><th>Status</th><th>Condição</th>
+          <th>#</th><th>Oportunidade</th><th>Negócio</th><th>Valor Ano</th><th>Valor Mensal</th><th>Referência</th><th>Competência</th><th>Responsável</th><th>Status</th><th>Ação</th><th>Condição</th>
         </tr></thead>
-        <tbody id="fvc-tabela-body"><tr><td colspan="10" class="loading">Carregando FVC...</td></tr></tbody>
+        <tbody id="fvc-tabela-body"><tr><td colspan="11" class="loading">Carregando FVC...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -1608,6 +1609,16 @@ body.sidebar-collapsed #page-gente{
       <div class="field"><label>Onde</label><input type="text" id="m-onde"></div>
       <div class="field full"><label>Como</label><textarea id="m-como" placeholder="Descreva como a ação será executada"></textarea></div>
       <div class="field full"><label>Quanto (R$)</label><input type="text" inputmode="decimal" id="m-quanto" placeholder="0,00"></div>
+      <div class="field full" style="border-top:1px solid #334155;padding-top:14px;margin-top:4px">
+        <label style="color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:.06em">Vincular a Valor Gerado (FVC)</label>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+          <select id="m-fvc-uid" style="flex:1" onchange="onModalFvcChange()">
+            <option value="">— Nenhum —</option>
+          </select>
+          <button type="button" class="btn btn-sm" style="white-space:nowrap;font-size:11px" onclick="openFvcModalFromAcao()">+ Criar FVC</button>
+        </div>
+        <div id="m-fvc-preview" style="margin-top:8px;display:none;padding:8px 10px;background:#0f172a;border-radius:6px;border-left:3px solid #22c55e"></div>
+      </div>
       <div class="field full" style="border-top:1px solid #334155;padding-top:14px;margin-top:4px">
         <label style="color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:.06em">Vincular a Risco</label>
         <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
@@ -2021,7 +2032,7 @@ body.sidebar-collapsed #page-gente{
       <input type="hidden" id="fvc-m-uid">
       <div class="field full"><label>Oportunidade *</label><input type="text" id="fvc-m-oportunidade" placeholder="Descrição da oportunidade"></div>
       <div class="field"><label>Negócio</label><input type="text" id="fvc-m-negocio"></div>
-      <div class="field"><label>Responsável</label><input type="text" id="fvc-m-responsavel"></div>
+      <div class="field"><label>Responsável</label><select id="fvc-m-responsavel"><option value="">-- Selecione --</option></select></div>
       <div class="field"><label>Status</label><select id="fvc-m-status"><option>Em Andamento</option><option>Concluído</option></select></div>
       <div class="field"><label>Referência</label><select id="fvc-m-referencia"><option>Anual</option><option>Pontual</option></select></div>
       <div class="field"><label>Competência</label><input type="text" id="fvc-m-competencia" placeholder="2026"></div>
@@ -2029,6 +2040,16 @@ body.sidebar-collapsed #page-gente{
       <div class="field"><label>Valor Mensal</label><input type="text" inputmode="decimal" id="fvc-m-valor-mensal"></div>
       <div class="field full"><label>Plano de Ação</label><textarea id="fvc-m-plano" placeholder="Plano de ação relacionado"></textarea></div>
       <div class="field full"><label>Condição</label><textarea id="fvc-m-condicao" placeholder="Condição / observação"></textarea></div>
+      <div class="field full" style="border-top:1px solid #334155;padding-top:14px;margin-top:4px">
+        <label style="color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:.06em">Vincular Ação do Plano</label>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+          <select id="fvc-m-acao-id" style="flex:1" onchange="onFvcModalAcaoChange()">
+            <option value="">— Nenhuma —</option>
+          </select>
+          <button type="button" class="btn btn-sm" style="white-space:nowrap;font-size:11px" onclick="openAcaoModalFromFvc()">+ Criar ação</button>
+        </div>
+        <div id="fvc-m-acao-preview" style="margin-top:8px;display:none;padding:8px 10px;background:#0f172a;border-radius:6px;border-left:3px solid #3b82f6"></div>
+      </div>
     </div>
     <div class="modal-footer">
       <div style="flex:1"></div>
@@ -7036,7 +7057,11 @@ function openFvcModal(uid) {
   document.getElementById('fvc-m-uid').value = uid || '';
   document.getElementById('fvc-m-oportunidade').value = item?.oportunidade || '';
   document.getElementById('fvc-m-negocio').value = item?.negocio || '';
-  document.getElementById('fvc-m-responsavel').value = item?.responsavel || (isAdminUser() ? '' : (currentUser?.full_name || currentUser?.username || ''));
+  // Responsável como select padronizado
+  const respSel = document.getElementById('fvc-m-responsavel');
+  const respAtual = item?.responsavel || (isAdminUser() ? '' : normalizeResponsibleName(currentUser?.full_name || currentUser?.username || ''));
+  respSel.innerHTML = '<option value="">-- Selecione --</option>' + getResponsaveis().map(r => `<option${r===respAtual?' selected':''}>${escapeHtml(r)}</option>`).join('');
+  respSel.value = respAtual;
   document.getElementById('fvc-m-status').value = item?.status || 'Em Andamento';
   document.getElementById('fvc-m-referencia').value = item?.referencia || 'Anual';
   document.getElementById('fvc-m-competencia').value = item?.competencia || '';
@@ -7044,6 +7069,9 @@ function openFvcModal(uid) {
   document.getElementById('fvc-m-valor-mensal').value = item?.valorMensal ?? '';
   document.getElementById('fvc-m-plano').value = item?.planoAcao || '';
   document.getElementById('fvc-m-condicao').value = item?.condicao || '';
+  // Preenche dropdown de ação vinculada
+  const acaoId = uid ? ((dados||[]).find(a => a.fvc_uid === uid)?.id || '') : '';
+  populateFvcAcaoDropdown(acaoId ? String(acaoId) : '');
   document.getElementById('fvc-modal').classList.remove('hidden');
 }
 
@@ -7080,12 +7108,25 @@ function saveFvcItem() {
     condicao: document.getElementById('fvc-m-condicao').value.trim()
   };
 
+  // Vincular ação selecionada no dropdown do modal FVC
+  const acaoIdSel = document.getElementById('fvc-m-acao-id')?.value;
   const next = current ? data.map(x => x.uid === uid ? payload : x) : [...data, payload];
   saveFvcData(next);
   setupFvcFilters();
   applyFvcFilters();
   closeFvcModal();
   showToast(current ? 'Item FVC atualizado' : 'Item FVC criado');
+  if (_pendingFvcLink) {
+    _pendingFvcLink = false;
+    populateFvcDropdown(uid);
+    const sel = document.getElementById('m-fvc-uid');
+    if (sel) { sel.value = uid; onModalFvcChange(); }
+  } else if (acaoIdSel) {
+    // Atualiza fvc_uid na ação selecionada via Supabase
+    supabase.from('acoes').update({fvc_uid: uid}).eq('id', acaoIdSel).then(({error}) => {
+      if (!error) { const a = (dados||[]).find(x=>String(x.id)===String(acaoIdSel)); if(a) a.fvc_uid=uid; renderFvcTable(); renderTable(); }
+    });
+  }
 }
 
 function updateFvcKpis() {
@@ -7139,6 +7180,16 @@ function renderFvcTable() {
   const rows = fvcFiltrados.map(item => {
     const badge = item.status === 'Concluído' ? 'Concluído' : 'andamento';
     const encodedUid = encodeURIComponent(item.uid);
+    const acoesVinculadas = (dados || []).filter(a => a.fvc_uid === item.uid);
+    let acaoCell;
+    if (acoesVinculadas.length) {
+      acaoCell = acoesVinculadas.map(a => {
+        const st = statusBadgeClass(statusCalculado(a));
+        return `<span class="badge badge-${st}" style="cursor:pointer;font-size:10px;display:block;margin-bottom:2px" onclick="event.stopPropagation();openModal(${a.id})" title="${escapeHtml(a.oque||'')}">✓ #${a.id}</span>`;
+      }).join('');
+    } else {
+      acaoCell = `<button class="btn btn-sm" style="font-size:10px;padding:2px 7px;white-space:nowrap" onclick="event.stopPropagation();criarAcaoParaFvc('${item.uid}')">+ Criar ação</button>`;
+    }
     return `<tr onclick="openFvcModal(decodeURIComponent('${encodedUid}'))">
       <td>${item.id}</td>
       <td class="wrap" style="max-width:320px">${escapeHtml(item.oportunidade)}</td>
@@ -7149,9 +7200,10 @@ function renderFvcTable() {
       <td>${escapeHtml(item.competencia)}</td>
       <td>${escapeHtml(item.responsavel)}</td>
       <td><span class="badge badge-${badge}">${escapeHtml(item.status)}</span></td>
+      <td onclick="event.stopPropagation()">${acaoCell}</td>
       <td class="wrap" style="max-width:260px">${escapeHtml(item.condicao)}</td>
     </tr>`;
-  }).join('') || '<tr><td colspan="10" style="text-align:center;padding:30px;color:#64748b">Nenhum item encontrado</td></tr>';
+  }).join('') || '<tr><td colspan="11" style="text-align:center;padding:30px;color:#64748b">Nenhum item encontrado</td></tr>';
   document.getElementById('fvc-tabela-body').innerHTML = rows;
 }
 
@@ -7450,6 +7502,10 @@ function renderTable() {
     const riskCell = risk
       ? `<span class="badge badge-${risk.criticidade==='Grave'?'Alta':risk.criticidade==='Médio'?'Média':'Baixa'}" style="cursor:pointer;font-size:10px" onclick="event.stopPropagation();showPage('risk');setTimeout(()=>openRiskModal('${encodeURIComponent(risk.uid)}'),80)" title="${escapeHtml(risk.item)}">⚠ Risco</span>`
       : '<span style="color:#475569;font-size:11px">—</span>';
+    const fvc = a.fvc_uid ? getFvcData().find(f => f.uid === a.fvc_uid) : null;
+    const fvcCell = fvc
+      ? `<span class="badge badge-andamento" style="cursor:pointer;font-size:10px;background:#14532d;color:#86efac" onclick="event.stopPropagation();showPage('fvc');setTimeout(()=>openFvcModal('${encodeURIComponent(fvc.uid)}'),80)" title="${escapeHtml(fvc.oportunidade)}">💰 FVC</span>`
+      : '<span style="color:#475569;font-size:11px">—</span>';
     return `<tr onclick="openModal(${a.id})">
       <td>${a.id}</td>
       <td class="wrap" style="max-width:300px">${a.oque||''}</td>
@@ -7460,9 +7516,10 @@ function renderTable() {
       <td>${fmtDate(a.conclusao)}</td>
       <td><span class="badge badge-${st}">${stLabel}</span></td>
       <td>${riskCell}</td>
+      <td>${fvcCell}</td>
       <td>${a.alertaPrazo?'<span class="warn-icon" title="Prazo vencido">⚠</span>':''}</td>
     </tr>`;
-  }).join('') || '<tr><td colspan="10" style="text-align:center;padding:30px;color:#64748b">Nenhuma ação encontrada</td></tr>';
+  }).join('') || '<tr><td colspan="11" style="text-align:center;padding:30px;color:#64748b">Nenhuma ação encontrada</td></tr>';
 
   document.getElementById('tabela-body').innerHTML = html;
 }
@@ -7503,6 +7560,7 @@ function openModal(id) {
     document.getElementById('m-prioridade').value='Média';
     document.getElementById('m-status-resumido').value='Em andamento';
     document.getElementById('m-prazo-motivo').value = '';
+    populateFvcDropdown(null);
     populateRiskDropdown(null);
     updatePrazoRequestFields();
   } else {
@@ -7526,6 +7584,7 @@ function openModal(id) {
     document.getElementById('m-como').value = a.como||'';
     document.getElementById('m-quanto').value = a.quanto||'';
     document.getElementById('m-prazo-motivo').value = '';
+    populateFvcDropdown(a.fvc_uid || null);
     populateRiskDropdown(a.risk_uid || null);
     updatePrazoRequestFields();
   }
@@ -7598,6 +7657,79 @@ function criarAcaoParaRisco(riskUid) {
   }, 50);
 }
 
+// ── FVC ↔ Ação helpers ──────────────────────────────────────────────────────
+let _pendingFvcLink = false;
+
+function populateFvcDropdown(selectedUid) {
+  const sel = document.getElementById('m-fvc-uid');
+  if (!sel) return;
+  const fvcs = getFvcData();
+  sel.innerHTML = '<option value="">— Nenhum —</option>' +
+    fvcs.map(f => {
+      const selected = f.uid === selectedUid ? ' selected' : '';
+      return `<option value="${escapeHtml(f.uid)}"${selected}>${escapeHtml(f.oportunidade)}</option>`;
+    }).join('');
+  updateFvcPreview(selectedUid);
+}
+
+function onModalFvcChange() {
+  updateFvcPreview(document.getElementById('m-fvc-uid').value);
+}
+
+function updateFvcPreview(uid) {
+  const preview = document.getElementById('m-fvc-preview');
+  if (!preview) return;
+  if (!uid) { preview.style.display = 'none'; return; }
+  const fvc = getFvcData().find(f => f.uid === uid);
+  if (!fvc) { preview.style.display = 'none'; return; }
+  preview.style.display = 'block';
+  preview.innerHTML = `<div style="font-size:12px;font-weight:700;color:#e2e8f0;margin-bottom:4px">${escapeHtml(fvc.oportunidade)}</div>
+    <div style="font-size:11px;color:#94a3b8">${escapeHtml(fvc.negocio||'')} · Responsável: ${escapeHtml(fvc.responsavel||'')} · Valor: ${fvcMoney(fvc.valorAno)}</div>`;
+}
+
+function openFvcModalFromAcao() {
+  _pendingFvcLink = true;
+  openFvcModal(null);
+}
+
+function criarAcaoParaFvc(fvcUid) {
+  openModal(null);
+  setTimeout(() => {
+    populateFvcDropdown(fvcUid);
+    const sel = document.getElementById('m-fvc-uid');
+    if (sel) { sel.value = fvcUid; onModalFvcChange(); }
+  }, 50);
+}
+
+function populateFvcAcaoDropdown(selectedAcaoId) {
+  const sel = document.getElementById('fvc-m-acao-id');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Nenhuma —</option>' +
+    (dados || []).filter(a => statusCalculado(a) !== 'Concluído' || String(a.id) === String(selectedAcaoId))
+      .map(a => `<option value="${a.id}"${String(a.id)===String(selectedAcaoId)?' selected':''}>#${a.id} — ${escapeHtml(a.oque||'')}</option>`).join('');
+  updateFvcAcaoPreview(selectedAcaoId);
+}
+
+function onFvcModalAcaoChange() {
+  updateFvcAcaoPreview(document.getElementById('fvc-m-acao-id').value);
+}
+
+function updateFvcAcaoPreview(acaoId) {
+  const preview = document.getElementById('fvc-m-acao-preview');
+  if (!preview) return;
+  if (!acaoId) { preview.style.display = 'none'; return; }
+  const a = (dados||[]).find(x => String(x.id) === String(acaoId));
+  if (!a) { preview.style.display = 'none'; return; }
+  preview.style.display = 'block';
+  preview.innerHTML = `<div style="font-size:12px;font-weight:700;color:#e2e8f0;margin-bottom:4px">#${a.id} — ${escapeHtml(a.oque||'')}</div>
+    <div style="font-size:11px;color:#94a3b8">${escapeHtml(a.quem||'')} · Prazo: ${fmtDate(a.prazo)} · Status: ${statusCalculado(a)}</div>`;
+}
+
+function openAcaoModalFromFvc() {
+  closeFvcModal();
+  setTimeout(() => openModal(null), 80);
+}
+
 async function saveAcao() {
   const oque = document.getElementById('m-oque').value.trim();
   if (!oque) { alert('Preencha o campo "O quê"'); return; }
@@ -7637,6 +7769,7 @@ async function saveAcao() {
     quem: normalizeResponsibleName(document.getElementById('m-quem').value),
     prioridade: document.getElementById('m-prioridade').value,
     status_resumido: conclusao ? 'Concluído' : document.getElementById('m-status-resumido').value,
+    fvc_uid: document.getElementById('m-fvc-uid').value || null,
     risk_uid: document.getElementById('m-risk-uid').value || null,
     // Admin aplica a data diretamente; não-admin mantém prazo atual e solicita aprovação
     prazo: admin ? (prazoDigitado || prazoAtual) : (currentAction ? prazoAtual : prazoDigitado),
