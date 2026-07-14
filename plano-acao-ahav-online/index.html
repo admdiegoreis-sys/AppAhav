@@ -1251,6 +1251,27 @@ body.sidebar-collapsed #page-gente{
   <div class="kb-board" id="kb-board"></div>
 </div>
 
+<!-- Modal: data de conclusão (Kanban) -->
+<div class="modal-overlay hidden" id="kb-conclusao-overlay" onclick="if(event.target===this)closeKbConclusao()">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <h3 class="modal-title">Concluir ação</h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeKbConclusao()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:20px 24px">
+      <p style="color:#94a3b8;font-size:13px;margin-bottom:4px" id="kb-conclusao-titulo"></p>
+      <div class="field" style="margin-top:16px">
+        <label>Data de conclusão</label>
+        <input type="date" id="kb-conclusao-data" style="width:100%">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeKbConclusao()">Cancelar</button>
+      <button class="btn btn-success" onclick="confirmKbConclusao()">✓ Confirmar conclusão</button>
+    </div>
+  </div>
+</div>
+
 <div class="container page hidden" id="page-plano">
   <div class="smart-tabs" id="gestao-tabs-plano"></div>
   <div class="page-actions">
@@ -3182,13 +3203,35 @@ function renderKanban() {
   }).join('');
 }
 
-async function kanbanConcluir(id) {
-  const hoje = new Date().toISOString().slice(0, 10);
+let _kbConcluirId = null;
+
+function kanbanConcluir(id) {
+  _kbConcluirId = id;
+  const a = dados.find(x => x.id == id);
+  const titulo = document.getElementById('kb-conclusao-titulo');
+  if (titulo) titulo.textContent = a?.oque || '';
+  const input = document.getElementById('kb-conclusao-data');
+  if (input) input.value = new Date().toISOString().slice(0, 10);
+  document.getElementById('kb-conclusao-overlay').classList.remove('hidden');
+}
+
+function closeKbConclusao() {
+  document.getElementById('kb-conclusao-overlay').classList.add('hidden');
+  _kbConcluirId = null;
+}
+
+async function confirmKbConclusao() {
+  const data = document.getElementById('kb-conclusao-data').value;
+  if (!data) { alert('Informe a data de conclusão.'); return; }
+  const hoje = new Date(); hoje.setHours(23,59,59,0);
+  if (new Date(data + 'T00:00:00') > hoje) { alert('A data de conclusão não pode ser maior que hoje.'); return; }
+  const id = _kbConcluirId;
+  closeKbConclusao();
   try {
-    const {error} = await supabase.from('acoes').update({conclusao: hoje, status_resumido: 'Concluído'}).eq('id', id);
+    const {error} = await supabase.from('acoes').update({conclusao: data, status_resumido: 'Concluído'}).eq('id', id);
     if (error) throw error;
     const a = dados.find(x => x.id == id);
-    if (a) { a.conclusao = hoje; a.statusResumo = 'Concluído'; }
+    if (a) { a.conclusao = data; a.statusResumo = 'Concluído'; }
     renderKanban();
     showToast('Ação concluída!');
   } catch(e) {
