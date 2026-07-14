@@ -147,18 +147,28 @@ td.wrap{white-space:normal}
 .kanban-title{display:flex;justify-content:space-between;gap:8px;color:#e2e8f0;font-size:12px;font-weight:700;margin-bottom:10px}
 .kanban-pill{font-size:11px;color:#94a3b8;background:#1e293b;border-radius:999px;padding:1px 7px}
 .kb-board{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
-.kb-col{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:12px;min-height:120px}
-.kb-col-hdr{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid #334155}
-.kb-col-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
-.kb-card{background:#0f172a;border:1px solid #334155;border-radius:8px;padding:10px 12px;margin-bottom:8px;cursor:pointer;transition:border-color .15s}
-.kb-card:hover{border-color:#3b82f6}
-.kb-card-title{font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:6px;line-height:1.35}
+.kb-col{background:#1e293b;border:1px solid #2d3f55;border-top:3px solid #334155;border-radius:12px;padding:14px;min-height:200px;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+.kb-col.col-andamento{border-top-color:#3b82f6}
+.kb-col.col-atrasado{border-top-color:#ef4444}
+.kb-col.col-concluido{border-top-color:#22c55e}
+.kb-col-hdr{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;margin-bottom:12px;border-bottom:1px solid #2d3f55}
+.kb-col-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.kb-col-count{font-size:11px;font-weight:700;padding:1px 8px;border-radius:999px;background:rgba(0,0,0,.35);color:#94a3b8}
+.kb-card{background:#1a2e45;border:1px solid #2d3f55;border-left:3px solid #475569;border-radius:8px;padding:10px 12px;margin-bottom:8px;cursor:pointer;transition:all .2s;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.kb-card:hover{border-color:#3b82f6;border-left-color:#3b82f6;transform:translateY(-1px);box-shadow:0 6px 16px rgba(59,130,246,.2)}
+.kb-card.prio-alta{border-left-color:#ef4444}
+.kb-card.prio-alta:hover{border-left-color:#ef4444;box-shadow:0 6px 16px rgba(239,68,68,.2)}
+.kb-card.prio-media{border-left-color:#f97316}
+.kb-card.prio-media:hover{border-left-color:#f97316;box-shadow:0 6px 16px rgba(249,115,22,.15)}
+.kb-card.prio-baixa{border-left-color:#3b82f6}
+.kb-card-title{font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:6px;line-height:1.4}
 .kb-card-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
 .kb-card-tag{font-size:10px;padding:2px 7px;border-radius:999px;font-weight:700}
-.kb-card-foot{display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
+.kb-card-foot{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin-top:6px}
 .kb-card-pessoa{font-size:11px;color:#94a3b8}
 .kb-card-prazo{font-size:10px;color:#64748b;margin-top:2px}
-.kb-card-prazo.atrasado{color:#f87171}
+.kb-card-prazo.atrasado{color:#f87171;font-weight:600}
+.kb-empty{color:#475569;font-size:12px;text-align:center;padding:24px 8px}
 @media(max-width:700px){.kb-board{grid-template-columns:1fr}}
 .mini-item{border-left:3px solid #3b82f6;background:#1e293b;border-radius:8px;padding:8px 9px;margin-bottom:8px;color:#cbd5e1;font-size:12px;line-height:1.35}
 .mini-item.risk{border-left-color:#ef4444}.mini-item.done{border-left-color:#22c55e}.mini-item.wait{border-left-color:#64748b}
@@ -3117,9 +3127,9 @@ function renderKanban() {
   };
 
   const colConfig = [
-    { key: 'Em andamento', label: 'Em andamento', color: '#3b82f6' },
-    { key: 'Atrasado',     label: 'Atrasado',     color: '#ef4444' },
-    { key: 'Concluído',    label: 'Concluído',     color: '#22c55e' },
+    { key: 'Em andamento', label: 'Em andamento', color: '#3b82f6', cls: 'col-andamento' },
+    { key: 'Atrasado',     label: 'Atrasado',     color: '#ef4444', cls: 'col-atrasado'  },
+    { key: 'Concluído',    label: 'Concluído',     color: '#22c55e', cls: 'col-concluido' },
   ];
 
   function prioStyle(p) {
@@ -3128,12 +3138,17 @@ function renderKanban() {
     return 'background:#1e3a5f;color:#93c5fd';
   }
 
-  function cardActions(a) {
-    const st = statusCalculado(a);
-    if (st === 'Concluído') {
-      return `<button class="btn btn-sm" style="font-size:10px;padding:2px 8px" onclick="kanbanReopenAcao(${a.id})">Reabrir</button>`;
+  function prioClass(p) {
+    if (p === 'Alta')  return 'prio-alta';
+    if (p === 'Média') return 'prio-media';
+    return 'prio-baixa';
+  }
+
+  function cardAction(a) {
+    if (statusCalculado(a) === 'Concluído') {
+      return `<button class="btn btn-sm" style="font-size:10px;padding:2px 9px;opacity:.85" onclick="event.stopPropagation();kanbanReopenAcao(${a.id})">↩ Reabrir</button>`;
     }
-    return `<button class="btn btn-success btn-sm" style="font-size:10px;padding:2px 8px" onclick="kanbanConcluir(${a.id})">Concluir</button>`;
+    return `<button class="btn btn-success btn-sm" style="font-size:10px;padding:2px 9px" onclick="event.stopPropagation();kanbanConcluir(${a.id})">✓ Concluir</button>`;
   }
 
   const board = document.getElementById('kb-board');
@@ -3142,27 +3157,27 @@ function renderKanban() {
     const cards = items.map(a => {
       const prazoAtrasado = isAtrasado(a) && !a.conclusao;
       const prazoFmt = a.prazo ? new Date(a.prazo + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-      return `<div class="kb-card" onclick="kanbanOpenAcao(${a.id})">
+      return `<div class="kb-card ${prioClass(a.prioridade)}" onclick="kanbanOpenAcao(${a.id})">
         <div class="kb-card-title">${a.oque || '(sem título)'}</div>
         <div class="kb-card-tags">
           ${a.prioridade ? `<span class="kb-card-tag" style="${prioStyle(a.prioridade)}">${a.prioridade}</span>` : ''}
-          ${a.projeto ? `<span class="kb-card-tag" style="background:#1e293b;color:#94a3b8;border:1px solid #334155">${a.projeto}</span>` : ''}
+          ${a.projeto ? `<span class="kb-card-tag" style="background:#0f1f35;color:#7aa3c8;border:1px solid #2d3f55">${a.projeto}</span>` : ''}
         </div>
         <div class="kb-card-foot">
           <div>
-            <div class="kb-card-pessoa">${a.quem || ''}</div>
-            ${prazoFmt ? `<div class="kb-card-prazo${prazoAtrasado?' atrasado':''}">${prazoAtrasado?'⚠ ':''}Prazo: ${prazoFmt}</div>` : ''}
+            <div class="kb-card-pessoa">${a.quem ? '👤 ' + a.quem : ''}</div>
+            ${prazoFmt ? `<div class="kb-card-prazo${prazoAtrasado?' atrasado':''}">${prazoAtrasado?'⚠ ':'📅 '}${prazoFmt}</div>` : ''}
           </div>
-          <div onclick="event.stopPropagation()">${cardActions(a)}</div>
+          ${cardAction(a)}
         </div>
       </div>`;
     }).join('');
-    return `<div class="kb-col">
+    return `<div class="kb-col ${col.cls}">
       <div class="kb-col-hdr">
         <span class="kb-col-title" style="color:${col.color}">${col.label}</span>
-        <span style="font-size:12px;color:#64748b">${items.length}</span>
+        <span class="kb-col-count">${items.length}</span>
       </div>
-      ${cards || '<div style="color:#475569;font-size:12px;text-align:center;padding:16px">Nenhuma ação</div>'}
+      ${cards || '<div class="kb-empty">Nenhuma ação</div>'}
     </div>`;
   }).join('');
 }
@@ -3195,8 +3210,7 @@ async function kanbanReopenAcao(id) {
 }
 
 function kanbanOpenAcao(id) {
-  showPage('plano');
-  setTimeout(() => openModal(id), 80);
+  openModal(id);
 }
 
 // ---- DATA ----
