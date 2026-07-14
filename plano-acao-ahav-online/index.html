@@ -1364,9 +1364,10 @@ body.sidebar-collapsed #page-gente{
         <th onclick="sortBy('prazo')" id="th-prazo">Prazo ↕</th>
         <th onclick="sortBy('conclusao')" id="th-conclusao">Conclusão ↕</th>
         <th>Status</th>
+        <th>Risco</th>
         <th>!</th>
       </tr></thead>
-      <tbody id="tabela-body"><tr><td colspan="9" class="loading">Carregando dados...</td></tr></tbody>
+      <tbody id="tabela-body"><tr><td colspan="10" class="loading">Carregando dados...</td></tr></tbody>
     </table>
     </div>
   </div>
@@ -1463,9 +1464,9 @@ body.sidebar-collapsed #page-gente{
     <div style="overflow-x:auto">
       <table>
         <thead><tr>
-          <th>#</th><th>Item</th><th>Negócio</th><th>Responsável</th><th>Natureza</th><th>Criticidade</th><th>Prioridade</th><th>Exposição</th><th>Período</th><th>Status</th><th>Obs.</th>
+          <th>#</th><th>Item</th><th>Negócio</th><th>Responsável</th><th>Natureza</th><th>Criticidade</th><th>Prioridade</th><th>Exposição</th><th>Período</th><th>Status</th><th>Ação</th><th>Obs.</th>
         </tr></thead>
-        <tbody id="risk-tabela-body"><tr><td colspan="11" class="loading">Carregando riscos...</td></tr></tbody>
+        <tbody id="risk-tabela-body"><tr><td colspan="12" class="loading">Carregando riscos...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -1607,6 +1608,16 @@ body.sidebar-collapsed #page-gente{
       <div class="field"><label>Onde</label><input type="text" id="m-onde"></div>
       <div class="field full"><label>Como</label><textarea id="m-como" placeholder="Descreva como a ação será executada"></textarea></div>
       <div class="field full"><label>Quanto (R$)</label><input type="text" inputmode="decimal" id="m-quanto" placeholder="0,00"></div>
+      <div class="field full" style="border-top:1px solid #334155;padding-top:14px;margin-top:4px">
+        <label style="color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:.06em">Vincular a Risco</label>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+          <select id="m-risk-uid" style="flex:1" onchange="onModalRiskChange()">
+            <option value="">— Nenhum —</option>
+          </select>
+          <button type="button" class="btn btn-sm" style="white-space:nowrap;font-size:11px" onclick="openRiskModalFromAcao()">+ Criar risco</button>
+        </div>
+        <div id="m-risk-preview" style="margin-top:8px;display:none;padding:8px 10px;background:#0f172a;border-radius:6px;border-left:3px solid #f97316"></div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-danger btn-sm hidden" id="btn-delete" onclick="deleteAcao()">🗑 Excluir</button>
@@ -3265,6 +3276,7 @@ async function loadData() {
     dados = data.map(a => normalizePrazoGovernance({
       ...a,
       quem: normalizeResponsibleName(a.quem),
+      risk_uid: a.risk_uid || null,
       statusResumo: a.conclusao ? 'Concluído' : (a.status_resumido || (a.status && a.status.toLowerCase().includes('finaliz') ? 'Concluído' : 'Em andamento'))
     }));
     setStatus(true);
@@ -7260,6 +7272,16 @@ function renderRiskTable() {
   const rows = riskFiltrados.map(item => {
     const badge = item.status === 'Concluído' ? 'Concluído' : 'andamento';
     const uid = encodeURIComponent(item.uid);
+    const acoesVinculadas = (dados || []).filter(a => a.risk_uid === item.uid);
+    let acaoCell;
+    if (acoesVinculadas.length) {
+      acaoCell = acoesVinculadas.map(a => {
+        const st = statusBadgeClass(statusCalculado(a));
+        return `<span class="badge badge-${st}" style="cursor:pointer;font-size:10px;display:block;margin-bottom:2px" onclick="event.stopPropagation();openModal(${a.id})" title="${escapeHtml(a.oque||'')}">✓ #${a.id}</span>`;
+      }).join('');
+    } else {
+      acaoCell = `<button class="btn btn-sm" style="font-size:10px;padding:2px 7px;white-space:nowrap" onclick="event.stopPropagation();criarAcaoParaRisco('${item.uid}')">+ Criar ação</button>`;
+    }
     return `<tr onclick="openRiskModal(decodeURIComponent('${uid}'))">
       <td>${item.id}</td>
       <td class="wrap" style="max-width:260px">${escapeHtml(item.item)}</td>
@@ -7271,9 +7293,10 @@ function renderRiskTable() {
       <td>${riskMoney(item.exposicao)}</td>
       <td>${escapeHtml(item.periodo)}</td>
       <td><span class="badge badge-${badge}">${escapeHtml(item.status)}</span></td>
+      <td onclick="event.stopPropagation()">${acaoCell}</td>
       <td class="wrap" style="max-width:260px">${escapeHtml(item.obs)}</td>
     </tr>`;
-  }).join('') || '<tr><td colspan="11" style="text-align:center;padding:30px;color:#64748b">Nenhum risco encontrado</td></tr>';
+  }).join('') || '<tr><td colspan="12" style="text-align:center;padding:30px;color:#64748b">Nenhum risco encontrado</td></tr>';
   document.getElementById('risk-tabela-body').innerHTML = rows;
 }
 
@@ -7337,6 +7360,12 @@ function saveRiskItem() {
   applyRiskFilters();
   closeRiskModal();
   showToast(current ? 'Risco atualizado' : 'Risco criado');
+  if (_pendingRiskLink) {
+    _pendingRiskLink = false;
+    populateRiskDropdown(uid);
+    const sel = document.getElementById('m-risk-uid');
+    if (sel) { sel.value = uid; onModalRiskChange(); }
+  }
 }
 
 function deleteRiskItem() {
@@ -7417,6 +7446,10 @@ function renderTable() {
   const html = slice.map(a => {
     const stLabel = a.statusCalc || statusCalculado(a);
     const st = statusBadgeClass(stLabel);
+    const risk = a.risk_uid ? getRiskData().find(r => r.uid === a.risk_uid) : null;
+    const riskCell = risk
+      ? `<span class="badge badge-${risk.criticidade==='Grave'?'Alta':risk.criticidade==='Médio'?'Média':'Baixa'}" style="cursor:pointer;font-size:10px" onclick="event.stopPropagation();showPage('risk');setTimeout(()=>openRiskModal('${encodeURIComponent(risk.uid)}'),80)" title="${escapeHtml(risk.item)}">⚠ Risco</span>`
+      : '<span style="color:#475569;font-size:11px">—</span>';
     return `<tr onclick="openModal(${a.id})">
       <td>${a.id}</td>
       <td class="wrap" style="max-width:300px">${a.oque||''}</td>
@@ -7426,9 +7459,10 @@ function renderTable() {
       <td>${fmtDate(a.prazo)}</td>
       <td>${fmtDate(a.conclusao)}</td>
       <td><span class="badge badge-${st}">${stLabel}</span></td>
+      <td>${riskCell}</td>
       <td>${a.alertaPrazo?'<span class="warn-icon" title="Prazo vencido">⚠</span>':''}</td>
     </tr>`;
-  }).join('') || '<tr><td colspan="9" style="text-align:center;padding:30px;color:#64748b">Nenhuma ação encontrada</td></tr>';
+  }).join('') || '<tr><td colspan="10" style="text-align:center;padding:30px;color:#64748b">Nenhuma ação encontrada</td></tr>';
 
   document.getElementById('tabela-body').innerHTML = html;
 }
@@ -7469,6 +7503,7 @@ function openModal(id) {
     document.getElementById('m-prioridade').value='Média';
     document.getElementById('m-status-resumido').value='Em andamento';
     document.getElementById('m-prazo-motivo').value = '';
+    populateRiskDropdown(null);
     updatePrazoRequestFields();
   } else {
     const a = dados.find(x=>x.id==id);
@@ -7491,6 +7526,7 @@ function openModal(id) {
     document.getElementById('m-como').value = a.como||'';
     document.getElementById('m-quanto').value = a.quanto||'';
     document.getElementById('m-prazo-motivo').value = '';
+    populateRiskDropdown(a.risk_uid || null);
     updatePrazoRequestFields();
   }
 }
@@ -7514,6 +7550,52 @@ function onModalStatusChange() {
   } else if (status !== 'Concluído') {
     conclusao.value = '';
   }
+}
+
+let _pendingRiskLink = false;
+
+function populateRiskDropdown(selectedUid) {
+  const sel = document.getElementById('m-risk-uid');
+  if (!sel) return;
+  const risks = getRiskData();
+  sel.innerHTML = '<option value="">— Nenhum —</option>' +
+    risks.map(r => {
+      const crit = r.criticidade === 'Grave' ? '🔴' : r.criticidade === 'Médio' ? '🟡' : '🟢';
+      const selected = r.uid === selectedUid ? ' selected' : '';
+      return `<option value="${escapeHtml(r.uid)}"${selected}>${crit} ${escapeHtml(r.item)}</option>`;
+    }).join('');
+  updateRiskPreview(selectedUid);
+}
+
+function onModalRiskChange() {
+  updateRiskPreview(document.getElementById('m-risk-uid').value);
+}
+
+function updateRiskPreview(uid) {
+  const preview = document.getElementById('m-risk-preview');
+  if (!preview) return;
+  if (!uid) { preview.style.display = 'none'; return; }
+  const risk = getRiskData().find(r => r.uid === uid);
+  if (!risk) { preview.style.display = 'none'; return; }
+  const critColor = risk.criticidade === 'Grave' ? '#ef4444' : risk.criticidade === 'Médio' ? '#f97316' : '#22c55e';
+  preview.style.borderLeftColor = critColor;
+  preview.style.display = 'block';
+  preview.innerHTML = `<div style="font-size:12px;font-weight:700;color:#e2e8f0;margin-bottom:4px">${escapeHtml(risk.item)}</div>
+    <div style="font-size:11px;color:#94a3b8">${escapeHtml(risk.negocio||'')} · Criticidade: <span style="color:${critColor}">${escapeHtml(risk.criticidade||'')}</span> · Responsável: ${escapeHtml(risk.responsavel||'')}</div>`;
+}
+
+function openRiskModalFromAcao() {
+  _pendingRiskLink = true;
+  openRiskModal(null);
+}
+
+function criarAcaoParaRisco(riskUid) {
+  openModal(null);
+  setTimeout(() => {
+    populateRiskDropdown(riskUid);
+    const sel = document.getElementById('m-risk-uid');
+    if (sel) { sel.value = riskUid; onModalRiskChange(); }
+  }, 50);
 }
 
 async function saveAcao() {
@@ -7555,6 +7637,7 @@ async function saveAcao() {
     quem: normalizeResponsibleName(document.getElementById('m-quem').value),
     prioridade: document.getElementById('m-prioridade').value,
     status_resumido: conclusao ? 'Concluído' : document.getElementById('m-status-resumido').value,
+    risk_uid: document.getElementById('m-risk-uid').value || null,
     // Admin aplica a data diretamente; não-admin mantém prazo atual e solicita aprovação
     prazo: admin ? (prazoDigitado || prazoAtual) : (currentAction ? prazoAtual : prazoDigitado),
     prazo_original: prazoOriginal,
