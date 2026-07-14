@@ -2413,6 +2413,7 @@ const SMART_REMOTE_TABLE = 'smartmold_state';
 const SMART_REMOTE_KEY = 'default';
 const FVC_STORAGE_KEY = 'ahav_fvc_data';
 const RISK_STORAGE_KEY = 'ahav_risk_data';
+const ACAO_LINKS_KEY = 'ahav_acao_links';
 const AUTH_SESSION_KEY = 'ahav_auth_session';
 const LOCAL_USERS_KEY = 'ahav_local_users';
 const DEFAULT_ADMIN_HASH = '2ccb642daba2e0364c839d5667a1ae4d2d61e5b66e697ea53c99127aa3129485';
@@ -3294,12 +3295,17 @@ async function loadData() {
     document.getElementById('status-text').textContent = 'Carregando...';
     const {data, error} = await supabase.from('acoes').select('*').order('id');
     if (error) throw error;
-    dados = data.map(a => normalizePrazoGovernance({
-      ...a,
-      quem: normalizeResponsibleName(a.quem),
-      risk_uid: a.risk_uid || null,
-      statusResumo: a.conclusao ? 'Concluído' : (a.status_resumido || (a.status && a.status.toLowerCase().includes('finaliz') ? 'Concluído' : 'Em andamento'))
-    }));
+    const links = getAcaoLinks();
+    dados = data.map(a => {
+      const lk = links[String(a.id)] || {};
+      return normalizePrazoGovernance({
+        ...a,
+        quem: normalizeResponsibleName(a.quem),
+        risk_uid: lk.risk_uid || a.risk_uid || null,
+        fvc_uid: lk.fvc_uid || a.fvc_uid || null,
+        statusResumo: a.conclusao ? 'Concluído' : (a.status_resumido || (a.status && a.status.toLowerCase().includes('finaliz') ? 'Concluído' : 'Em andamento'))
+      });
+    });
     setStatus(true);
     updateKPIs();
     updateCharts();
@@ -7010,6 +7016,27 @@ function saveFvcData(rows) {
   localStorage.setItem(FVC_STORAGE_KEY, JSON.stringify(normalizeFvcRows(rows)));
 }
 
+function getAcaoLinks() {
+  try {
+    const saved = localStorage.getItem(ACAO_LINKS_KEY);
+    return saved ? JSON.parse(saved) : {};
+  } catch(e) { return {}; }
+}
+
+function setAcaoLink(acaoId, riskUid, fvcUid) {
+  const links = getAcaoLinks();
+  links[String(acaoId)] = { risk_uid: riskUid || null, fvc_uid: fvcUid || null };
+  localStorage.setItem(ACAO_LINKS_KEY, JSON.stringify(links));
+}
+
+function mergeAcaoLink(acaoId, patch) {
+  const links = getAcaoLinks();
+  links[String(acaoId)] = { ...(links[String(acaoId)] || {}), ...patch };
+  localStorage.setItem(ACAO_LINKS_KEY, JSON.stringify(links));
+  const a = (dados || []).find(x => String(x.id) === String(acaoId));
+  if (a) Object.assign(a, patch);
+}
+
 function setupFvcFilters() {
   const data = getVisibleFvcData();
   fvcSelectOptions('fvc-negocio', uniqueSorted(data.map(x => x.negocio)), 'Todos');
@@ -7122,10 +7149,9 @@ function saveFvcItem() {
     const sel = document.getElementById('m-fvc-uid');
     if (sel) { sel.value = uid; onModalFvcChange(); }
   } else if (acaoIdSel) {
-    // Atualiza fvc_uid na ação selecionada via Supabase
-    supabase.from('acoes').update({fvc_uid: uid}).eq('id', acaoIdSel).then(({error}) => {
-      if (!error) { const a = (dados||[]).find(x=>String(x.id)===String(acaoIdSel)); if(a) a.fvc_uid=uid; renderFvcTable(); renderTable(); }
-    });
+    mergeAcaoLink(acaoIdSel, { fvc_uid: uid });
+    renderFvcTable();
+    renderTable();
   }
 }
 
@@ -7763,14 +7789,15 @@ async function saveAcao() {
     return;
   }
 
+  const _riskUid = document.getElementById('m-risk-uid').value || null;
+  const _fvcUid = document.getElementById('m-fvc-uid').value || null;
+
   const payload = {
     oque, projeto: document.getElementById('m-projeto').value,
     // Qualquer usuário pode delegar (mudar quem); normaliza o nome
     quem: normalizeResponsibleName(document.getElementById('m-quem').value),
     prioridade: document.getElementById('m-prioridade').value,
     status_resumido: conclusao ? 'Concluído' : document.getElementById('m-status-resumido').value,
-    fvc_uid: document.getElementById('m-fvc-uid').value || null,
-    risk_uid: document.getElementById('m-risk-uid').value || null,
     // Admin aplica a data diretamente; não-admin mantém prazo atual e solicita aprovação
     prazo: admin ? (prazoDigitado || prazoAtual) : (currentAction ? prazoAtual : prazoDigitado),
     prazo_original: prazoOriginal,
@@ -7825,6 +7852,8 @@ async function saveAcao() {
       } else break;
     } while (attempts < 8);
     if (result.error) throw result.error;
+    const savedId = editingId || (result.data && result.data[0] && result.data[0].id);
+    if (savedId) setAcaoLink(savedId, _riskUid, _fvcUid);
     closeModal();
     const msg = (!admin && prazoAlterado)
       ? '✓ Solicitação de alteração de prazo enviada para aprovação!'
