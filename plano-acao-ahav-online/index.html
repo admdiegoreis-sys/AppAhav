@@ -7150,8 +7150,9 @@ function saveFvcItem() {
     if (sel) { sel.value = uid; onModalFvcChange(); }
   } else if (acaoIdSel) {
     mergeAcaoLink(acaoIdSel, { fvc_uid: uid });
-    renderFvcTable();
-    renderTable();
+    supabase.from('acoes').update({ fvc_uid: uid }).eq('id', acaoIdSel).then(() => {
+      renderFvcTable(); renderTable();
+    });
   }
 }
 
@@ -7798,6 +7799,8 @@ async function saveAcao() {
     quem: normalizeResponsibleName(document.getElementById('m-quem').value),
     prioridade: document.getElementById('m-prioridade').value,
     status_resumido: conclusao ? 'Concluído' : document.getElementById('m-status-resumido').value,
+    risk_uid: _riskUid,
+    fvc_uid: _fvcUid,
     // Admin aplica a data diretamente; não-admin mantém prazo atual e solicita aprovação
     prazo: admin ? (prazoDigitado || prazoAtual) : (currentAction ? prazoAtual : prazoDigitado),
     prazo_original: prazoOriginal,
