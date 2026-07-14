@@ -3224,13 +3224,18 @@ function renderKanban() {
       const prazoFmt = a.prazo ? new Date(a.prazo + 'T00:00:00').toLocaleDateString('pt-BR') : '';
       const hasRisk = !!a.risk_uid;
       const hasFvc  = !!a.fvc_uid;
+      const cornerIcons = (hasRisk || hasFvc) ? `<div style="display:flex;gap:4px">
+        ${hasRisk ? `<span title="Vinculado a Risco" style="font-size:18px;line-height:1" >⚠️</span>` : ''}
+        ${hasFvc  ? `<span title="Vinculado a Valor Gerado" style="font-size:18px;line-height:1">💰</span>` : ''}
+      </div>` : '';
       return `<div class="kb-card ${prioClass(a.prioridade)}" onclick="kanbanOpenAcao(${a.id})">
-        <div class="kb-card-title">${a.oque || '(sem título)'}</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div class="kb-card-title" style="flex:1">${a.oque || '(sem título)'}</div>
+          ${cornerIcons}
+        </div>
         <div class="kb-card-tags">
           ${a.prioridade ? `<span class="kb-card-tag" style="${prioStyle(a.prioridade)}">${a.prioridade}</span>` : ''}
           ${a.projeto ? `<span class="kb-card-tag" style="background:#0f1f35;color:#7aa3c8;border:1px solid #2d3f55">${a.projeto}</span>` : ''}
-          ${hasRisk ? `<span class="kb-card-tag" title="Vinculado a um Risco" style="background:#431407;color:#fb923c;border:1px solid #7c2d12">⚠ Risco</span>` : ''}
-          ${hasFvc  ? `<span class="kb-card-tag" title="Vinculado a Valor Gerado" style="background:#052e16;color:#4ade80;border:1px solid #14532d">💰 FVC</span>` : ''}
         </div>
         <div class="kb-card-foot">
           <div>
