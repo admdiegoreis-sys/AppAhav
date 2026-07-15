@@ -8057,24 +8057,17 @@ function exportFvcPDF() {
   doc.setFontSize(10); doc.setTextColor(100);
   doc.text('Gerado em: '+new Date().toLocaleDateString('pt-BR')+' | '+fvcFiltrados.length+' itens', 14, 23);
   doc.autoTable({
-    head:[['#','Oportunidade','Negócio','Valor Ano','Valor Mensal','Referência','Competência','Responsável','Status','Condição']],
-    body: fvcFiltrados.map(item=>[
-      item.id,
-      (item.oportunidade||'').substring(0,45),
-      item.negocio||'',
-      fvcMoney(item.valorAno),
-      fvcMoney(item.valorMensal),
-      item.referencia||'',
-      item.competencia||'',
-      item.responsavel||'',
-      item.status||'',
-      (item.condicao||'').substring(0,50)
-    ]),
+    head:[['#','Oportunidade','Negócio','Valor Ano','Valor Mensal','Referência','Competência','Responsável','Status','Condição','Ação vinculada']],
+    body: fvcFiltrados.map(item=>{
+      const lnk=(dados||[]).find(a=>a.fvc_uid===item.uid);
+      const at=lnk?('#'+lnk.id+' — '+(lnk.oque||'').substring(0,38)):'—';
+      return [item.id,(item.oportunidade||'').substring(0,40),item.negocio||'',fvcMoney(item.valorAno),fvcMoney(item.valorMensal),item.referencia||'',item.competencia||'',item.responsavel||'',item.status||'',(item.condicao||'').substring(0,35),at];
+    }),
     startY:28,
     styles:{fontSize:7,cellPadding:2.4},
     headStyles:{fillColor:[30,41,59],textColor:[148,163,184]},
     alternateRowStyles:{fillColor:[248,250,252]},
-    columnStyles:{1:{cellWidth:58},9:{cellWidth:48}}
+    columnStyles:{1:{cellWidth:42},9:{cellWidth:32},10:{cellWidth:48}}
   });
   doc.save('fvc-valor-gerado-'+new Date().toISOString().split('T')[0]+'.pdf');
 }
@@ -8087,25 +8080,17 @@ function exportRiskPDF() {
   doc.setFontSize(10); doc.setTextColor(100);
   doc.text('Gerado em: '+new Date().toLocaleDateString('pt-BR')+' | '+riskFiltrados.length+' riscos', 14, 23);
   doc.autoTable({
-    head:[['#','Item','Negócio','Responsável','Natureza','Criticidade','Prioridade','Exposição','Período','Status','Obs.']],
-    body: riskFiltrados.map(item=>[
-      item.id,
-      (item.item||'').substring(0,45),
-      item.negocio||'',
-      item.responsavel||'',
-      item.natureza||'',
-      item.criticidade||'',
-      item.prioridade||'',
-      riskMoney(item.exposicao),
-      item.periodo||'',
-      item.status||'',
-      (item.obs||'').substring(0,55)
-    ]),
+    head:[['#','Item','Negócio','Responsável','Natureza','Criticidade','Prioridade','Exposição','Período','Status','Obs.','Ação vinculada']],
+    body: riskFiltrados.map(item=>{
+      const lnk=(dados||[]).find(a=>a.risk_uid===item.uid);
+      const at=lnk?('#'+lnk.id+' — '+(lnk.oque||'').substring(0,38)):'—';
+      return [item.id,(item.item||'').substring(0,40),item.negocio||'',item.responsavel||'',item.natureza||'',item.criticidade||'',item.prioridade||'',riskMoney(item.exposicao),item.periodo||'',item.status||'',(item.obs||'').substring(0,35),at];
+    }),
     startY:28,
     styles:{fontSize:7,cellPadding:2.4},
     headStyles:{fillColor:[30,41,59],textColor:[148,163,184]},
     alternateRowStyles:{fillColor:[248,250,252]},
-    columnStyles:{1:{cellWidth:44},10:{cellWidth:50}}
+    columnStyles:{1:{cellWidth:38},10:{cellWidth:30},11:{cellWidth:46}}
   });
   doc.save('gestao-riscos-'+new Date().toISOString().split('T')[0]+'.pdf');
 }
