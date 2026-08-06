@@ -2587,6 +2587,12 @@ function createSupabaseRestClient(url, key) {
         }
       };
     },
+    rpc(fnName, params = {}) {
+      return request(`/rpc/${fnName}`, {
+        method: 'POST',
+        body: JSON.stringify(params)
+      });
+    },
     channel() {
       return {
         on() { return this; },
