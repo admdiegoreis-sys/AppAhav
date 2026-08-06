@@ -4,4 +4,9 @@
 *.tmp
 zip-check/
 00_GOVERNANCA_DADOS_AHAV/
+.env
+.env.*
+node_modules/
+dist/
+.netlify/
 

@@ -2669,8 +2669,8 @@ async function login() {
     return;
   }
   const hash = await sha256(password);
-  const user = await findAuthUser(username);
-  if (!user || !user.active || user.password_hash !== hash) {
+  const user = await verifyCredentials(username, hash);
+  if (!user || user.active === false) {
     errorEl.textContent = 'Usuário ou senha inválidos.';
     return;
   }
@@ -2757,7 +2757,7 @@ function stripUnknownColumns(payload, errorMsg) {
 
 async function findAuthUser(username) {
   try {
-    const {data, error} = await supabase.from('app_users').select('*').eq('username', username);
+    const {data, error} = await supabase.from('app_users').select('username,full_name,role,active,must_change_password,permissions,access,gente_empresas').eq('username', username);
     if (!error && Array.isArray(data)) {
       authUsesSupabase = true;
       return normalizeAuthUserRecord(data[0] || null);
@@ -2765,6 +2765,22 @@ async function findAuthUser(username) {
   } catch(e) {}
   authUsesSupabase = false;
   return normalizeAuthUserRecord(readLocalUsers().find(u => u.username === username) || null);
+}
+
+async function verifyCredentials(username, passwordHash) {
+  if (supabase) {
+    try {
+      const {data, error} = await supabase.rpc('verify_login', {p_username: username, p_password_hash: passwordHash});
+      if (!error) {
+        authUsesSupabase = true;
+        const row = Array.isArray(data) ? data[0] : data;
+        return normalizeAuthUserRecord(row || null);
+      }
+    } catch(e) {}
+  }
+  authUsesSupabase = false;
+  const local = readLocalUsers().find(u => u.username === username && u.password_hash === passwordHash && u.active !== false);
+  return normalizeAuthUserRecord(local || null);
 }
 
 function parseMaybeJson(value, fallback) {
@@ -2915,7 +2931,7 @@ function requireAdmin() {
 
 async function listAuthUsers() {
   try {
-    const {data, error} = await supabase.from('app_users').select('*').order('username');
+    const {data, error} = await supabase.from('app_users').select('username,full_name,role,active,must_change_password,permissions,access,gente_empresas').order('username');
     if (!error && Array.isArray(data)) {
       authUsesSupabase = true;
       return data;
@@ -2943,7 +2959,8 @@ function clearUserAdminForm() {
   const role = document.getElementById('adm-role'); if (role) role.value = 'user';
   const active = document.getElementById('adm-active'); if (active) active.value = 'true';
   const must = document.getElementById('adm-must-change'); if (must) must.value = 'true';
-  const pass = document.getElementById('adm-password'); if (pass) pass.type = 'text';
+  const pass = document.getElementById('adm-password');
+  if (pass) { pass.type = 'text'; pass.placeholder = 'Preencha para criar ou alterar a senha'; }
   document.querySelectorAll('.adm-gente-empresa').forEach(el => { el.checked = false; });
 }
 
@@ -3004,7 +3021,6 @@ async function renderUsersAdmin() {
     : 'Modo local: usuários salvos apenas neste navegador.';
   document.getElementById('adm-users-list').innerHTML = users.map(user => {
     const encoded = encodeURIComponent(user.username);
-    const plainPass = user.password_plain || '—';
     const statusBadge = user.active !== false
       ? '<span style="color:#22c55e;font-size:11px">● Ativo</span>'
       : '<span style="color:#ef4444;font-size:11px">● Bloqueado</span>';
@@ -3015,10 +3031,10 @@ async function renderUsersAdmin() {
         <small>${escapeHtml(user.username)} · ${user.role === 'admin' ? 'Administrador' : 'Usuário'} · ${statusBadge}</small>
       </div>
       <div style="display:flex;align-items:center;gap:6px">
-        <input type="text" value="${escapeHtml(plainPass)}" id="pass-field-${encoded}"
+        <input type="password" id="pass-field-${encoded}"
           style="flex:1;font-size:12px;padding:5px 8px;background:#0f172a;min-width:0"
-          placeholder="sem senha salva"
-          onchange="updateUserPassInline(decodeURIComponent('${encoded}'), this.value)">
+          placeholder="definir nova senha"
+          onchange="updateUserPassInline(decodeURIComponent('${encoded}'), this.value); this.value='';">
         <button type="button" title="Mostrar/ocultar"
           onclick="(()=>{const i=document.getElementById('pass-field-${encoded}');i.type=i.type==='text'?'password':'text';this.textContent=i.type==='text'?'👁':'🔒'})()"
           style="padding:4px 7px;font-size:12px;flex-shrink:0">👁</button>
@@ -3038,8 +3054,9 @@ async function editUserAdmin(username) {
   document.getElementById('adm-role').value = user.role || 'user';
   document.getElementById('adm-active').value = String(user.active !== false);
   document.getElementById('adm-must-change').value = String(user.must_change_password === true);
-  document.getElementById('adm-password').value = user.password_plain || '';
-  document.getElementById('adm-password').type = 'text';
+  document.getElementById('adm-password').value = '';
+  document.getElementById('adm-password').type = 'password';
+  document.getElementById('adm-password').placeholder = 'Deixe em branco para manter a senha atual';
   renderPermissionsGrid(getUserAccess(user));
   const genteEmpresas = getUserGenteEmpresas(user);
   document.querySelectorAll('.adm-gente-empresa').forEach(el => {
@@ -3047,17 +3064,17 @@ async function editUserAdmin(username) {
   });
 }
 
-async function updateUserPassInline(username, plainPass) {
-  if (!plainPass || plainPass === '—') return;
+async function updateUserPassInline(username, newPlainPass) {
+  if (!newPlainPass) return;
   const users = await listAuthUsers();
   const current = users.find(u => u.username === username);
   if (!current) return;
-  const payload = { ...current, password_plain: plainPass, password_hash: await sha256(plainPass) };
+  const newHash = await sha256(newPlainPass);
   if (authUsesSupabase) {
-    const { error } = await supabase.from('app_users').update(payload).eq('username', username);
+    const { error } = await supabase.from('app_users').update({ password_hash: newHash }).eq('username', username);
     if (error) { showToast('Erro ao salvar senha: ' + error.message, true); return; }
   } else {
-    writeLocalUsers(users.map(u => u.username === username ? payload : u));
+    writeLocalUsers(users.map(u => u.username === username ? { ...current, password_hash: newHash } : u));
   }
   showToast('Senha atualizada para ' + username);
 }
@@ -3084,12 +3101,11 @@ async function saveUserAdmin() {
     role,
     active,
     must_change_password: password ? true : mustChange,
-    password_hash: password ? await sha256(password) : current.password_hash,
-    password_plain: password || current?.password_plain || '',
     permissions,
     access,
     gente_empresas
   };
+  if (password) payload.password_hash = await sha256(password);
   if (authUsesSupabase) {
     let p = {...payload};
     let result, attempts = 0;
@@ -3104,7 +3120,8 @@ async function saveUserAdmin() {
     } while (attempts < 5);
     if (result.error) { showToast('Erro ao salvar usuário: ' + result.error.message, true); return; }
   } else {
-    const next = current ? users.map(u => u.username === username ? payload : u) : [...users, payload];
+    const merged = password ? payload : { ...payload, password_hash: current?.password_hash };
+    const next = current ? users.map(u => u.username === username ? merged : u) : [...users, payload];
     writeLocalUsers(next);
   }
   closeEditUserModal();
@@ -8587,7 +8604,7 @@ function genteSetupPessoaEmpresaOptions(selectedValue = '') {
   if (!sel) return;
   const allowed = getUserGenteEmpresas();
   const empresas = isAdminUser() ? GENTE_EMPRESAS : allowed;
-  sel.innerHTML = empresas.map(e => `<option value="${e}">${e}</option>`).join('');
+  sel.innerHTML = empresas.map(e => `<option value="${escapeHtml(e)}">${escapeHtml(e)}</option>`).join('');
   sel.value = empresas.includes(selectedValue) ? selectedValue : (empresas[0] || 'Ahav');
   sel.disabled = !isAdminUser() && empresas.length === 1;
 }
@@ -8839,6 +8856,14 @@ function genteAddFeedback() {
   if (!texto) { alert('Escreva o registro antes de adicionar.'); return; }
   const entry = { data: data || new Date().toISOString().slice(0,10), texto };
   if (file) {
+    const allowedExt = ['pdf','doc','docx','xls','xlsx','png','jpg','jpeg'];
+    const allowedMime = ['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','image/png','image/jpeg'];
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    if (!allowedExt.includes(ext) || (file.type && !allowedMime.includes(file.type))) {
+      alert('Tipo de arquivo não permitido. Use PDF, Word, Excel, PNG ou JPG.');
+      if (fileEl) fileEl.value = '';
+      return;
+    }
     if (file.size > 700 * 1024) {
       alert(`Arquivo muito grande (${(file.size/1024).toFixed(0)} KB). O limite é 700 KB para garantir o salvamento no servidor.`);
       return;
@@ -9474,7 +9499,7 @@ function genteOpenOrgModal() {
   document.getElementById('go-nome').value = '';
   document.getElementById('go-cargo').value = '';
   const sel = document.getElementById('go-pai');
-  sel.innerHTML = org.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
+  sel.innerHTML = org.map(o => `<option value="${escapeHtml(o.id)}">${escapeHtml(o.nome)}</option>`).join('');
   document.getElementById('gente-org-modal').classList.remove('hidden');
 }
 
